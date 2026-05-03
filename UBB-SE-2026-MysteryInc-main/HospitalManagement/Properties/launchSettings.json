@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "HospitalManagement (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "HospitalManagement (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

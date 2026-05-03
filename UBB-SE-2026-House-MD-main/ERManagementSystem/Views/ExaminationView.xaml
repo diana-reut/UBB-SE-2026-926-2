@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="ERManagementSystem.Views.ExaminationView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ERManagementSystem.Views"
+    xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <ScrollViewer Padding="24">
+        <StackPanel Spacing="16">
+
+            <!-- TITLE -->
+            <TextBlock
+                Text="Examination — Doctor Request &amp; Examination"
+                Style="{StaticResource PageTitleTextBlockStyle}"/>
+
+            <!-- ELIGIBLE VISITS CARD -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock
+                        Text="Visits  (IN_ROOM / WAITING_FOR_DOCTOR)"
+                        Style="{StaticResource SectionTitleTextBlockStyle}"/>
+
+                    <controls:DataGrid
+                        x:Name="VisitsDataGrid"
+                        ItemsSource="{x:Bind ViewModel.EligibleVisits, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.SelectedVisit, Mode=TwoWay}"
+                        SelectionMode="Single"
+                        AutoGenerateColumns="False"
+                        IsReadOnly="True"
+                        MinHeight="180"
+                        GridLinesVisibility="Horizontal"
+                        BorderThickness="1"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                        <controls:DataGrid.Columns>
+                            <controls:DataGridTextColumn
+                                Header="Visit ID"
+                                Binding="{Binding Visit_ID}"
+                                Width="80"/>
+                            <controls:DataGridTextColumn
+                                Header="Patient ID"
+                                Binding="{Binding Patient_ID}"
+                                Width="140"/>
+                            <controls:DataGridTextColumn
+                                Header="Chief Complaint"
+                                Binding="{Binding Chief_Complaint}"
+                                Width="*"/>
+                            <controls:DataGridTextColumn
+                                Header="Status"
+                                Binding="{Binding Status}"
+                                Width="180"/>
+                        </controls:DataGrid.Columns>
+                    </controls:DataGrid>
+                </StackPanel>
+            </Border>
+
+            <!-- ASSIGNED DOCTOR INFO CARD (read-only) -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock
+                        Text="Assigned Doctor"
+                        Style="{StaticResource SectionTitleTextBlockStyle}"/>
+
+                    <StackPanel Orientation="Horizontal" Spacing="24">
+                        <StackPanel>
+                            <TextBlock Text="Doctor Name"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       FontSize="12"/>
+                            <TextBlock Text="{x:Bind ViewModel.DoctorName, Mode=OneWay}"
+                                       FontSize="16" FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="Specialty"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       FontSize="12"/>
+                            <TextBlock Text="{x:Bind ViewModel.DoctorSpecialty, Mode=OneWay}"
+                                       FontSize="16" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- TRIAGE DETAILS CARD (read-only) — Task 4.14 -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock
+                        Text="Triage Details"
+                        Style="{StaticResource SectionTitleTextBlockStyle}"/>
+
+                    <!-- Row 1: Level, Specialization, Severity Score, Nurse -->
+                    <StackPanel Orientation="Horizontal" Spacing="24">
+                        <StackPanel MinWidth="100">
+                            <TextBlock Text="Triage Level"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       FontSize="12"/>
+                            <TextBlock Text="{x:Bind ViewModel.TriageLevelDisplay, Mode=OneWay}"
+                                       FontSize="16" FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <StackPanel MinWidth="140">
+                            <TextBlock Text="Specialization"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       FontSize="12"/>
+                            <TextBlock Text="{x:Bind ViewModel.TriageSpecialization, Mode=OneWay}"
+                                       FontSize="16" FontWeight="SemiBold"/>
+                        </StackPanel>
+
+                        <StackPanel MinWidth="100">
+                            <TextBlock Text="Assigned Nurse"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       FontSize="12"/>
+                            <TextBlock Text="{x:Bind ViewModel.TriageNurseId, Mode=OneWay}"
+                                       FontSize="16" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </StackPanel>
+
+
+                </StackPanel>
+            </Border>
+
+            <!-- NOTES -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="8">
+                    <Grid>
+                        <TextBlock
+                            Text="Examination Notes"
+                            Style="{StaticResource SectionTitleTextBlockStyle}"
+                            HorizontalAlignment="Left"/>
+                        <TextBlock
+                            Text="{x:Bind ViewModel.SavedTimeDisplay, Mode=OneWay}"
+                            Foreground="MediumSeaGreen"
+                            FontWeight="SemiBold"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <TextBox
+                        x:Name="NotesTextBox"
+                        Text="{x:Bind ViewModel.Notes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        PlaceholderText="Enter examination notes here..."
+                        AcceptsReturn="True"
+                        TextWrapping="Wrap"
+                        MinHeight="120"
+                        MaxHeight="240"/>
+                </StackPanel>
+            </Border>
+
+            <!-- TASK 4.10: PAST EXAMINATIONS -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock
+                        Text="Past Examinations"
+                        Style="{StaticResource SectionTitleTextBlockStyle}"/>
+                    <controls:DataGrid
+                        ItemsSource="{x:Bind ViewModel.ExaminationHistory, Mode=OneWay}"
+                        AutoGenerateColumns="False"
+                        IsReadOnly="True"
+                        GridLinesVisibility="Horizontal"
+                        SelectionMode="Single"
+                        MinHeight="100" MaxHeight="200"
+                        HeadersVisibility="Column"
+                        Margin="0,8,0,0">
+                        <controls:DataGrid.Columns>
+                            <controls:DataGridTextColumn Header="Exam ID" Binding="{Binding Exam_ID}" />
+                            <controls:DataGridTextColumn Header="Date &amp; Time" Binding="{Binding Exam_Time}" />
+                            <controls:DataGridTextColumn Header="Doctor ID" Binding="{Binding Doctor_ID}" />
+                            <controls:DataGridTextColumn Header="Room" Binding="{Binding Room_ID}" />
+                            <controls:DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="*" />
+                        </controls:DataGrid.Columns>
+                    </controls:DataGrid>
+                </StackPanel>
+            </Border>
+
+            <!-- BUTTONS -->
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Request Doctor"
+                        Command="{x:Bind ViewModel.RequestDoctorCommand}"
+                        Style="{StaticResource PrimaryButtonStyle}"/>
+                <Button Content="Save Examination"
+                        Command="{x:Bind ViewModel.SaveExaminationCommand}"
+                        Background="MediumSeaGreen"
+                        Foreground="White"/>
+                <Button Content="View Summary"
+                        Command="{x:Bind ViewModel.ViewSummaryCommand}"
+                        Background="SteelBlue"
+                        Foreground="White"/>
+                <Button Content="Refresh"
+                        Command="{x:Bind ViewModel.LoadDataCommand}"/>
+            </StackPanel>
+
+            <!-- STATUS MESSAGE -->
+            <TextBlock
+                Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
+                Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

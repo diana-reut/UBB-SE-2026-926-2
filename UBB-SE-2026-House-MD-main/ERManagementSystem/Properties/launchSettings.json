@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ERManagementSystem (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "ERManagementSystem (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

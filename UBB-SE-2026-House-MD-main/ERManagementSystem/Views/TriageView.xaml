@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="ERManagementSystem.Views.TriageView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ERManagementSystem.Views"
+    xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24">
+        <StackPanel Spacing="16" Margin="24">
+
+            <!-- ── Page Title ────────────────────────────────────────── -->
+            <TextBlock Text="Triage"
+                       Style="{StaticResource PageTitleTextBlockStyle}" />
+
+            <!-- ── Registered Visits DataGrid ────────────────────────── -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Registered Visits"
+                   Style="{StaticResource SectionTitleTextBlockStyle}" />
+
+                    <controls:DataGrid
+            x:Name="TriageDataGrid"
+            ItemsSource="{x:Bind ViewModel.RegisteredVisits, Mode=OneWay}"
+            SelectedItem="{x:Bind ViewModel.SelectedVisit, Mode=TwoWay}"
+            AutoGenerateColumns="False"
+            IsReadOnly="True"
+            SelectionMode="Single"
+            CanUserSortColumns="True"
+            MinHeight="180"
+            MaxHeight="300"
+            HorizontalScrollBarVisibility="Auto">
+
+                        <controls:DataGrid.Columns>
+                            <!-- Visit ID: slightly bigger -->
+                            <controls:DataGridTextColumn Header="Visit ID"
+                                             Binding="{Binding Visit_ID}" 
+                                             Width="100" />
+
+                            <!-- Patient ID -->
+                            <controls:DataGridTextColumn Header="Patient ID"
+                                             Binding="{Binding Patient_ID}" 
+                                             Width="160" />
+
+                            <!-- Arrival Time -->
+                            <controls:DataGridTextColumn Header="Arrival Time"
+                                             Binding="{Binding Arrival_date_time}" 
+                                             Width="180" />
+
+                            <!-- Chief Complaint: auto-size to content + wrap text -->
+                            <controls:DataGridTextColumn Header="Chief Complaint"
+                                             Binding="{Binding Chief_Complaint}" 
+                                             Width="SizeToCells">
+                                <controls:DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextWrapping" Value="Wrap"/>
+                                    </Style>
+                                </controls:DataGridTextColumn.ElementStyle>
+                            </controls:DataGridTextColumn>
+
+                            <!-- Status -->
+                            <controls:DataGridTextColumn Header="Status"
+                                             Binding="{Binding Status}" 
+                                             Width="120" />
+                        </controls:DataGrid.Columns>
+                    </controls:DataGrid>
+                </StackPanel>
+            </Border>
+
+            <!-- ── Triage Parameters ─────────────────────────────────── -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Triage Parameters"
+                               Style="{StaticResource SectionTitleTextBlockStyle}" />
+
+                    <StackPanel Orientation="Horizontal" Spacing="16">
+                        <!-- Consciousness -->
+                        <StackPanel Spacing="4" MinWidth="180">
+                            <TextBlock Text="Consciousness" FontWeight="SemiBold" />
+                            <ComboBox x:Name="ConsciousnessCombo"
+                                      PlaceholderText="Select..."
+                                      SelectionChanged="ConsciousnessCombo_SelectionChanged"
+                                      HorizontalAlignment="Stretch">
+                                <ComboBoxItem Content="1 - Awake" Tag="1" />
+                                <ComboBoxItem Content="2 - Confused" Tag="2" />
+                                <ComboBoxItem Content="3 - Unconscious" Tag="3" />
+                            </ComboBox>
+                        </StackPanel>
+
+                        <!-- Breathing -->
+                        <StackPanel Spacing="4" MinWidth="180">
+                            <TextBlock Text="Breathing" FontWeight="SemiBold" />
+                            <ComboBox x:Name="BreathingCombo"
+                                      PlaceholderText="Select..."
+                                      SelectionChanged="BreathingCombo_SelectionChanged"
+                                      HorizontalAlignment="Stretch">
+                                <ComboBoxItem Content="1 - Normal" Tag="1" />
+                                <ComboBoxItem Content="2 - Difficult" Tag="2" />
+                                <ComboBoxItem Content="3 - Absent" Tag="3" />
+                            </ComboBox>
+                        </StackPanel>
+
+                        <!-- Bleeding -->
+                        <StackPanel Spacing="4" MinWidth="180">
+                            <TextBlock Text="Bleeding" FontWeight="SemiBold" />
+                            <ComboBox x:Name="BleedingCombo"
+                                      PlaceholderText="Select..."
+                                      SelectionChanged="BleedingCombo_SelectionChanged"
+                                      HorizontalAlignment="Stretch">
+                                <ComboBoxItem Content="1 - None" Tag="1" />
+                                <ComboBoxItem Content="2 - Moderate" Tag="2" />
+                                <ComboBoxItem Content="3 - Severe" Tag="3" />
+                            </ComboBox>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="16">
+                        <!-- Injury Type -->
+                        <StackPanel Spacing="4" MinWidth="180">
+                            <TextBlock Text="Injury Type" FontWeight="SemiBold" />
+                            <ComboBox x:Name="InjuryTypeCombo"
+                                      PlaceholderText="Select..."
+                                      SelectionChanged="InjuryTypeCombo_SelectionChanged"
+                                      HorizontalAlignment="Stretch">
+                                <ComboBoxItem Content="1 - Minor" Tag="1" />
+                                <ComboBoxItem Content="2 - Moderate" Tag="2" />
+                                <ComboBoxItem Content="3 - Severe" Tag="3" />
+                            </ComboBox>
+                        </StackPanel>
+
+                        <!-- Pain Level -->
+                        <StackPanel Spacing="4" MinWidth="180">
+                            <TextBlock Text="Pain Level" FontWeight="SemiBold" />
+                            <ComboBox x:Name="PainLevelCombo"
+                                      PlaceholderText="Select..."
+                                      SelectionChanged="PainLevelCombo_SelectionChanged"
+                                      HorizontalAlignment="Stretch">
+                                <ComboBoxItem Content="1 - Mild" Tag="1" />
+                                <ComboBoxItem Content="2 - Moderate" Tag="2" />
+                                <ComboBoxItem Content="3 - Severe" Tag="3" />
+                            </ComboBox>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ── Triage Results (visible after performing triage) ──── -->
+            <Border Style="{StaticResource CardBorderStyle}"
+                    Visibility="{x:Bind ViewModel.IsTriaged, Mode=OneWay}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Triage Results"
+                               Style="{StaticResource SectionTitleTextBlockStyle}" />
+                    <StackPanel Orientation="Horizontal" Spacing="24">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Severity Level" FontWeight="SemiBold" />
+                            <TextBlock Text="{x:Bind ViewModel.CalculatedSeverity, Mode=OneWay}"
+                                       FontSize="20" FontWeight="Bold"
+                                       Foreground="{StaticResource PrimaryBrush}" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Specialization" FontWeight="SemiBold" />
+                            <TextBlock Text="{x:Bind ViewModel.CalculatedSpecialization, Mode=OneWay}"
+                                       FontSize="20" FontWeight="Bold"
+                                       Foreground="{StaticResource SuccessBrush}" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ── Action Buttons ────────────────────────────────────── -->
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <!-- Always visible -->
+                <Button Content="Perform Triage"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Command="{x:Bind ViewModel.PerformTriageCommand}"
+                        Visibility="{x:Bind ViewModel.IsNotTriaged, Mode=OneWay}"/>
+
+                <!-- Visible only after triage is performed -->
+                <Button Content="Move to Queue"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Background="{StaticResource SuccessBrush}"
+                        Command="{x:Bind ViewModel.MoveToQueueCommand}"
+                        Visibility="{x:Bind ViewModel.IsTriaged, Mode=OneWay}" />
+
+                <Button Content="Cancel"
+                        Command="{x:Bind ViewModel.CancelTriageCommand}"
+                        Visibility="{x:Bind ViewModel.IsTriaged, Mode=OneWay}" />
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

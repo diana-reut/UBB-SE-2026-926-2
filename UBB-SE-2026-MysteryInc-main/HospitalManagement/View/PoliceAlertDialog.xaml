@@ -1,0 +1,27 @@
+<ContentDialog
+    x:Class="HospitalManagement.View.PoliceAlertDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="LAW ENFORCEMENT ALERT"
+    PrimaryButtonText="Send Alert"
+    CloseButtonText="Cancel"
+    DefaultButton="Primary"
+    Background="White">
+
+    <ContentDialog.Resources>
+        <SolidColorBrush x:Key="ContentDialogPrimaryButtonBackground" Color="#DC2626"/>
+        <SolidColorBrush x:Key="ContentDialogPrimaryButtonForeground" Color="White"/>
+    </ContentDialog.Resources>
+
+    <ScrollViewer MaxHeight="450">
+        <Border Background="#FAFAFA" BorderBrush="LightGray" BorderThickness="1" 
+                CornerRadius="6" Padding="15" Margin="0,10">
+            <TextBlock x:Name="ReportTextBlock" 
+                       TextWrapping="Wrap" 
+                       FontFamily="Consolas" 
+                       FontSize="14" 
+                       Foreground="Black" 
+                       LineHeight="22"/>
+        </Border>
+    </ScrollViewer>
+</ContentDialog>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="HospitalManagement.View.StatisticsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:lvc="using:LiveChartsCore.SkiaSharpView.WinUI"
+    xmlns:helpers="using:HospitalManagement.Utils"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.Resources>
+            <helpers:StringVisibilityConverter x:Key="StatToVisConverter" />
+            <helpers:StringToBoolConverter x:Key="StringToBoolConverter" />
+            <helpers:AxisConverter x:Key="AxisConverter" />
+        </Grid.Resources>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="280" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Left Sidebar - Menu -->
+        <Border Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" BorderThickness="0,0,1,0" BorderBrush="Gray">
+            <ListView x:Name="StatisticsMenu"
+                      Padding="10"
+                      Margin="0,20,0,0"
+                      SelectionChanged="StatisticsMenu_SelectionChanged">
+                <ListView.Header>
+                    <TextBlock Text="Hospital Statistics" FontSize="20" FontWeight="Bold" Margin="10,0,0,20"/>
+                </ListView.Header>
+                <x:String>Patient Distribution</x:String>
+                <x:String>Consultation Source</x:String>
+                <x:String>Top Diagnoses</x:String>
+                <x:String>Top Medications</x:String>
+                <x:String>Demographics</x:String>
+            </ListView>
+        </Border>
+
+        <!-- Right Content Area - Charts -->
+        <Grid Grid.Column="1" Padding="40">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- Title -->
+            <TextBlock x:Name="StatisticTitle"
+                       Grid.Row="0"
+                       FontSize="28"
+                       FontWeight="SemiLight"
+                       Margin="0,0,0,20"
+                       Text="Patient Distribution"/>
+
+            <!-- Error Message - bound to ViewModel -->
+            <InfoBar Grid.Row="1"
+                     Title="Error"
+                     x:Name="ErrorInfoBar"
+                     Severity="Error"
+                     Margin="0,0,0,10"
+                     Message="{Binding ErrorMessage}"
+                     IsOpen="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}"/>
+
+            <!-- Charts Container -->
+            <Grid Grid.Row="2">
+                <!-- Pie Chart: Patient Distribution / Consultation Source -->
+                <lvc:PieChart x:Name="PieChartControl"
+                              Series="{Binding CurrentSeries}"
+                              Visibility="Visible" />
+
+                <!-- Cartesian Chart: Top Diagnoses / Top Medications -->
+                <lvc:CartesianChart x:Name="CartesianControl" Series="{Binding CartesianSeries}" XAxes="{Binding XAxes}" Visibility="Collapsed" />
+
+                <!-- Demographics: Gender pie + Age bar -->
+                <Grid x:Name="DemographicsGrid"
+                      Visibility="Collapsed">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Gender Distribution"
+                                   HorizontalAlignment="Center"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,10"/>
+                        <lvc:PieChart x:Name="GenderChart"
+                                      Series="{Binding GenderSeries}"
+                                      Height="300" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="Age Groups"
+                                   HorizontalAlignment="Center"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,10"/>
+                        <lvc:CartesianChart x:Name="AgeChart"
+                                            Series="{Binding AgeSeries}"
+                                            XAxes="{Binding AgeXAxes}"
+                                            Height="300" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -1,0 +1,120 @@
+﻿<UserControl
+    x:Class="ERManagementSystem.Views.VisitDetailsPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="16" Padding="16">
+
+            <!-- Title -->
+            <TextBlock Text="Visit Details"
+                       Style="{StaticResource PageTitleTextBlockStyle}"/>
+
+            <!-- Patient Info Card -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Patient Information"
+                               Style="{StaticResource SectionTitleTextBlockStyle}"/>
+                    <Grid ColumnDefinitions="Auto,*,Auto,*"
+                          RowDefinitions="Auto,Auto,Auto"
+                          ColumnSpacing="8" RowSpacing="6">
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Full Name:"  FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="FullNameText"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="CNP:"        FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="0" Grid.Column="3" x:Name="PatientIdText"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Date of Birth:" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="DateOfBirthText"/>
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Gender:"     FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="1" Grid.Column="3" x:Name="GenderText"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Phone:"      FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="PhoneText"/>
+                        <TextBlock Grid.Row="2" Grid.Column="2" Text="Emergency:"  FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="2" Grid.Column="3" x:Name="EmergencyContactText"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Visit Info Card -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Visit Information"
+                               Style="{StaticResource SectionTitleTextBlockStyle}"/>
+                    <Grid ColumnDefinitions="Auto,*,Auto,*"
+                          RowDefinitions="Auto,Auto"
+                          ColumnSpacing="8" RowSpacing="6">
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Visit ID:"  FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="VisitIdText"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Arrival:"   FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="0" Grid.Column="3" x:Name="ArrivalText"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Chief Complaint:" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3"
+                                   x:Name="ChiefComplaintText" TextWrapping="Wrap"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Triage Info Card — hidden until triage exists -->
+            <Border Style="{StaticResource CardBorderStyle}"
+                    x:Name="TriageCard"
+                    Visibility="Collapsed">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Triage Information"
+                               Style="{StaticResource SectionTitleTextBlockStyle}"/>
+                    <Grid ColumnDefinitions="Auto,*,Auto,*"
+                          RowDefinitions="Auto,Auto"
+                          ColumnSpacing="8" RowSpacing="6">
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Triage Level:"   FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TriageLevelText"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Specialization:" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="0" Grid.Column="3" x:Name="SpecializationText"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Nurse ID:"    FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="NurseIdText"/>
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Triage Time:" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="1" Grid.Column="3" x:Name="TriageTimeText"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- State History Timeline -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Visit Status Timeline"
+                               Style="{StaticResource SectionTitleTextBlockStyle}"/>
+                    <ItemsControl x:Name="TimelineItems">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4">
+                                    <Ellipse Width="12" Height="12"
+                                             VerticalAlignment="Center"
+                                             Fill="{Binding DotColor}"/>
+                                    <TextBlock Text="{Binding Label}"
+                                               FontWeight="{Binding Weight}"
+                                               Foreground="{Binding TextColor}"
+                                               VerticalAlignment="Center"/>
+                                    <Border Background="{StaticResource PrimaryBrush}"
+                                            CornerRadius="4" Padding="6,2"
+                                            Visibility="{Binding BadgeVisibility}">
+                                        <TextBlock Text="← Current"
+                                                   Foreground="White"
+                                                   FontSize="11"/>
+                                    </Border>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

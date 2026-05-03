@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="ERManagementSystem.Views.TransferLogView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ERManagementSystem.Views"
+    xmlns:helpers="using:ERManagementSystem.Helpers"
+    xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Page.Resources>
+        <helpers:TransferStatusColorConverter x:Key="StatusColorConverter"/>
+    </Page.Resources>
+
+    <ScrollViewer Padding="24">
+        <StackPanel Spacing="16">
+
+            <!-- TITLE -->
+            <TextBlock
+                Text="Transfer Log — Patient Data Transfer"
+                Style="{StaticResource PageTitleTextBlockStyle}"/>
+
+            <!-- ELIGIBLE VISITS CARD -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock
+                        Text="Visits Eligible for Transfer  (Status: IN_EXAMINATION)"
+                        Style="{StaticResource SectionTitleTextBlockStyle}"/>
+
+                    <controls:DataGrid
+                        x:Name="EligibleVisitsGrid"
+                        ItemsSource="{x:Bind ViewModel.EligibleVisits, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.SelectedVisit, Mode=TwoWay}"
+                        SelectionMode="Single"
+                        AutoGenerateColumns="False"
+                        IsReadOnly="True"
+                        MinHeight="180"
+                        GridLinesVisibility="Horizontal"
+                        BorderThickness="1"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                        <controls:DataGrid.Columns>
+                            <controls:DataGridTextColumn
+                                Header="Visit ID"
+                                Binding="{Binding Visit_ID}"
+                                Width="80"/>
+                            <controls:DataGridTextColumn
+                                Header="Patient"
+                                Binding="{Binding PatientName}"
+                                Width="180"/>
+                            <controls:DataGridTextColumn
+                                Header="Complaint"
+                                Binding="{Binding Chief_Complaint}"
+                                Width="*"/>
+                            <controls:DataGridTextColumn
+                                Header="Status"
+                                Binding="{Binding Status}"
+                                Width="140"/>
+                        </controls:DataGrid.Columns>
+                    </controls:DataGrid>
+                </StackPanel>
+            </Border>
+
+            <!-- BUTTONS -->
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Send Patient Data"
+                        Command="{x:Bind ViewModel.SendPatientDataCommand}"
+                        Style="{StaticResource PrimaryButtonStyle}"/>
+                <Button Content="↺  Retry Transfer"
+                        Command="{x:Bind ViewModel.RetryTransferCommand}"
+                        IsEnabled="{x:Bind ViewModel.CanRetry, Mode=OneWay}"
+                        Background="{StaticResource DangerBrush}"
+                        Foreground="White"/>
+                <Button Content="Close Visit"
+                        Command="{x:Bind ViewModel.CloseVisitCommand}"
+                        IsEnabled="{x:Bind ViewModel.HasSelectedVisit, Mode=OneWay}"
+                        Background="#5C0A16"
+                        Foreground="White"/>
+                <Button Content="Refresh"
+                        Command="{x:Bind ViewModel.LoadDataCommand}"/>
+            </StackPanel>
+
+            <!-- STATUS MESSAGE -->
+            <TextBlock
+                Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
+                Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+
+            <!-- TRANSFER HISTORY CARD -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock
+                        Text="Transfer History for Selected Visit"
+                        Style="{StaticResource SectionTitleTextBlockStyle}"/>
+
+                    <controls:DataGrid
+                        x:Name="TransferHistoryGrid"
+                        ItemsSource="{x:Bind ViewModel.TransferLogs, Mode=OneWay}"
+                        SelectionMode="Single"
+                        AutoGenerateColumns="False"
+                        IsReadOnly="True"
+                        MinHeight="180"
+                        GridLinesVisibility="Horizontal"
+                        BorderThickness="1"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                        <controls:DataGrid.Columns>
+                            <controls:DataGridTextColumn
+                                Header="Transfer ID"
+                                Binding="{Binding Transfer_ID}"
+                                Width="100"/>
+                            <controls:DataGridTextColumn
+                                Header="Visit ID"
+                                Binding="{Binding Visit_ID}"
+                                Width="80"/>
+                            <controls:DataGridTextColumn
+                                Header="Timestamp"
+                                Binding="{Binding Transfer_Time}"
+                                Width="180"/>
+                            <controls:DataGridTextColumn
+                                Header="Target System"
+                                Binding="{Binding Target_System}"
+                                Width="160"/>
+                            <controls:DataGridTemplateColumn Header="Status" Width="110">
+                                <controls:DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock
+                                            Text="{Binding Status}"
+                                            FontWeight="SemiBold"
+                                            Foreground="{Binding Status,
+                                                Converter={StaticResource StatusColorConverter}}"
+                                            VerticalAlignment="Center"
+                                            Margin="8,0"/>
+                                    </DataTemplate>
+                                </controls:DataGridTemplateColumn.CellTemplate>
+                            </controls:DataGridTemplateColumn>
+                        </controls:DataGrid.Columns>
+                    </controls:DataGrid>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

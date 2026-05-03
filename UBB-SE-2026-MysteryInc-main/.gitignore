@@ -1,0 +1,13 @@
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+appsettings.local.json
+**/appsettings.local.json
+/coverage-report
+/HospitalManagementTest/TestResults
+**/testconfig.local.json
+/HospitalManagement/configuration/testconfig.template.json

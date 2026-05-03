@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="ERManagementSystem.Views.QueueView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ERManagementSystem.Views"
+    xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
+    xmlns:helpers="using:ERManagementSystem.Helpers"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <helpers:TriageLevelColorConverter x:Key="TriageLevelColorConverter" />
+    </Page.Resources>
+
+    <!-- Grid layout: Title at top, DataGrid scrollable in middle, Button fixed at bottom -->
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- Page Title -->
+            <RowDefinition Height="*"/>
+            <!-- DataGrid / Scrollable -->
+            <RowDefinition Height="Auto"/>
+            <!-- Refresh Button -->
+        </Grid.RowDefinitions>
+
+        <!-- Page Title -->
+        <TextBlock Text="Patient Queue"
+                   Style="{StaticResource PageTitleTextBlockStyle}" />
+
+        <!-- Scrollable DataGrid -->
+        <Border Grid.Row="1" Style="{StaticResource CardBorderStyle}" Margin="0,16,0,16">
+            <StackPanel Spacing="8">
+                <TextBlock Text="Active Visits (ordered by priority)"
+                           Style="{StaticResource SectionTitleTextBlockStyle}" />
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="500">
+                    <controls:DataGrid
+                        x:Name="QueueDataGrid"
+                        ItemsSource="{x:Bind ViewModel.ActiveVisits, Mode=OneWay}"
+                        AutoGenerateColumns="False"
+                        IsReadOnly="True"
+                        SelectionMode="Single"
+                        CanUserSortColumns="True">
+                        <controls:DataGrid.Columns>
+                            <controls:DataGridTextColumn Header="Visit ID"
+                                Binding="{Binding VisitId}" Width="80" />
+                            <controls:DataGridTextColumn Header="Patient ID"
+                                Binding="{Binding PatientId}" Width="160" />
+                            <controls:DataGridTemplateColumn Header="Triage Level" Width="120">
+                                <controls:DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding TriageLevel}"
+                                                   Foreground="{Binding TriageLevel, Converter={StaticResource TriageLevelColorConverter}}"
+                                                   FontWeight="Bold"
+                                                   VerticalAlignment="Center"
+                                                   Margin="12,0" />
+                                    </DataTemplate>
+                                </controls:DataGridTemplateColumn.CellTemplate>
+                            </controls:DataGridTemplateColumn>
+                            <controls:DataGridTextColumn Header="Specialization"
+                                Binding="{Binding Specialization}" Width="180" />
+                            <controls:DataGridTextColumn Header="Arrival Time"
+                                Binding="{Binding ArrivalTime}" Width="180" />
+                            <controls:DataGridTextColumn Header="Status"
+                                Binding="{Binding Status}" Width="160" />
+                        </controls:DataGrid.Columns>
+                    </controls:DataGrid>
+                </ScrollViewer>
+            </StackPanel>
+        </Border>
+
+        <!-- Refresh Button -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
+            <Button Content="Refresh Queue"
+                    Style="{StaticResource PrimaryButtonStyle}"
+                    Command="{x:Bind ViewModel.RefreshQueueCommand}" />
+        </StackPanel>
+
+    </Grid>
+</Page>
