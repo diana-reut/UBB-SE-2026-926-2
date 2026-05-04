@@ -37,6 +37,30 @@ IF OBJECT_ID('MedicalHistory', 'U') IS NOT NULL
     DROP TABLE MedicalHistory;
 GO
 
+IF OBJECT_ID('Transfer_Log', 'U') IS NOT NULL
+    DROP TABLE Transfer_Log;
+GO
+
+IF OBJECT_ID('Examination', 'U') IS NOT NULL
+    DROP TABLE Examination;
+GO
+
+IF OBJECT_ID('Triage_Parameters', 'U') IS NOT NULL
+    DROP TABLE Triage_Parameters;
+GO
+
+IF OBJECT_ID('Triage', 'U') IS NOT NULL
+    DROP TABLE Triage;
+GO
+
+IF OBJECT_ID('ER_Room', 'U') IS NOT NULL
+    DROP TABLE ER_Room;
+GO
+
+IF OBJECT_ID('ER_Visit', 'U') IS NOT NULL
+    DROP TABLE ER_Visit;
+GO
+
 IF OBJECT_ID('Patient', 'U') IS NOT NULL
     DROP TABLE Patient;
 GO
@@ -56,6 +80,7 @@ CREATE TABLE Patient
     EmergencyContact VARCHAR(255) NULL,
     Archived BIT NOT NULL DEFAULT 0,
     IsDonor BIT NOT NULL DEFAULT 0,
+    Transferred BIT NOT NULL DEFAULT 0,
 
     CONSTRAINT UQ_Patient_CNP UNIQUE (CNP),
 
@@ -269,4 +294,135 @@ GO
 
 CREATE NONCLUSTERED INDEX IX_PrescriptionItems_PrescriptionID
 ON PrescriptionItems(PrescriptionID);
+GO
+
+-- ER_Visit
+
+CREATE TABLE ER_Visit
+(
+    Visit_ID INT IDENTITY(1,1) NOT NULL,
+    Patient_ID CHAR(13) NOT NULL,
+    Arrival_date_time DATETIME2 NOT NULL CONSTRAINT DF_ER_Visit_Arrival_Time DEFAULT SYSDATETIME(),
+    Chief_Complaint NVARCHAR(255) NOT NULL,
+    Status NVARCHAR(30) NOT NULL,
+
+    CONSTRAINT PK_ER_Visit PRIMARY KEY (Visit_ID),
+    CONSTRAINT FK_ER_Visit_Patient
+        FOREIGN KEY (Patient_ID) REFERENCES Patient(CNP),
+    CONSTRAINT CK_ER_Visit_Status
+        CHECK (Status IN ('REGISTERED', 'TRIAGED', 'WAITING_FOR_ROOM', 'IN_ROOM', 'WAITING_FOR_DOCTOR', 'IN_EXAMINATION', 'TRANSFERRED', 'CLOSED'))
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_ER_Visit_Patient_ID
+ON ER_Visit(Patient_ID);
+GO
+
+-- Triage
+
+CREATE TABLE Triage
+(
+    Triage_ID INT IDENTITY(1,1) NOT NULL,
+    Visit_ID INT NOT NULL,
+    Triage_Level INT NOT NULL,
+    Specialization NVARCHAR(50) NULL,
+    Nurse_ID INT NOT NULL,
+    Triage_Time DATETIME2 NOT NULL CONSTRAINT DF_Triage_Triage_Time DEFAULT SYSDATETIME(),
+
+    CONSTRAINT PK_Triage PRIMARY KEY (Triage_ID),
+    CONSTRAINT FK_Triage_ER_Visit
+        FOREIGN KEY (Visit_ID) REFERENCES ER_Visit(Visit_ID),
+    CONSTRAINT UQ_Triage_Visit UNIQUE (Visit_ID),
+    CONSTRAINT CK_Triage_Level CHECK (Triage_Level BETWEEN 1 AND 5),
+    CONSTRAINT CK_Specialization CHECK (
+        Specialization IS NULL OR
+        Specialization IN ('Orthopedics', 'Pulmonology', 'Neurology', 'General Surgery', 'Emergency Medicine'))
+);
+GO
+
+-- Triage_Parameters
+
+CREATE TABLE Triage_Parameters
+(
+    Triage_ID INT NOT NULL,
+    Consciousness INT NOT NULL,
+    Breathing INT NOT NULL,
+    Bleeding INT NOT NULL,
+    Injury_Type INT NOT NULL,
+    Pain_Level INT NOT NULL,
+
+    CONSTRAINT PK_Triage_Parameters PRIMARY KEY (Triage_ID),
+    CONSTRAINT FK_Triage_Parameters_Triage
+        FOREIGN KEY (Triage_ID) REFERENCES Triage(Triage_ID),
+    CONSTRAINT CK_Triage_Parameters_Consciousness CHECK (Consciousness BETWEEN 1 AND 3),
+    CONSTRAINT CK_Triage_Parameters_Breathing CHECK (Breathing BETWEEN 1 AND 3),
+    CONSTRAINT CK_Triage_Parameters_Bleeding CHECK (Bleeding BETWEEN 1 AND 3),
+    CONSTRAINT CK_Triage_Parameters_Injury_Type CHECK (Injury_Type BETWEEN 1 AND 3),
+    CONSTRAINT CK_Triage_Parameters_Pain_Level CHECK (Pain_Level BETWEEN 1 AND 3)
+);
+GO
+
+-- ER_Room
+
+CREATE TABLE ER_Room
+(
+    Room_ID INT IDENTITY(1,1) NOT NULL,
+    Room_Type NVARCHAR(50) NOT NULL,
+    Availability_Status NVARCHAR(50) NOT NULL CONSTRAINT DF_ER_Room_Availability_Status DEFAULT 'available',
+    Current_Visit_ID INT NULL,
+
+    CONSTRAINT PK_ER_Room PRIMARY KEY (Room_ID),
+    CONSTRAINT FK_ER_Room_ER_Visit FOREIGN KEY (Current_Visit_ID) REFERENCES ER_Visit(Visit_ID),
+    CONSTRAINT CK_ER_Room_Room_Type
+        CHECK (Room_Type IN (
+            'Operating Room (OR)',
+            'Trauma/Resuscitation Bay',
+            'Respiratory/Monitored Room',
+            'Neurology/Quiet Observation Room',
+            'Orthopedic/Procedure Room',
+            'General Examination Room'
+        )),
+    CONSTRAINT CK_ER_Room_Availability_Status
+        CHECK (Availability_Status IN ('available', 'occupied', 'cleaning'))
+);
+GO
+
+-- Examination
+
+CREATE TABLE Examination
+(
+    Exam_ID INT IDENTITY(1,1) NOT NULL,
+    Visit_ID INT NOT NULL,
+    Doctor_ID INT NOT NULL,
+    Exam_Time DATETIME2 NOT NULL CONSTRAINT DF_Examination_Exam_Time DEFAULT SYSDATETIME(),
+    Room_ID INT NOT NULL,
+    Notes NVARCHAR(1000) NULL,
+
+    CONSTRAINT PK_Examination PRIMARY KEY (Exam_ID),
+    CONSTRAINT FK_Examination_ER_Visit
+        FOREIGN KEY (Visit_ID) REFERENCES ER_Visit(Visit_ID),
+    CONSTRAINT FK_Examination_ER_Room
+        FOREIGN KEY (Room_ID) REFERENCES ER_Room(Room_ID)
+);
+GO
+
+-- Transfer_Log
+
+CREATE TABLE Transfer_Log
+(
+    Transfer_ID INT IDENTITY(1,1) NOT NULL,
+    Visit_ID INT NOT NULL,
+    Transfer_Time DATETIME2 NOT NULL CONSTRAINT DF_Transfer_Log_Transfer_Time DEFAULT SYSDATETIME(),
+    Target_System NVARCHAR(30) NOT NULL,
+    Status NVARCHAR(30) NOT NULL,
+    FilePath NVARCHAR(500) NULL,
+
+    CONSTRAINT PK_Transfer_Log PRIMARY KEY (Transfer_ID),
+    CONSTRAINT FK_Transfer_Log_ER_Visit
+        FOREIGN KEY (Visit_ID) REFERENCES ER_Visit(Visit_ID),
+    CONSTRAINT CK_Transfer_Log_Target_System
+        CHECK (Target_System IN ('Patient Management')),
+    CONSTRAINT CK_Transfer_Log_Status
+        CHECK (Status IN ('SUCCESS', 'FAILED', 'RETRYING'))
+);
 GO

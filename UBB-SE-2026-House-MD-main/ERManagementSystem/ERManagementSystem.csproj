@@ -18,6 +18,7 @@
     <CodeAnalysisRuleSet>SE.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="Models\Patients.cs" />
     <None Remove="Styles\Controls.xaml" />
     <None Remove="Views\ExaminationView.xaml" />
     <None Remove="Views\PatientRegistrationView.xaml" />
@@ -26,6 +27,14 @@
     <None Remove="Views\RoomManagementView.xaml" />
     <None Remove="Views\TransferLogView.xaml" />
     <None Remove="Views\TriageView.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Database\script1_create_database.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\HospitalShared\HospitalShared.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />

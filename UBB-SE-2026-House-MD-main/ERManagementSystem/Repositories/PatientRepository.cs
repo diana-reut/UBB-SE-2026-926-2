@@ -19,21 +19,21 @@ namespace ERManagementSystem.Repositories
         {
             const string query = @"
                 INSERT INTO dbo.Patient
-                    (Patient_ID, First_Name, Last_Name, Date_of_Birth,
-                     Gender, Phone, Emergency_Contact, Transferred)
+                    (FirstName, LastName, CNP, DateOfBirth,
+                     Sex, Phone, EmergencyContact, Archived, IsDonor, Transferred)
                 VALUES
-                    (@Patient_ID, @First_Name, @Last_Name, @Date_of_Birth,
-                     @Gender, @Phone, @Emergency_Contact, @Transferred)";
+                    (@FirstName, @LastName, @CNP, @DateOfBirth,
+                     @Sex, @Phone, @EmergencyContact, 0, 0, @Transferred)";
 
             var parameters = new[]
             {
-                new SqlParameter("@Patient_ID",        patient.Patient_ID),
-                new SqlParameter("@First_Name",        patient.First_Name),
-                new SqlParameter("@Last_Name",         patient.Last_Name),
-                new SqlParameter("@Date_of_Birth",     patient.Date_of_Birth),
-                new SqlParameter("@Gender",            patient.Gender),
+                new SqlParameter("@FirstName",         patient.First_Name),
+                new SqlParameter("@LastName",          patient.Last_Name),
+                new SqlParameter("@CNP",               patient.Patient_ID),
+                new SqlParameter("@DateOfBirth",       patient.Date_of_Birth),
+                new SqlParameter("@Sex",               MapGenderToSex(patient.Gender)),
                 new SqlParameter("@Phone",             patient.Phone),
-                new SqlParameter("@Emergency_Contact", patient.Emergency_Contact),
+                new SqlParameter("@EmergencyContact",  patient.Emergency_Contact),
                 new SqlParameter("@Transferred",       patient.Transferred)
             };
 
@@ -52,10 +52,17 @@ namespace ERManagementSystem.Repositories
         public Patient? GetById(string id)
         {
             const string query = @"
-                SELECT Patient_ID, First_Name, Last_Name, Date_of_Birth,
-                       Gender, Phone, Emergency_Contact, Transferred
+                SELECT PatientID,
+                       CNP AS Patient_ID,
+                       FirstName AS First_Name,
+                       LastName AS Last_Name,
+                       DateOfBirth AS Date_of_Birth,
+                       CASE Sex WHEN 'M' THEN 'Male' WHEN 'F' THEN 'Female' ELSE Sex END AS Gender,
+                       Phone,
+                       EmergencyContact AS Emergency_Contact,
+                       Transferred
                 FROM   dbo.Patient
-                WHERE  Patient_ID = @Patient_ID";
+                WHERE  CNP = @Patient_ID";
 
             var parameters = new[]
             {
@@ -86,24 +93,24 @@ namespace ERManagementSystem.Repositories
         {
             const string query = @"
                 UPDATE dbo.Patient
-                SET    First_Name        = @First_Name,
-                       Last_Name         = @Last_Name,
-                       Date_of_Birth     = @Date_of_Birth,
-                       Gender            = @Gender,
+                SET    FirstName         = @FirstName,
+                       LastName          = @LastName,
+                       DateOfBirth       = @DateOfBirth,
+                       Sex               = @Sex,
                        Phone             = @Phone,
-                       Emergency_Contact = @Emergency_Contact,
+                       EmergencyContact  = @EmergencyContact,
                        Transferred       = @Transferred
-                WHERE  Patient_ID = @Patient_ID";
+                WHERE  CNP = @Patient_ID";
 
             var parameters = new[]
             {
                 new SqlParameter("@Patient_ID",        patient.Patient_ID),
-                new SqlParameter("@First_Name",        patient.First_Name),
-                new SqlParameter("@Last_Name",         patient.Last_Name),
-                new SqlParameter("@Date_of_Birth",     patient.Date_of_Birth),
-                new SqlParameter("@Gender",            patient.Gender),
+                new SqlParameter("@FirstName",         patient.First_Name),
+                new SqlParameter("@LastName",          patient.Last_Name),
+                new SqlParameter("@DateOfBirth",       patient.Date_of_Birth),
+                new SqlParameter("@Sex",               MapGenderToSex(patient.Gender)),
                 new SqlParameter("@Phone",             patient.Phone),
-                new SqlParameter("@Emergency_Contact", patient.Emergency_Contact),
+                new SqlParameter("@EmergencyContact",  patient.Emergency_Contact),
                 new SqlParameter("@Transferred",       patient.Transferred)
             };
 
@@ -123,7 +130,7 @@ namespace ERManagementSystem.Repositories
         {
             const string query = @"
                 DELETE FROM dbo.Patient
-                WHERE Patient_ID = @Patient_ID";
+                WHERE CNP = @Patient_ID";
 
             var parameters = new[]
             {
@@ -154,6 +161,16 @@ namespace ERManagementSystem.Repositories
                 Phone = reader["Phone"] as string ?? string.Empty,
                 Emergency_Contact = reader["Emergency_Contact"] as string ?? string.Empty,
                 Transferred = Convert.ToBoolean(reader["Transferred"])
+            };
+        }
+
+        private static string MapGenderToSex(string gender)
+        {
+            return gender switch
+            {
+                "Male" => "M",
+                "Female" => "F",
+                _ => gender,
             };
         }
     }

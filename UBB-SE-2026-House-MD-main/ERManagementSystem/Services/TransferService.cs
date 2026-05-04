@@ -147,7 +147,7 @@ namespace ERManagementSystem.Services
             const string sql = @"
                 UPDATE dbo.Patient
                 SET Transferred = 1
-                WHERE Patient_ID = (
+                WHERE CNP = (
                     SELECT Patient_ID FROM dbo.ER_Visit WHERE Visit_ID = @VisitId
                 )";
 
@@ -175,11 +175,11 @@ namespace ERManagementSystem.Services
                 SELECT v.Visit_ID,
                        v.Chief_Complaint,
                        v.Status,
-                       p.First_Name,
-                       p.Last_Name,
+                       p.FirstName,
+                       p.LastName,
                        p.Transferred
                 FROM dbo.ER_Visit v
-                INNER JOIN dbo.Patient p ON p.Patient_ID = v.Patient_ID
+                INNER JOIN dbo.Patient p ON p.CNP = v.Patient_ID
                 WHERE v.Status = @Status
                 ORDER BY v.Arrival_date_time ASC";
 
@@ -209,13 +209,13 @@ namespace ERManagementSystem.Services
         {
             const string sql = @"
                 SELECT
-                    p.Patient_ID,
-                    p.First_Name,
-                    p.Last_Name,
-                    p.Date_of_Birth,
-                    p.Gender,
+                    p.CNP AS Patient_ID,
+                    p.FirstName AS First_Name,
+                    p.LastName AS Last_Name,
+                    p.DateOfBirth AS Date_of_Birth,
+                    CASE p.Sex WHEN 'M' THEN 'Male' WHEN 'F' THEN 'Female' ELSE p.Sex END AS Gender,
                     p.Phone,
-                    p.Emergency_Contact,
+                    p.EmergencyContact AS Emergency_Contact,
                     v.Visit_ID,
                     v.Arrival_date_time,
                     v.Chief_Complaint,
@@ -231,7 +231,7 @@ namespace ERManagementSystem.Services
                     e.Notes,
                     e.Doctor_ID
                 FROM dbo.ER_Visit v
-                INNER JOIN dbo.Patient           p  ON p.Patient_ID  = v.Patient_ID
+                INNER JOIN dbo.Patient           p  ON p.CNP = v.Patient_ID
                 LEFT  JOIN dbo.Triage            t  ON t.Visit_ID    = v.Visit_ID
                 LEFT  JOIN dbo.Triage_Parameters tp ON tp.Triage_ID  = t.Triage_ID
                 LEFT  JOIN dbo.Examination       e  ON e.Visit_ID    = v.Visit_ID

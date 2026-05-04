@@ -104,14 +104,14 @@ namespace ERManagementSystem.Repositories
         {
             string sql = @"
                 SELECT 
-                    p.First_Name, p.Last_Name,
+                    p.FirstName, p.LastName,
                     v.Arrival_date_time, v.Chief_Complaint,
                     t.Triage_Level, t.Specialization,
                     tp.Consciousness, tp.Breathing, tp.Bleeding, tp.Injury_Type, tp.Pain_Level,
                     e.Doctor_ID, e.Exam_Time, e.Notes
                 FROM Examination e
                 JOIN ER_Visit v ON e.Visit_ID = v.Visit_ID
-                JOIN Patient p ON v.Patient_ID = p.Patient_ID
+                JOIN Patient p ON v.Patient_ID = p.CNP
                 JOIN Triage t ON v.Visit_ID = t.Visit_ID
                 JOIN Triage_Parameters tp ON t.Triage_ID = tp.Triage_ID
                 WHERE e.Exam_ID = @ExamId";

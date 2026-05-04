@@ -3,7 +3,7 @@
 -- Sample data for local SQL Server
 -- ============================================
 
-USE ERManagementSystem;
+USE HospitalManagementDb;
 GO
 
 -- cleanup in FK-safe order
@@ -14,7 +14,6 @@ DELETE FROM dbo.Triage_Parameters;
 DELETE FROM dbo.Triage;
 DELETE FROM dbo.ER_Visit;
 DELETE FROM dbo.ER_Room;
-DELETE FROM dbo.Patient;
 GO
 
 -- reseed ids to start from 1
@@ -25,22 +24,36 @@ DBCC CHECKIDENT ('dbo.Examination', RESEED, 0);
 DBCC CHECKIDENT ('dbo.Transfer_Log', RESEED, 0);
 GO
 
--- ============================================
--- 1. Patient (10 rows)
--- ============================================
-INSERT INTO dbo.Patient
-    (Patient_ID, First_Name, Last_Name, Date_of_Birth, Gender, Phone, Emergency_Contact, Transferred)
-VALUES
-    ('5010112123456', 'Andrei',   'Popescu',   '2001-01-01', 'Male',   '0745123897', 'Maria Popescu - 0726349812', 0),
-    ('6020205123467', 'Elena',    'Ionescu',   '2002-02-05', 'Female', '0728437612', 'Mihai Ionescu - 0759213467', 0),
-    ('1980315123478', 'Radu',     'Georgescu', '1998-03-15', 'Male',   '0736129845', 'Ana Georgescu - 0763458721', 0),
-    ('2990412123489', 'Ioana',    'Dumitru',   '1999-04-12', 'Female', '0754389126', 'Sorin Dumitru - 0782195634', 0),
-    ('1970525123490', 'Mihai',    'Stan',      '1997-05-25', 'Male',   '0769821345', 'Elena Stan - 0729183746', 0),
-    ('6030618123501', 'Alexandra','Matei',     '2003-06-18', 'Female', '0782456139', 'Cristian Matei - 0746128937', 0),
-    ('1960721123512', 'Vlad',     'Enache',    '1996-07-21', 'Male',   '0791348265', 'Laura Enache - 0738945612', 1),
-    ('2950823123523', 'Bianca',   'Marin',     '1995-08-23', 'Female', '0725613984', 'Dan Marin - 0753498126', 0),
-    ('6040915123534', 'Stefan',   'Ilie',      '2004-09-15', 'Male',   '0774129863', 'Camelia Ilie - 0795612348', 0),
-    ('2931017123545', 'Teodora', 'Nistor', '1993-10-17', 'Female', '0738456129', 'Paul Nistor - 0749823156', 0);
+IF NOT EXISTS (SELECT 1 FROM dbo.Patient WHERE CNP = '5010112123456')
+    INSERT INTO dbo.Patient (FirstName, LastName, CNP, DateOfBirth, Sex, Phone, EmergencyContact, Archived, IsDonor, Transferred)
+    VALUES ('Andrei', 'Popescu', '5010112123456', '2001-01-01', 'M', '0745123897', 'Maria Popescu - 0726349812', 0, 0, 0);
+IF NOT EXISTS (SELECT 1 FROM dbo.Patient WHERE CNP = '6020205123467')
+    INSERT INTO dbo.Patient (FirstName, LastName, CNP, DateOfBirth, Sex, Phone, EmergencyContact, Archived, IsDonor, Transferred)
+    VALUES ('Elena', 'Ionescu', '6020205123467', '2002-02-05', 'F', '0728437612', 'Mihai Ionescu - 0759213467', 0, 0, 0);
+IF NOT EXISTS (SELECT 1 FROM dbo.Patient WHERE CNP = '1980315123478')
+    INSERT INTO dbo.Patient (FirstName, LastName, CNP, DateOfBirth, Sex, Phone, EmergencyContact, Archived, IsDonor, Transferred)
+    VALUES ('Radu', 'Georgescu', '1980315123478', '1998-03-15', 'M', '0736129845', 'Ana Georgescu - 0763458721', 0, 0, 0);
+IF NOT EXISTS (SELECT 1 FROM dbo.Patient WHERE CNP = '2990412123489')
+    INSERT INTO dbo.Patient (FirstName, LastName, CNP, DateOfBirth, Sex, Phone, EmergencyContact, Archived, IsDonor, Transferred)
+    VALUES ('Ioana', 'Dumitru', '2990412123489', '1999-04-12', 'F', '0754389126', 'Sorin Dumitru - 0782195634', 0, 0, 0);
+IF NOT EXISTS (SELECT 1 FROM dbo.Patient WHERE CNP = '1970525123490')
+    INSERT INTO dbo.Patient (FirstName, LastName, CNP, DateOfBirth, Sex, Phone, EmergencyContact, Archived, IsDonor, Transferred)
+    VALUES ('Mihai', 'Stan', '1970525123490', '1997-05-25', 'M', '0769821345', 'Elena Stan - 0729183746', 0, 0, 0);
+IF NOT EXISTS (SELECT 1 FROM dbo.Patient WHERE CNP = '6030618123501')
+    INSERT INTO dbo.Patient (FirstName, LastName, CNP, DateOfBirth, Sex, Phone, EmergencyContact, Archived, IsDonor, Transferred)
+    VALUES ('Alexandra', 'Matei', '6030618123501', '2003-06-18', 'F', '0782456139', 'Cristian Matei - 0746128937', 0, 0, 0);
+IF NOT EXISTS (SELECT 1 FROM dbo.Patient WHERE CNP = '1960721123512')
+    INSERT INTO dbo.Patient (FirstName, LastName, CNP, DateOfBirth, Sex, Phone, EmergencyContact, Archived, IsDonor, Transferred)
+    VALUES ('Vlad', 'Enache', '1960721123512', '1996-07-21', 'M', '0791348265', 'Laura Enache - 0738945612', 0, 0, 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.Patient WHERE CNP = '2950823123523')
+    INSERT INTO dbo.Patient (FirstName, LastName, CNP, DateOfBirth, Sex, Phone, EmergencyContact, Archived, IsDonor, Transferred)
+    VALUES ('Bianca', 'Marin', '2950823123523', '1995-08-23', 'F', '0725613984', 'Dan Marin - 0753498126', 0, 0, 0);
+IF NOT EXISTS (SELECT 1 FROM dbo.Patient WHERE CNP = '6040915123534')
+    INSERT INTO dbo.Patient (FirstName, LastName, CNP, DateOfBirth, Sex, Phone, EmergencyContact, Archived, IsDonor, Transferred)
+    VALUES ('Stefan', 'Ilie', '6040915123534', '2004-09-15', 'M', '0774129863', 'Camelia Ilie - 0795612348', 0, 0, 0);
+IF NOT EXISTS (SELECT 1 FROM dbo.Patient WHERE CNP = '2931017123545')
+    INSERT INTO dbo.Patient (FirstName, LastName, CNP, DateOfBirth, Sex, Phone, EmergencyContact, Archived, IsDonor, Transferred)
+    VALUES ('Teodora', 'Nistor', '2931017123545', '1993-10-17', 'F', '0738456129', 'Paul Nistor - 0749823156', 0, 0, 0);
 GO
 
 -- ============================================
