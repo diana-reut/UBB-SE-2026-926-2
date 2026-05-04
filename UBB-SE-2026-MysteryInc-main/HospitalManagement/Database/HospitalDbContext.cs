@@ -1,6 +1,8 @@
-﻿using Microsoft.Data.SqlClient;
-using HospitalManagement.Configuration;
+using System.Collections.Generic;
 using System.Data.Common;
+using HospitalManagement.Configuration;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 
 namespace HospitalManagement.Database;
 
@@ -8,17 +10,26 @@ internal sealed partial class HospitalDbContext : IDbContext
 {
     private readonly SqlConnection _connection;
     private SqlTransaction? _transaction;
+    private readonly string _connectionString;
 
     public HospitalDbContext()
+        : this(BuildCompatibilityConfiguration())
     {
-        if (string.IsNullOrWhiteSpace(Config.ConnectionString))
+    }
+
+    public HospitalDbContext(IConfiguration configuration)
+    {
+        _connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new DatabaseException("DefaultConnection is missing from appsettings.json.");
+
+        if (string.IsNullOrWhiteSpace(_connectionString))
         {
             throw new DatabaseException("Connection string is not loaded.");
         }
 
         _connection = new SqlConnection
         {
-            ConnectionString = Config.ConnectionString,
+            ConnectionString = _connectionString,
         };
         _connection.Open();
     }
@@ -102,16 +113,15 @@ internal sealed partial class HospitalDbContext : IDbContext
             return;
         }
 
-        // 1. If the connection forgot its string, re-assign it from Config
+        // Re-assign the configured value if the connection loses its string.
         if (string.IsNullOrEmpty(_connection.ConnectionString))
         {
-            _connection.ConnectionString = Config.ConnectionString;
+            _connection.ConnectionString = _connectionString;
         }
 
-        // 2. Check the state. If it's not open, try to open it.
+        // Re-open the connection when a repository call needs it again.
         if (_connection.State != System.Data.ConnectionState.Open)
         {
-            // 3. Double-check again just to be 100% sure we have a string now
             if (string.IsNullOrEmpty(_connection.ConnectionString))
             {
                 throw new DatabaseException("CRITICAL: Connection string is still missing in EnsureConnectionOpen!");
@@ -119,5 +129,20 @@ internal sealed partial class HospitalDbContext : IDbContext
 
             _connection.Open();
         }
+    }
+
+    private static IConfiguration BuildCompatibilityConfiguration()
+    {
+        if (string.IsNullOrWhiteSpace(Config.ConnectionString))
+        {
+            Config.Load();
+        }
+
+        return new ConfigurationBuilder()
+            .AddInMemoryCollection(
+            [
+                new KeyValuePair<string, string?>("ConnectionStrings:DefaultConnection", Config.ConnectionString),
+            ])
+            .Build();
     }
 }

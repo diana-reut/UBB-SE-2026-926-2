@@ -1,3 +1,4 @@
+using HospitalManagement.Infrastructure;
 using HospitalManagement.ViewModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -17,10 +18,7 @@ internal sealed partial class TransplantRequestView : Page
     {
         InitializeComponent();
 
-        var factory =
-            (Application.Current as App)!
-                .Services
-                .GetRequiredService<Func<int, TransplantRequestViewModel>>();
+        var factory = ServiceRegistry.Services.GetRequiredService<Func<int, TransplantRequestViewModel>>();
 
         ViewModel = factory(patientId);
         _parentWindow = parentWindow;

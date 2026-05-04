@@ -1,28 +1,25 @@
-﻿using ERManagementSystem.Services;
+using ERManagementSystem.Infrastructure;
+using ERManagementSystem.Services;
 using ERManagementSystem.ViewModels;
-using ERManagementSystem.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
 namespace ERManagementSystem
 {
-    public sealed partial class MainWindow : Window
+    public sealed partial class ERShellWindow : Window
     {
         public MainWindowViewModel ViewModel { get; }
 
-        public MainWindow()
+        public ERShellWindow()
         {
-            this.InitializeComponent();
+            InitializeComponent();
 
-            ViewModel = App.Services.GetRequiredService<MainWindowViewModel>();
+            ViewModel = ServiceRegistry.Services.GetRequiredService<MainWindowViewModel>();
 
-            var navigationService = App.Services.GetRequiredService<NavigationService>();
+            var navigationService = ServiceRegistry.Services.GetRequiredService<NavigationService>();
             navigationService.Initialize(ContentFrame);
 
-            // FIX: Navigate properly so OnNavigatedTo fires and ViewModel is set.
-            // Previously used ContentFrame.Content = ... which bypasses navigation
-            // entirely — OnNavigatedTo never fired, ViewModel was always null.
             ViewModel.ShowPatientRegistrationCommand.Execute(null);
             AppNavigationView.SelectedItem = AppNavigationView.MenuItems[0];
         }

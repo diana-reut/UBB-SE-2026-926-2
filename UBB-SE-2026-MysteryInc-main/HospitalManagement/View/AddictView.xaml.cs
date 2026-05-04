@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using Microsoft.Extensions.DependencyInjection;
+using HospitalManagement.Infrastructure;
 
 
 namespace HospitalManagement.View;
@@ -12,7 +13,7 @@ internal sealed partial class AddictView : UserControl
 
     public AddictView()
     {
-        ViewModel = ((App)Application.Current).Services.GetRequiredService<ViewModel.AddictViewModel>();
+        ViewModel = ServiceRegistry.Services.GetRequiredService<ViewModel.AddictViewModel>();
         InitializeComponent();
     }
 

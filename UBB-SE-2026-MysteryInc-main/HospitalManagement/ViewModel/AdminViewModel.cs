@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using HospitalManagement.Entity;
 using HospitalManagement.Entity.Enums;
+using HospitalManagement.Infrastructure;
 using HospitalManagement.Integration;
 using HospitalManagement.Service;
 using HospitalManagement.View;
@@ -76,7 +77,7 @@ internal partial class AdminViewModel : ObservableObject
     [RelayCommand]
     private static void NavigateHome()
     {
-        MainWindow mainWindow = (Application.Current as App)!.Services
+        MainWindow mainWindow = ServiceRegistry.Services
             .GetRequiredService<MainWindow>();
         mainWindow.Activate();
     }
@@ -165,10 +166,10 @@ internal partial class AdminViewModel : ObservableObject
 
     public AdminViewModel()
     {
-        _ghostService = (Application.Current as App)!.Services.GetRequiredService<IGhostService>();
-        _patientService = (Application.Current as App)!.Services.GetRequiredService<IPatientService>();
-        _transplantService = (Application.Current as App)!.Services.GetRequiredService<ITransplantService>();
-        _dialogService = (Application.Current as App)!.Services.GetRequiredService<IDialogService>();
+        _ghostService = ServiceRegistry.Services.GetRequiredService<IGhostService>();
+        _patientService = ServiceRegistry.Services.GetRequiredService<IPatientService>();
+        _transplantService = ServiceRegistry.Services.GetRequiredService<ITransplantService>();
+        _dialogService = ServiceRegistry.Services.GetRequiredService<IDialogService>();
 
         Patients = [];
         ArchivedPatients = [];
@@ -224,7 +225,7 @@ internal partial class AdminViewModel : ObservableObject
     {
         if (SelectedPatient is null) return;
 
-        IServiceProvider scope = (Application.Current as App)!.Services;
+        IServiceProvider scope = ServiceRegistry.Services;
         PatientView patientWindow = scope.GetRequiredService<PatientView>();
         patientWindow.Initialize(SelectedPatient.Id, () => { });
         patientWindow.Activate();

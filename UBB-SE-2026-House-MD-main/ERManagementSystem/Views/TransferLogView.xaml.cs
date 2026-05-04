@@ -1,3 +1,4 @@
+using ERManagementSystem.Infrastructure;
 using ERManagementSystem.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
@@ -31,12 +32,12 @@ namespace ERManagementSystem.Views
 
             if (ViewModel == null)
             {
-                ViewModel = App.Services.GetRequiredService<TransferLogViewModel>();
+                ViewModel = ServiceRegistry.Services.GetRequiredService<TransferLogViewModel>();
             }
 
-            this.Loaded += (s, args) =>
+            Loaded += (s, args) =>
             {
-                ViewModel.XamlRoot = this.XamlRoot;
+                ViewModel.XamlRoot = XamlRoot;
             };
             ViewModel.LoadData();
         }

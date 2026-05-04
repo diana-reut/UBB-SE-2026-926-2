@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using HospitalManagement.ViewModel;
 using HospitalManagement.Service;
+using HospitalManagement.Infrastructure;
 
 namespace HospitalManagement.View.DialogServiceAdmin;
 
@@ -71,7 +72,7 @@ internal class DialogService : IDialogService
 
     public async Task<MedicalHistoryEntry> ShowMedicalHistoryAsync()
     {
-        var viewModel = (Application.Current as App)!.Services
+        var viewModel = ServiceRegistry.Services
         .GetRequiredService<MedicalHistoryDialogViewModel>();
 
         var dialog = new MedicalHistoryDialog(viewModel)
@@ -97,7 +98,7 @@ internal class DialogService : IDialogService
             return;
         }
 
-        OrganDonorDialog dialog = (Application.Current as App)!.Services
+        OrganDonorDialog dialog = ServiceRegistry.Services
             .GetRequiredService<OrganDonorDialog>();
 
         dialog.XamlRoot = XamlRoot;

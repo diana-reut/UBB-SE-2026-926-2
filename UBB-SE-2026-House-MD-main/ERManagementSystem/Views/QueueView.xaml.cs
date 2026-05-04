@@ -1,3 +1,4 @@
+using ERManagementSystem.Infrastructure;
 using ERManagementSystem.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
@@ -11,7 +12,7 @@ namespace ERManagementSystem.Views
 
         public QueueView()
         {
-            this.InitializeComponent();
+            InitializeComponent();
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -24,7 +25,7 @@ namespace ERManagementSystem.Views
             }
             else if (ViewModel == null)
             {
-                ViewModel = App.Services.GetRequiredService<QueueViewModel>();
+                ViewModel = ServiceRegistry.Services.GetRequiredService<QueueViewModel>();
             }
 
             if (ViewModel == null)

@@ -1,4 +1,5 @@
 using HospitalManagement.Entity;
+using HospitalManagement.Infrastructure;
 using HospitalManagement.ViewModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -17,7 +18,7 @@ internal sealed partial class PatientProfileView : Page
     {
         InitializeComponent();
 
-        _viewModel = (Application.Current as App)!.Services.GetRequiredService<PatientProfileViewModel>();
+        _viewModel = ServiceRegistry.Services.GetRequiredService<PatientProfileViewModel>();
 
 
         DataContext = _viewModel;
@@ -83,7 +84,7 @@ internal sealed partial class PatientProfileView : Page
     private async Task OnShowPrescriptionAsync(int prescriptionId)
     {
         var prescriptionWindow = new Window { Title = "Prescription Details" };
-        PrescriptionView prescriptionPage = (Application.Current as App).Services.GetRequiredService<PrescriptionView>();
+        PrescriptionView prescriptionPage = ServiceRegistry.Services.GetRequiredService<PrescriptionView>();
 
         prescriptionPage.ViewModel.SearchIdText = prescriptionId.ToString();
 

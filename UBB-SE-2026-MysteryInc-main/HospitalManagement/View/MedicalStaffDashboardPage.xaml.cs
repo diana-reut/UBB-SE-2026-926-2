@@ -1,40 +1,33 @@
+using HospitalManagement.Entity;
 using HospitalManagement.Infrastructure;
 using HospitalManagement.ViewModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System;
-
-
+using Microsoft.UI.Xaml.Controls;
 
 namespace HospitalManagement.View;
-//ma plang
-internal sealed partial class MedicalStaffView : Window
+
+internal sealed partial class MedicalStaffDashboardPage : Page
 {
     public MedicalStaffViewModel ViewModel { get; }
 
-    public MedicalStaffView()
+    public MedicalStaffDashboardPage()
     {
         InitializeComponent();
         ViewModel = ServiceRegistry.Services.GetRequiredService<MedicalStaffViewModel>();
-
-        if (Content is FrameworkElement rootElement)
-        {
-            rootElement.DataContext = ViewModel;
-        }
+        DataContext = ViewModel;
 
         ViewModel.OpenBloodDonorsAction = selectedPatient =>
         {
+            BloodDonorsView donorsPage = ServiceRegistry.Services.GetRequiredService<BloodDonorsView>();
+            donorsPage.Initialize(selectedPatient.Id);
+
             var donorsWindow = new Window
             {
                 Title = $"Compatible Donors - {selectedPatient.FirstName} {selectedPatient.LastName}",
+                Content = donorsPage,
             };
 
-            IServiceProvider scope = ServiceRegistry.Services;
-            BloodDonorsView donorsPage = scope.GetRequiredService<BloodDonorsView>();
-
-            donorsPage.Initialize(selectedPatient.Id);
-
-            donorsWindow.Content = donorsPage;
             donorsWindow.Activate();
         };
 
@@ -45,26 +38,21 @@ internal sealed partial class MedicalStaffView : Window
                 Title = $"Organ Transplant Request - {selectedPatient.FirstName} {selectedPatient.LastName}",
             };
 
-            var requestPage = new TransplantRequestView(selectedPatient.Id, requestWindow);
-
-            requestWindow.Content = requestPage;
+            requestWindow.Content = new TransplantRequestView(selectedPatient.Id, requestWindow);
             requestWindow.Activate();
         };
     }
 
     private void PatientList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
     {
-        if (sender is Microsoft.UI.Xaml.Controls.ListView listView
-            && listView.SelectedItem is Entity.Patient selectedPatient)
+        if (sender is ListView listView && listView.SelectedItem is Patient selectedPatient)
         {
             var newWindow = new Window
             {
                 Title = "Patient Medical Profile",
             };
 
-            // 3. Instantiate your Page passing the actual Patient Id
-            IServiceProvider scope = ServiceRegistry.Services;
-            PatientProfileView profilePage = scope.GetRequiredService<PatientProfileView>();
+            PatientProfileView profilePage = ServiceRegistry.Services.GetRequiredService<PatientProfileView>();
             profilePage.Initialize(selectedPatient.Id);
 
             newWindow.Content = profilePage;

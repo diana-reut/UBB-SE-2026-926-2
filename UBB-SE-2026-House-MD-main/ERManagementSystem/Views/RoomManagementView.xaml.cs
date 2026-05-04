@@ -1,7 +1,4 @@
-using ERManagementSystem.Helpers;
-using ERManagementSystem.Models;
-using ERManagementSystem.Repositories;
-using ERManagementSystem.Services;
+using ERManagementSystem.Infrastructure;
 using ERManagementSystem.ViewModels;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
@@ -14,7 +11,7 @@ namespace ERManagementSystem.Views
 
         public RoomManagementView()
         {
-            ViewModel = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<RoomManagementViewModel>(App.Services);
+            ViewModel = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<RoomManagementViewModel>(ServiceRegistry.Services);
             InitializeComponent();
         }
 
@@ -26,14 +23,14 @@ namespace ERManagementSystem.Views
                 ViewModel = vm;
             }
 
-            ViewModel.XamlRoot = this.Content?.XamlRoot;
+            ViewModel.XamlRoot = Content?.XamlRoot;
             Bindings.Update();
             ViewModel.LoadRoomsCommand.Execute(null);
         }
 
         private void Page_Loaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
         {
-            ViewModel.XamlRoot = this.XamlRoot;
+            ViewModel.XamlRoot = XamlRoot;
         }
     }
 }

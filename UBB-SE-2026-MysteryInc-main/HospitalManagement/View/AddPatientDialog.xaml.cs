@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
+using HospitalManagement.Infrastructure;
 
 namespace HospitalManagement.View;
 
@@ -12,7 +13,7 @@ internal sealed partial class AddPatientDialog : ContentDialog
 
     public AddPatientDialog()
     {
-        _viewModel = ((App)Application.Current).Services.GetRequiredService<ViewModel.AddPatientDialogViewModel>();
+        _viewModel = ServiceRegistry.Services.GetRequiredService<ViewModel.AddPatientDialogViewModel>();
         InitializeComponent();
     }
 

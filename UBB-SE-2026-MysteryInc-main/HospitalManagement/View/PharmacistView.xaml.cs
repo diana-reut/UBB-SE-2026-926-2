@@ -1,3 +1,4 @@
+using HospitalManagement.Infrastructure;
 using HospitalManagement.ViewModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Windowing;
@@ -12,7 +13,7 @@ public sealed partial class PharmacistView : Window
 
     public PharmacistView()
     {
-        ViewModel = (Application.Current as App)!.Services.GetRequiredService<PharmacistViewModel>();
+        ViewModel = ServiceRegistry.Services.GetRequiredService<PharmacistViewModel>();
 
         InitializeComponent();
 
