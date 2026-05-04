@@ -78,7 +78,7 @@ public partial class PharmacistViewModel : ObservableObject
 
     public void NavigateBackToHome()
     {
-        var mainWindow = new MainWindow();
+        Window mainWindow = ServiceRegistry.MainWindow;
         mainWindow.Activate();
         RequestClose?.Invoke();
     }

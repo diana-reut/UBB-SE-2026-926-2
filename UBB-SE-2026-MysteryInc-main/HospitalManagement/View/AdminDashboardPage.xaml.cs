@@ -15,7 +15,7 @@ internal sealed partial class AdminDashboardPage : Page
         InitializeComponent();
 
         IDialogService dialogService = ServiceRegistry.Services.GetRequiredService<IDialogService>();
-        dialogService.SetWindow(ServiceRegistry.Services.GetRequiredService<MainWindow>());
+        dialogService.SetWindow(ServiceRegistry.MainWindow);
 
         StatisticsContainer.Child = ServiceRegistry.Services.GetRequiredService<StatisticsView>();
 

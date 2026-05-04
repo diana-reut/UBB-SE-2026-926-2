@@ -16,6 +16,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        ServiceRegistry.SetMainWindow(this);
 
         nint hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
         WindowId windowId = Win32Interop.GetWindowIdFromWindow(hwnd);

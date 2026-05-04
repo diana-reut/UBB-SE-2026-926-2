@@ -36,7 +36,8 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        window = Services.GetRequiredService<MainWindow>();
+        window = new MainWindow();
+        HospitalManagement.Infrastructure.ServiceRegistry.SetMainWindow(window);
         ERManagementSystem.Infrastructure.ServiceRegistry.SetMainWindow(window);
         window.Activate();
     }
@@ -105,7 +106,6 @@ public partial class App : Application
         _ = services.AddSingleton<IExternalPatientPublisher, ExternalPatientPublisher>();
         _ = services.AddSingleton<IDialogService, DialogService>();
 
-        _ = services.AddSingleton<MainWindow>();
         _ = services.AddTransient<AdminDashboardPage>();
         _ = services.AddTransient<MedicalStaffDashboardPage>();
         _ = services.AddTransient<PharmacistDashboardPage>();

@@ -25,6 +25,8 @@ internal partial class AdminViewModel : ObservableObject
     private readonly IGhostService _ghostService;
     private readonly ITransplantService _transplantService;
     private readonly IDialogService _dialogService;
+    private PatientView? _patientDetailsWindow;
+    private bool _isOpeningPatientDetails;
 
     [ObservableProperty]
     private string _currentView = "";
@@ -77,8 +79,7 @@ internal partial class AdminViewModel : ObservableObject
     [RelayCommand]
     private static void NavigateHome()
     {
-        MainWindow mainWindow = ServiceRegistry.Services
-            .GetRequiredService<MainWindow>();
+        Window mainWindow = ServiceRegistry.MainWindow;
         mainWindow.Activate();
     }
 
@@ -223,12 +224,34 @@ internal partial class AdminViewModel : ObservableObject
     [RelayCommand]
     private void OpenPatientDetails()
     {
-        if (SelectedPatient is null) return;
+        if (SelectedPatient is null || _isOpeningPatientDetails)
+        {
+            return;
+        }
 
-        IServiceProvider scope = ServiceRegistry.Services;
-        PatientView patientWindow = scope.GetRequiredService<PatientView>();
-        patientWindow.Initialize(SelectedPatient.Id, () => { });
-        patientWindow.Activate();
+        if (_patientDetailsWindow is not null)
+        {
+            _patientDetailsWindow.Initialize(SelectedPatient.Id, () => { });
+            _patientDetailsWindow.Activate();
+            return;
+        }
+
+        try
+        {
+            _isOpeningPatientDetails = true;
+
+            IServiceProvider scope = ServiceRegistry.Services;
+            PatientView patientWindow = scope.GetRequiredService<PatientView>();
+            patientWindow.Closed += (_, _) => _patientDetailsWindow = null;
+            patientWindow.Initialize(SelectedPatient.Id, () => { });
+
+            _patientDetailsWindow = patientWindow;
+            patientWindow.Activate();
+        }
+        finally
+        {
+            _isOpeningPatientDetails = false;
+        }
     }
 
     public async Task AssignOrganDonorAsync(int transplantId, int donorId, float score, string donorName)
