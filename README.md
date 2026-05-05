@@ -18,6 +18,13 @@ Local file you must create on your machine:
 2. Edit `DefaultConnection` in `appsettings.local.json` to point to your SQL Server or LocalDB instance.
 3. Build and run `HospitalManagement`.
 
+## Running in Visual Studio
+
+- Set `UBB-SE-2026-MysteryInc-main/HospitalManagement/HospitalManagement.csproj` as the startup project.
+- Run the app unpackaged.
+- Do not use MSIX/package/deploy launch profiles for now.
+- Make sure `UBB-SE-2026-MysteryInc-main/HospitalManagement/config/appsettings.local.json` exists before starting the app.
+
 Example LocalDB connection string:
 
 ```json
