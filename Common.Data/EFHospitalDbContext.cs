@@ -3,7 +3,9 @@ using HospitalManagement.Entity.Enums;
 using ERManagementSystem.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 
 namespace HospitalManagement.Data;
@@ -38,9 +40,7 @@ public class EFHospitalDbContext : DbContext
     {
         var chronicConditionsConverter = new ValueConverter<List<string>, string>(
             value => JsonSerializer.Serialize(value ?? new List<string>(), new JsonSerializerOptions()),
-            value => string.IsNullOrWhiteSpace(value)
-                ? new List<string>()
-                : JsonSerializer.Deserialize<List<string>>(value, new JsonSerializerOptions()) ?? new List<string>());
+            value => DeserializeChronicConditions(value));
 
         modelBuilder.Entity<Patient>(entity =>
         {
@@ -61,6 +61,15 @@ public class EFHospitalDbContext : DbContext
             entity.Property(p => p.IsArchived).HasColumnName("Archived");
             entity.Property(p => p.IsDonor).HasColumnName("IsDonor");
             entity.Property(p => p.Transferred).HasColumnName("Transferred");
+            entity.Ignore(p => p.FullName);
+            entity.Ignore(p => p.Patient_ID);
+            entity.Ignore(p => p.First_Name);
+            entity.Ignore(p => p.Last_Name);
+            entity.Ignore(p => p.Date_of_Birth);
+            entity.Ignore(p => p.Gender);
+            entity.Ignore(p => p.Phone);
+            entity.Ignore(p => p.Emergency_Contact);
+            entity.Ignore(p => p.IsDeceased);
             entity.HasIndex(p => p.Cnp).IsUnique();
         });
 
@@ -237,5 +246,24 @@ public class EFHospitalDbContext : DbContext
             entity.Property(t => t.Status).HasColumnName("Status").HasMaxLength(30);
             entity.Property(t => t.FilePath).HasColumnName("FilePath").HasMaxLength(500);
         });
+    }
+
+    private static List<string> DeserializeChronicConditions(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return [];
+        }
+
+        string trimmed = value.Trim();
+        if (trimmed.StartsWith('['))
+        {
+            return JsonSerializer.Deserialize<List<string>>(trimmed, new JsonSerializerOptions()) ?? [];
+        }
+
+        return trimmed
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(condition => !string.IsNullOrWhiteSpace(condition))
+            .ToList();
     }
 }

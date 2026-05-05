@@ -1,5 +1,7 @@
 using System;
+using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using ERManagementSystem.Infrastructure;
 using HospitalManagement.Data;
 using HospitalManagement.Infrastructure;
@@ -24,11 +26,17 @@ public partial class App : Application
 {
     public IServiceProvider Services { get; }
     private static readonly IConfiguration AppConfiguration = BuildConfiguration();
+    private const string LocalConfigurationRelativePath = "config\\appsettings.local.json";
+    private static readonly string StartupLogPath = Path.Combine(AppContext.BaseDirectory, "startup-errors.log");
 
     private Window? window;
 
     public App()
     {
+        AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+        UnhandledException += App_UnhandledException;
+        TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
+
         Services = ConfigureServices();
         HospitalManagement.Infrastructure.ServiceRegistry.Configure(Services);
         ERManagementSystem.Infrastructure.ServiceRegistry.Configure(Services);
@@ -37,6 +45,7 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        EnsureDatabaseCreated();
         window = new MainWindow();
         HospitalManagement.Infrastructure.ServiceRegistry.SetMainWindow(window);
         ERManagementSystem.Infrastructure.ServiceRegistry.SetMainWindow(window);
@@ -119,9 +128,51 @@ public partial class App : Application
 
     private static IConfiguration BuildConfiguration()
     {
+        string configPath = Path.Combine(AppContext.BaseDirectory, LocalConfigurationRelativePath);
+
+        if (!File.Exists(configPath))
+        {
+            throw new FileNotFoundException(
+                $"Missing local configuration file '{LocalConfigurationRelativePath}'. Copy 'config\\\\appsettings.example.json' to 'config\\\\appsettings.local.json' and set your local connection string.");
+        }
+
         return new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile(LocalConfigurationRelativePath, optional: false, reloadOnChange: true)
             .Build();
+    }
+
+    private void EnsureDatabaseCreated()
+    {
+        using IServiceScope scope = Services.CreateScope();
+        EFHospitalDbContext dbContext = scope.ServiceProvider.GetRequiredService<EFHospitalDbContext>();
+        dbContext.Database.EnsureCreated();
+    }
+
+    private static void CurrentDomain_UnhandledException(object sender, System.UnhandledExceptionEventArgs e)
+    {
+        LogUnhandledException("AppDomain.CurrentDomain.UnhandledException", e.ExceptionObject as Exception);
+    }
+
+    private static void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    {
+        LogUnhandledException("TaskScheduler.UnobservedTaskException", e.Exception);
+    }
+
+    private static void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
+    {
+        LogUnhandledException("Application.UnhandledException", e.Exception);
+    }
+
+    private static void LogUnhandledException(string source, Exception? exception)
+    {
+        try
+        {
+            string entry = $"[{DateTime.Now:O}] {source}{Environment.NewLine}{exception}{Environment.NewLine}{Environment.NewLine}";
+            File.AppendAllText(StartupLogPath, entry);
+        }
+        catch
+        {
+        }
     }
 }
