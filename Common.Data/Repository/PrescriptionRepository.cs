@@ -1,6 +1,6 @@
-﻿using HospitalManagement.Data;
+using HospitalManagement.Data;
 using HospitalManagement.Entity;
-using HospitalManagement.Entity.DTOs;
+using HospitalManagement.Integration;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagement.Repository;
 
-internal class PrescriptionRepository : IPrescriptionRepository
+public class PrescriptionRepository : IPrescriptionRepository
 {
     private readonly EFHospitalDbContext _context;
 
@@ -18,36 +18,31 @@ internal class PrescriptionRepository : IPrescriptionRepository
         _context = context;
     }
 
-    public Task<Prescription?> GetByRecordIdAsync(int recordId)
-    {
-        return _context.Prescriptions
-            .Include(p => p.MedicationList)
-            .FirstOrDefaultAsync(p => p.RecordId == recordId);
-    }
+    public void Add(Prescription prescription) => AddAsync(prescription).GetAwaiter().GetResult();
 
     public async Task AddAsync(Prescription prescription)
     {
         ArgumentNullException.ThrowIfNull(prescription);
-
         await _context.Prescriptions.AddAsync(prescription);
         await _context.SaveChangesAsync();
     }
+
+    public void Update(Prescription prescription) => UpdateAsync(prescription).GetAwaiter().GetResult();
 
     public async Task UpdateAsync(Prescription prescription)
     {
         ArgumentNullException.ThrowIfNull(prescription);
 
-        var existing = await _context.Prescriptions
+        Prescription existing = await _context.Prescriptions
             .Include(p => p.MedicationList)
-            .FirstOrDefaultAsync(p => p.Id == prescription.Id);
-
-        if (existing == null) throw new KeyNotFoundException();
+            .FirstOrDefaultAsync(p => p.Id == prescription.Id)
+            ?? throw new KeyNotFoundException();
 
         _context.Entry(existing).CurrentValues.SetValues(prescription);
-
-        // Replace medication list
         _context.PrescriptionItems.RemoveRange(existing.MedicationList);
-        foreach (var item in prescription.MedicationList)
+        existing.MedicationList.Clear();
+
+        foreach (PrescriptionItem item in prescription.MedicationList)
         {
             existing.MedicationList.Add(item);
         }
@@ -55,26 +50,26 @@ internal class PrescriptionRepository : IPrescriptionRepository
         await _context.SaveChangesAsync();
     }
 
+    public void Delete(int id) => DeleteAsync(id).GetAwaiter().GetResult();
+
     public async Task DeleteAsync(int id)
     {
-        var prescription = await _context.Prescriptions.FindAsync(id);
-        if (prescription != null)
+        Prescription? prescription = await _context.Prescriptions.FindAsync(id);
+        if (prescription is not null)
         {
             _context.Prescriptions.Remove(prescription);
             await _context.SaveChangesAsync();
         }
     }
 
+    public List<Prescription> GetTopN(int n, int page) => GetTopNAsync(n, page).GetAwaiter().GetResult();
+
     public Task<List<Prescription>> GetTopNAsync(int n, int page)
     {
         int pageSize = n <= 0 ? 20 : n;
         int pageNumber = page <= 0 ? 1 : page;
 
-        return _context.Prescriptions
-            .Include(p => p.MedicationList)
-            .Include(p => p.MedicalRecord)
-                .ThenInclude(mr => mr.History)
-                .ThenInclude(mh => mh.Patient)
+        return BaseQuery()
             .OrderByDescending(p => p.Date)
             .ThenByDescending(p => p.Id)
             .Skip((pageNumber - 1) * pageSize)
@@ -82,24 +77,25 @@ internal class PrescriptionRepository : IPrescriptionRepository
             .ToListAsync();
     }
 
-    public Task<List<PrescriptionItem>> GetItemsAsync(int prescriptionId)
-    {
-        return _context.PrescriptionItems
+    public List<PrescriptionItem> GetItems(int prescriptionId) => GetItemsAsync(prescriptionId).GetAwaiter().GetResult();
+
+    public Task<List<PrescriptionItem>> GetItemsAsync(int prescriptionId) =>
+        _context.PrescriptionItems
             .Where(pi => pi.PrescriptionId == prescriptionId)
+            .AsNoTracking()
             .ToListAsync();
-    }
+
+    public List<Prescription> GetFiltered(PrescriptionFilter filter) => GetFilteredAsync(filter).GetAwaiter().GetResult();
 
     public async Task<List<Prescription>> GetFilteredAsync(PrescriptionFilter filter)
     {
-        if (filter is null) return await GetTopNAsync(20, 1);
+        if (filter is null)
+        {
+            return await GetTopNAsync(20, 1);
+        }
 
-        var query = _context.Prescriptions
-            .Include(p => p.MedicationList)
-            .Include(p => p.MedicalRecord)
-                .ThenInclude(mr => mr.History)
-                .ThenInclude(mh => mh.Patient)
-            .Where(p => p.MedicalRecord.History.Patient.IsArchived == false)
-            .AsQueryable();
+        IQueryable<Prescription> query = BaseQuery()
+            .Where(p => !p.MedicalRecord.History.Patient.IsArchived);
 
         if (filter.PrescriptionId.HasValue)
             query = query.Where(p => p.Id == filter.PrescriptionId.Value);
@@ -121,32 +117,52 @@ internal class PrescriptionRepository : IPrescriptionRepository
 
         if (!string.IsNullOrWhiteSpace(filter.PatientName))
         {
-            query = query.Where(p => 
-                p.MedicalRecord.History.Patient.FirstName.Contains(filter.PatientName) || 
+            query = query.Where(p =>
+                p.MedicalRecord.History.Patient.FirstName.Contains(filter.PatientName) ||
                 p.MedicalRecord.History.Patient.LastName.Contains(filter.PatientName));
         }
 
-        return await query.OrderByDescending(p => p.Date).ToListAsync();
-    }
-
-    public Task<List<Prescription>> GetAllAsync()
-    {
-        return _context.Prescriptions
-            .Include(p => p.MedicationList)
+        return await query
+            .OrderByDescending(p => p.Date)
             .ToListAsync();
     }
+
+    public List<Prescription> GetAll() => GetAllAsync().GetAwaiter().GetResult();
+
+    public Task<List<Prescription>> GetAllAsync() =>
+        BaseQuery().ToListAsync();
+
+    public Prescription? GetByRecordId(int recordId) => GetByRecordIdAsync(recordId).GetAwaiter().GetResult();
+
+    public Task<Prescription?> GetByRecordIdAsync(int recordId) =>
+        BaseQuery().FirstOrDefaultAsync(p => p.RecordId == recordId);
+
+    public List<Patient> GetAddictCandidatePatients() => GetAddictCandidatePatientsAsync().GetAwaiter().GetResult();
 
     public async Task<List<Patient>> GetAddictCandidatePatientsAsync()
     {
         DateTime thirtyDaysAgo = DateTime.Now.AddDays(-30);
 
-        return await _context.Prescriptions
+        return await BaseQuery()
             .Where(p => p.Date >= thirtyDaysAgo)
             .Where(p => !p.MedicalRecord.History.Patient.IsArchived)
-            .GroupBy(p => new { p.MedicalRecord.History.Patient, p.MedicationList.FirstOrDefault().MedName })
+            .Where(p => p.MedicationList.Any())
+            .GroupBy(p => new
+            {
+                Patient = p.MedicalRecord.History.Patient,
+                MedName = p.MedicationList.First().MedName,
+            })
             .Where(g => g.Select(p => p.MedicalRecord.StaffId).Distinct().Count() >= 3)
             .Select(g => g.Key.Patient)
             .Distinct()
             .ToListAsync();
     }
+
+    private IQueryable<Prescription> BaseQuery() =>
+        _context.Prescriptions
+            .Include(p => p.MedicationList)
+            .Include(p => p.MedicalRecord)
+            .ThenInclude(mr => mr.History)
+            .ThenInclude(mh => mh.Patient)
+            .AsNoTracking();
 }

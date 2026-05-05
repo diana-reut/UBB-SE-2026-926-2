@@ -1,139 +1,70 @@
-﻿using HospitalManagement.Entity;
+using HospitalManagement.Data;
+using HospitalManagement.Entity;
+using HospitalManagement.Entity.Enums;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace HospitalManagement.Repository;
 
-internal class TransplantRepository : ITransplantRepository
+public class TransplantRepository : ITransplantRepository
 {
-    private readonly IDbContext _context;
+    private readonly EFHospitalDbContext _context;
 
-    public TransplantRepository(IDbContext context)
+    public TransplantRepository(EFHospitalDbContext context)
     {
         _context = context;
     }
 
-    private static string Escape(string value)
+    public void Add(Transplant transplant) => AddAsync(transplant).GetAwaiter().GetResult();
+
+    public async Task AddAsync(Transplant transplant)
     {
-        return value?.Replace("'", "''", StringComparison.Ordinal) ?? "";
+        await _context.Transplants.AddAsync(transplant);
+        await _context.SaveChangesAsync();
     }
 
-    private static string FormatDate(DateTime date)
+    public List<Transplant> GetWaitingByOrgan(string organType) => GetWaitingByOrganAsync(organType).GetAwaiter().GetResult();
+
+    public Task<List<Transplant>> GetWaitingByOrganAsync(string organType) =>
+        _context.Transplants
+            .Where(t => t.OrganType == organType && t.Status == TransplantStatus.Pending)
+            .OrderBy(t => t.RequestDate)
+            .ToListAsync();
+
+    public void Update(int id, int donorId, float score) => UpdateAsync(id, donorId, score).GetAwaiter().GetResult();
+
+    public async Task UpdateAsync(int id, int donorId, float score)
     {
-        return date.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+        Transplant transplant = await _context.Transplants.FirstAsync(t => t.TransplantId == id);
+        transplant.DonorId = donorId;
+        transplant.Status = TransplantStatus.Scheduled;
+        transplant.CompatibilityScore = score;
+        await _context.SaveChangesAsync();
     }
 
-    // RP23: AddRequest
-    public void Add(Transplant transplant)
-    {
-        ArgumentNullException.ThrowIfNull(transplant);
+    public List<Transplant> GetTopMatches(string organType) => GetTopMatchesAsync(organType).GetAwaiter().GetResult();
 
-        // DECI TOATA PARTEA ASTA CU TRANSPLANT NU VA FUNCTIONA PANA NU SE SCOATE DONOR_ID NOT NULL
-        // DUPA CE VA FI NULL VA FI OK ACEST COD (si requirementurile) - DONE
-        string sql = $@"
-            INSERT INTO Transplants (ReceiverID, DonorID, OrganType, RequestDate, TransplantDate, Status, CompatibilityScore)
-            VALUES (
-                {transplant.ReceiverId}, 
-                NULL, 
-                '{Escape(transplant.OrganType)}', 
-                '{FormatDate(DateTime.Now)}', 
-                NULL, 
-                'Pending', 
-                0
-            )";
+    public Task<List<Transplant>> GetTopMatchesAsync(string organType) =>
+        _context.Transplants
+            .Where(t => t.OrganType == organType && t.Status == TransplantStatus.Pending)
+            .OrderByDescending(t => t.CompatibilityScore)
+            .Take(5)
+            .ToListAsync();
 
-        _ = _context.ExecuteNonQuery(sql);
-    }
+    public List<Transplant> GetByReceiverId(int receiverId) => GetByReceiverIdAsync(receiverId).GetAwaiter().GetResult();
 
-    public List<Transplant> GetWaitingByOrgan(string organType)
-    {
-        string sql = $@"
-            SELECT t.*, mh.BloodType, mh.RH, mh.ChronicConditions 
-            FROM Transplants t
-            JOIN MedicalHistory mh ON t.ReceiverID = mh.PatientID
-            WHERE t.OrganType = '{Escape(organType)}' AND t.Status = 'Pending'";
+    public Task<List<Transplant>> GetByReceiverIdAsync(int receiverId) =>
+        _context.Transplants.Where(t => t.ReceiverId == receiverId).ToListAsync();
 
-        return GetListByQuery(sql);
-    }
+    public List<Transplant> GetByDonorId(int donorId) => GetByDonorIdAsync(donorId).GetAwaiter().GetResult();
 
+    public Task<List<Transplant>> GetByDonorIdAsync(int donorId) =>
+        _context.Transplants.Where(t => t.DonorId == donorId).ToListAsync();
 
-    public void Update(int id, int donorId, float score)
-    {
-        string sql = $@"
-                UPDATE Transplants SET
-                    DonorID = {donorId},
-                    Status = 'Scheduled',
-                    CompatibilityScore = {score.ToString(System.Globalization.CultureInfo.InvariantCulture)}
-                WHERE TransplantID = {id}";
+    public Transplant? GetById(int id) => GetByIdAsync(id).GetAwaiter().GetResult();
 
-        _ = _context.ExecuteNonQuery(sql);
-    }
-
-
-    public List<Transplant> GetTopMatches(string organType)
-    {
-        string sql = $@"
-                SELECT TOP 5 t.* FROM Transplants t
-                WHERE t.OrganType = '{Escape(organType)}' AND t.Status = 'Pending'
-                ORDER BY t.CompatibilityScore DESC";
-
-        return GetListByQuery(sql);
-    }
-
-    public List<Transplant> GetByReceiverId(int receiverId)
-    {
-        return GetListByQuery($"SELECT * FROM Transplants WHERE ReceiverID = {receiverId}");
-    }
-
-    public List<Transplant> GetByDonorId(int donorId)
-    {
-        return GetListByQuery($"SELECT * FROM Transplants WHERE DonorID = {donorId}");
-    }
-
-    private List<Transplant> GetListByQuery(string sql)
-    {
-        var list = new List<Transplant>();
-        using (System.Data.Common.DbDataReader reader = _context.ExecuteQuery(sql))
-        {
-            while (reader.Read())
-            {
-                list.Add(new Transplant
-                {
-                    TransplantId = (int)reader["TransplantID"],
-                    ReceiverId = (int)reader["ReceiverID"],
-                    DonorId = reader["DonorID"] == DBNull.Value ? null : (int)reader["DonorID"],
-                    OrganType = reader["OrganType"] as string ?? "",
-                    RequestDate = (DateTime)reader["RequestDate"],
-                    TransplantDate = reader["TransplantDate"] == DBNull.Value ? null : (DateTime)reader["TransplantDate"],
-                    Status = Enum.Parse<Entity.Enums.TransplantStatus>(reader.GetString(reader.GetOrdinal("Status"))),
-                    CompatibilityScore = Convert.ToSingle(reader["CompatibilityScore"], System.Globalization.CultureInfo.InvariantCulture),
-                });
-            }
-        }
-
-        return list;
-    }
-
-
-    // Added - for transplant Service
-    public Transplant? GetById(int id)
-    {
-        string sql = $"SELECT * FROM Transplants WHERE TransplantID = {id}";
-
-        using System.Data.Common.DbDataReader reader = _context.ExecuteQuery(sql);
-        if (reader.Read())
-        {
-            return new Transplant
-            {
-                TransplantId = (int)reader["TransplantID"],
-                ReceiverId = (int)reader["ReceiverID"],
-                DonorId = reader["DonorID"] == DBNull.Value ? null : (int)reader["DonorID"],
-                OrganType = reader["OrganType"] as string ?? "",
-                RequestDate = (DateTime)reader["RequestDate"],
-                TransplantDate = reader["TransplantDate"] == DBNull.Value ? null : (DateTime)reader["TransplantDate"],
-                Status = Enum.Parse<Entity.Enums.TransplantStatus>(reader.GetString(reader.GetOrdinal("Status"))),
-                CompatibilityScore = Convert.ToSingle(reader["CompatibilityScore"], System.Globalization.CultureInfo.InvariantCulture),
-            };
-        }
-
-        return null;
-    }
+    public Task<Transplant?> GetByIdAsync(int id) =>
+        _context.Transplants.FirstOrDefaultAsync(t => t.TransplantId == id);
 }

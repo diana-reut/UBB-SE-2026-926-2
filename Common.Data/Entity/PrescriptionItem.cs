@@ -1,19 +1,30 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HospitalManagement.Entity;
 
 public class PrescriptionItem
 {
     [Key]
-    public int PrescrItemId { get; set; }
+    public int Id { get; set; }
 
     [Required]
-    public int Prescription { get; set; }
+    public int PrescriptionId { get; set; }
+
+    [ForeignKey(nameof(PrescriptionId))]
+    public Prescription Prescription { get; set; } = null!;
 
     [Required]
     [MaxLength(200)]
-    public string MedName { get; set; } = "";
+    public string MedName { get; set; } = string.Empty;
 
     [MaxLength(50)]
     public string? Quantity { get; set; }
+
+    [NotMapped]
+    public int PrescrItemId
+    {
+        get => Id;
+        set => Id = value;
+    }
 }

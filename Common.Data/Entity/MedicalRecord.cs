@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using HospitalManagement.Entity.Enums;
@@ -11,16 +11,21 @@ public class MedicalRecord
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
 
-    public MedicalHistory History { get; set; }
+    [Required]
+    public int HistoryId { get; set; }
+
+    [Required]
+    public MedicalHistory History { get; set; } = null!;
 
     public SourceType SourceType { get; set; }
 
-    // What are these id's linked to?
     public int SourceId { get; set; }
 
     public int StaffId { get; set; }
+
     [MaxLength(200)]
     public string? Symptoms { get; set; }
+
     [MaxLength(100)]
     public string? Diagnosis { get; set; }
 
@@ -36,6 +41,7 @@ public class MedicalRecord
     public decimal FinalPrice { get; set; }
 
     public int? DiscountApplied { get; set; }
+
     [Required]
     public bool PoliceNotified { get; set; }
 

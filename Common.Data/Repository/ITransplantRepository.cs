@@ -1,21 +1,23 @@
-﻿using HospitalManagement.Entity;
+using HospitalManagement.Entity;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace HospitalManagement.Repository;
 
-internal interface ITransplantRepository
+public interface ITransplantRepository
 {
-    public void Add(Transplant transplant);
-
-    public List<Transplant> GetByDonorId(int donorId);
-
-    public Transplant? GetById(int id);
-
-    public List<Transplant> GetByReceiverId(int receiverId);
-
-    public List<Transplant> GetTopMatches(string organType);
-
-    public List<Transplant> GetWaitingByOrgan(string organType);
-
-    public void Update(int id, int donorId, float score);
+    void Add(Transplant transplant);
+    Task AddAsync(Transplant transplant);
+    List<Transplant> GetByDonorId(int donorId);
+    Task<List<Transplant>> GetByDonorIdAsync(int donorId);
+    Transplant? GetById(int id);
+    Task<Transplant?> GetByIdAsync(int id);
+    List<Transplant> GetByReceiverId(int receiverId);
+    Task<List<Transplant>> GetByReceiverIdAsync(int receiverId);
+    List<Transplant> GetTopMatches(string organType);
+    Task<List<Transplant>> GetTopMatchesAsync(string organType);
+    List<Transplant> GetWaitingByOrgan(string organType);
+    Task<List<Transplant>> GetWaitingByOrganAsync(string organType);
+    void Update(int id, int donorId, float score);
+    Task UpdateAsync(int id, int donorId, float score);
 }

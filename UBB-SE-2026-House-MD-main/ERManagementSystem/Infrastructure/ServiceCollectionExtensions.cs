@@ -1,5 +1,3 @@
-using ERManagementSystem.DataAccess;
-using ERManagementSystem.Helpers;
 using ERManagementSystem.Repositories;
 using ERManagementSystem.Services;
 using ERManagementSystem.ViewModels;
@@ -12,9 +10,6 @@ namespace ERManagementSystem.Infrastructure
     {
         public static IServiceCollection AddERManagementSystem(this IServiceCollection services)
         {
-            services.AddSingleton<DatabaseConnection>();
-            services.AddSingleton<SqlHelper>();
-
             services.AddSingleton<NavigationService>();
             services.AddSingleton<INavigationService>(sp =>
                 sp.GetRequiredService<NavigationService>());

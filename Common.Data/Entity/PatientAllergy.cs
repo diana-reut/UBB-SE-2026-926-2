@@ -1,21 +1,21 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using HospitalManagement.Entity;
+using System.ComponentModel.DataAnnotations;
 
-namespace Common.Data.Entity
+namespace HospitalManagement.Entity;
+
+public class PatientAllergy
 {
-    public class PatientAllergy
-    {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+    [Required]
+    public int MedicalHistoryId { get; set; }
 
-        [Required]
-        public int MedicalHistoryId { get; set; }
-        
-        [Required]
-        public Allergy Allergy { get; set; }
+    [Required]
+    public int AllergyId { get; set; }
 
-        public string SeverityLevel { get; set; }
-    }
+    [Required]
+    public MedicalHistory MedicalHistory { get; set; } = null!;
+
+    [Required]
+    public Allergy Allergy { get; set; } = null!;
+
+    [Required]
+    public string SeverityLevel { get; set; } = string.Empty;
 }

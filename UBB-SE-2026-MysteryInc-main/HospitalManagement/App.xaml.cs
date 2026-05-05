@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using ERManagementSystem.Infrastructure;
-using HospitalManagement.Database;
+using HospitalManagement.Data;
 using HospitalManagement.Infrastructure;
 using HospitalManagement.Integration.Export;
 using HospitalManagement.Integration.External;
@@ -12,6 +12,7 @@ using HospitalManagement.View.DialogServiceAdmin;
 using HospitalManagement.ViewModel;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Xaml;
 
 [assembly: InternalsVisibleTo("HospitalManagementTest")]
@@ -47,25 +48,26 @@ public partial class App : Application
         var services = new ServiceCollection();
         _ = services.AddSingleton(AppConfiguration);
 
-        _ = services.AddSingleton<IDbContext, HospitalDbContext>();
+        _ = services.AddDbContext<EFHospitalDbContext>(options =>
+            options.UseSqlServer(AppConfiguration.GetConnectionString("DefaultConnection")));
 
-        _ = services.AddSingleton<IPatientRepository, PatientRepository>();
-        _ = services.AddSingleton<IMedicalHistoryRepository, MedicalHistoryRepository>();
-        _ = services.AddSingleton<IMedicalRecordRepository, MedicalRecordRepository>();
-        _ = services.AddSingleton<IAllergyRepository, AllergyRepository>();
-        _ = services.AddSingleton<ITransplantRepository, TransplantRepository>();
-        _ = services.AddSingleton<IPrescriptionRepository, PrescriptionRepository>();
+        _ = services.AddScoped<IPatientRepository, PatientRepository>();
+        _ = services.AddScoped<IMedicalHistoryRepository, MedicalHistoryRepository>();
+        _ = services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
+        _ = services.AddScoped<IAllergyRepository, AllergyRepository>();
+        _ = services.AddScoped<ITransplantRepository, TransplantRepository>();
+        _ = services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
 
-        _ = services.AddSingleton<IBloodCompatibilityService, BloodCompatibilityService>();
-        _ = services.AddSingleton<IPatientService, PatientService>();
-        _ = services.AddSingleton<IAllergyService, AllergyService>();
-        _ = services.AddSingleton<ITransplantService, TransplantService>();
-        _ = services.AddSingleton<IExportService, ExportService>();
-        _ = services.AddSingleton<IImportService, ImportService>();
-        _ = services.AddSingleton<IBillingService, BillingService>();
+        _ = services.AddTransient<IBloodCompatibilityService, BloodCompatibilityService>();
+        _ = services.AddTransient<IPatientService, PatientService>();
+        _ = services.AddTransient<IAllergyService, AllergyService>();
+        _ = services.AddTransient<ITransplantService, TransplantService>();
+        _ = services.AddTransient<IExportService, ExportService>();
+        _ = services.AddTransient<IImportService, ImportService>();
+        _ = services.AddTransient<IBillingService, BillingService>();
         _ = services.AddTransient<IAddictDetectionService, AddictDetectionService>();
         _ = services.AddTransient<IPrescriptionService, PrescriptionService>();
-        _ = services.AddSingleton<IStatisticsService, StatisticsService>();
+        _ = services.AddTransient<IStatisticsService, StatisticsService>();
         _ = services.AddSingleton<IGhostService, GhostService>();
 
         _ = services.AddTransient<AdminViewModel>();

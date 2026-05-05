@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HospitalManagement.Entity;
 
@@ -12,7 +13,10 @@ public class Prescription
     [Required]
     public int RecordId { get; set; }
 
-    public List<PrescriptionItem> MedicationList { get; set; } = new();
+    [Required]
+    public MedicalRecord MedicalRecord { get; set; } = null!;
+
+    public List<PrescriptionItem> MedicationList { get; set; } = [];
 
     [MaxLength(2000)]
     public string? DoctorNotes { get; set; }
@@ -20,11 +24,9 @@ public class Prescription
     [Required]
     public DateTime Date { get; set; }
 
-    [Required]
-    [MaxLength(100)]
+    [NotMapped]
     public string PatientName { get; set; } = "Unknown";
 
-    [Required]
-    [MaxLength(100)]
+    [NotMapped]
     public string DoctorName { get; set; } = "Unknown";
 }

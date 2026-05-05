@@ -19,4 +19,10 @@ public class Allergy
     [MaxLength(50)]
     public string? AllergyCategory { get; set; }
 
+    [NotMapped]
+    public int AllergyId
+    {
+        get => Id;
+        set => Id = value;
+    }
 }

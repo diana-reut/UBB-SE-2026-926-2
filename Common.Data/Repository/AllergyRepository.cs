@@ -1,12 +1,13 @@
-﻿using HospitalManagement.Data;
+using HospitalManagement.Data;
 using HospitalManagement.Entity;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace HospitalManagement.Repository;
 
-internal class AllergyRepository : IAllergyRepository
+public class AllergyRepository : IAllergyRepository
 {
     private readonly EFHospitalDbContext _context;
 
@@ -15,16 +16,21 @@ internal class AllergyRepository : IAllergyRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<Allergy>> GetAllergiesAsync()
-    {
-        return await _context.Allergies
+    public IEnumerable<Allergy> GetAllergies() =>
+        _context.Allergies
             .AsNoTracking()
-            .ToListAsync();
-    }
+            .ToList();
 
-    public Task<Allergy?> GetByIdAsync(int id)
-    {
-        return _context.Allergies
+    public Task<IEnumerable<Allergy>> GetAllergiesAsync() =>
+        Task.FromResult(GetAllergies());
+
+    public Allergy? GetById(int id) =>
+        _context.Allergies
+            .AsNoTracking()
+            .FirstOrDefault(a => a.Id == id);
+
+    public Task<Allergy?> GetByIdAsync(int id) =>
+        _context.Allergies
+            .AsNoTracking()
             .FirstOrDefaultAsync(a => a.Id == id);
-    }
 }

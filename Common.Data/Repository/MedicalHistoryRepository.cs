@@ -1,4 +1,3 @@
-﻿using Common.Data.Entity;
 using HospitalManagement.Data;
 using HospitalManagement.Entity;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagement.Repository;
 
-internal class MedicalHistoryRepository : IMedicalHistoryRepository
+public class MedicalHistoryRepository : IMedicalHistoryRepository
 {
     private readonly EFHospitalDbContext _context;
 
@@ -18,88 +17,103 @@ internal class MedicalHistoryRepository : IMedicalHistoryRepository
         _context = context;
     }
 
-    public Task<MedicalHistory?> GetByPatientIdAsync(int patientId)
-    {
-        return _context.MedicalHistory
-            .Include(r => r.Patient)
-            .FirstOrDefaultAsync(h => h.Patient.Id == patientId);
-    }
-
-    public Task<MedicalHistory?> GetByIdAsync(int historyId)
-    {
-        return _context.MedicalHistory
-            .FirstOrDefaultAsync(h => h.Id == historyId);
-    }
+    public int Create(MedicalHistory history) => CreateAsync(history).GetAwaiter().GetResult();
 
     public async Task<int> CreateAsync(MedicalHistory history)
     {
         ArgumentNullException.ThrowIfNull(history);
-
         _ = _context.MedicalHistory.Add(history);
         _ = await _context.SaveChangesAsync();
-
         return history.Id;
     }
+
+    public void Update(MedicalHistory history) => UpdateAsync(history).GetAwaiter().GetResult();
 
     public async Task UpdateAsync(MedicalHistory history)
     {
         ArgumentNullException.ThrowIfNull(history);
 
-        var existing = await _context.MedicalHistory
+        MedicalHistory existing = await _context.MedicalHistory
             .AsNoTracking()
-            .Include(r => r.Patient)
             .FirstOrDefaultAsync(h => h.Id == history.Id)
-            ?? throw new KeyNotFoundException($"MedicalHistory with ID={history.Id} not found.");
+            ?? throw new KeyNotFoundException($"Medical history {history.Id} was not found.");
 
-        if (existing.Patient.Id != history.Patient.Id)
+        if (existing.PatientId != history.PatientId)
         {
-            throw new InvalidOperationException("PatientID mismatch - cannot reassign history to a different patient.");
+            throw new InvalidOperationException("Cannot reassign medical history to another patient.");
         }
 
         _ = _context.MedicalHistory.Update(history);
         _ = await _context.SaveChangesAsync();
     }
 
+    public MedicalHistory? GetByPatientId(int patientId) => GetByPatientIdAsync(patientId).GetAwaiter().GetResult();
+
+    public Task<MedicalHistory?> GetByPatientIdAsync(int patientId) =>
+        _context.MedicalHistory
+            .Include(h => h.Patient)
+            .Include(h => h.PatientAllergies)
+            .ThenInclude(pa => pa.Allergy)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(h => h.PatientId == patientId);
+
+    public MedicalHistory? GetById(int historyId) => GetByIdAsync(historyId).GetAwaiter().GetResult();
+
+    public Task<MedicalHistory?> GetByIdAsync(int historyId) =>
+        _context.MedicalHistory
+            .Include(h => h.Patient)
+            .Include(h => h.PatientAllergies)
+            .ThenInclude(pa => pa.Allergy)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(h => h.Id == historyId);
+
+    public void SaveAllergies(int historyId, List<(Allergy Allergy, string SeverityLevel)> allergies) =>
+        SaveAllergiesAsync(historyId, allergies).GetAwaiter().GetResult();
+
     public async Task SaveAllergiesAsync(int historyId, List<(Allergy Allergy, string SeverityLevel)> allergies)
     {
         if (allergies is null || allergies.Count == 0)
-            return;
-
-        foreach (var (allergy, severity) in allergies)
         {
-            var patientAllergy = new PatientAllergy
+            return;
+        }
+
+        foreach ((Allergy allergy, string severity) in allergies)
+        {
+            _context.PatientAllergies.Add(new PatientAllergy
             {
                 MedicalHistoryId = historyId,
+                AllergyId = allergy.Id,
                 Allergy = allergy,
                 SeverityLevel = severity,
-            };
-            _context.PatientAllergies.Add(patientAllergy);
+            });
         }
 
         _ = await _context.SaveChangesAsync();
     }
 
+    public List<string> GetChronicConditions(int historyId) => GetChronicConditionsAsync(historyId).GetAwaiter().GetResult();
+
     public async Task<List<string>> GetChronicConditionsAsync(int historyId)
     {
-        var history = await _context.MedicalHistory
+        List<string>? conditions = await _context.MedicalHistory
             .Where(h => h.Id == historyId)
             .Select(h => h.ChronicConditions)
             .FirstOrDefaultAsync();
 
-        return history ?? [];
+        return conditions ?? [];
     }
+
+    public List<(Allergy Allergy, string SeverityLevel)> GetAllergiesByHistoryId(int historyId) =>
+        GetAllergiesByHistoryIdAsync(historyId).GetAwaiter().GetResult();
 
     public async Task<List<(Allergy Allergy, string SeverityLevel)>> GetAllergiesByHistoryIdAsync(int historyId)
     {
-        var patientAllergies = await _context.PatientAllergies
+        List<PatientAllergy> entries = await _context.PatientAllergies
             .Include(pa => pa.Allergy)
             .Where(pa => pa.MedicalHistoryId == historyId)
+            .AsNoTracking()
             .ToListAsync();
 
-        return patientAllergies
-            .Select(pa => (pa., pa.SeverityLevel))
-            .ToList();
+        return entries.Select(pa => (pa.Allergy, pa.SeverityLevel)).ToList();
     }
-
-    // INCLUDE HISTORY IN THE ALLERGY 
 }

@@ -26,6 +26,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Entity\**\*.cs" />
+    <Compile Remove="Integration\PatientFilter.cs" />
+    <Compile Remove="Integration\PrescriptionFilter.cs" />
     <None Remove="View\AddPatientDialog.xaml" />
     <None Remove="View\PoliceAlertDialog.xaml" />
   </ItemGroup>
@@ -58,7 +60,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Common.Data\Common.Data.csproj" />
-    <ProjectReference Include="..\..\HospitalShared\HospitalShared.csproj" />
     <ProjectReference Include="..\..\UBB-SE-2026-House-MD-main\ERManagementSystem\ERManagementSystem.csproj" />
   </ItemGroup>
   <ItemGroup>

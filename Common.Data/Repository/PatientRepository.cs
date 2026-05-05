@@ -1,6 +1,7 @@
-﻿using HospitalManagement.Data;
+using HospitalManagement.Data;
 using HospitalManagement.Entity;
 using HospitalManagement.Entity.Enums;
+using HospitalManagement.Integration;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagement.Repository;
 
-internal class PatientRepository : IPatientRepository
+public class PatientRepository : IPatientRepository
 {
     private readonly EFHospitalDbContext _context;
 
@@ -18,38 +19,81 @@ internal class PatientRepository : IPatientRepository
         _context = context;
     }
 
-    public Task<Patient?> GetByIdAsync(int id)
+    public void Add(Patient p) => AddAsync(p).GetAwaiter().GetResult();
+
+    public async Task AddAsync(Patient p)
     {
-        return _context.Patients
-            .Include(p => p.MedicalHistory)
-            .FirstOrDefaultAsync(p => p.Id == id);
+        ArgumentNullException.ThrowIfNull(p);
+        _ = await _context.Patients.AddAsync(p);
+        _ = await _context.SaveChangesAsync();
     }
 
-    public Task<List<Patient>> GetAllAsync(bool includeArchived)
-    {
-        IQueryable<Patient> query = _context.Patients;
+    public void Update(Patient p) => UpdateAsync(p).GetAwaiter().GetResult();
 
-        if (!includeArchived)
+    public async Task UpdateAsync(Patient p)
+    {
+        ArgumentNullException.ThrowIfNull(p);
+        _ = _context.Patients.Update(p);
+        _ = await _context.SaveChangesAsync();
+    }
+
+    public void Delete(int id) => DeleteAsync(id).GetAwaiter().GetResult();
+
+    public async Task DeleteAsync(int id)
+    {
+        Patient? patient = await _context.Patients.FindAsync(id);
+        if (patient is not null)
+        {
+            _ = _context.Patients.Remove(patient);
+            _ = await _context.SaveChangesAsync();
+        }
+    }
+
+    public bool Exists(string cnp) => ExistsAsync(cnp).GetAwaiter().GetResult();
+
+    public Task<bool> ExistsAsync(string cnp) =>
+        _context.Patients.AnyAsync(p => p.Cnp == cnp);
+
+    public List<Patient> GetAll(bool include_archived) => GetAllAsync(include_archived).GetAwaiter().GetResult();
+
+    public Task<List<Patient>> GetAllAsync(bool include_archived)
+    {
+        IQueryable<Patient> query = _context.Patients
+            .Include(p => p.MedicalHistory);
+
+        if (!include_archived)
         {
             query = query.Where(p => !p.IsArchived);
         }
 
-        return query.ToListAsync();
+        return query.AsNoTracking().ToListAsync();
     }
 
-    public Task<List<Patient>> GetArchivedAsync()
-    {
-        return _context.Patients
+    public List<Patient> GetArchived() => GetArchivedAsync().GetAwaiter().GetResult();
+
+    public Task<List<Patient>> GetArchivedAsync() =>
+        _context.Patients
+            .AsNoTracking()
             .Where(p => p.IsArchived)
             .ToListAsync();
-    }
+
+    public Patient? GetById(int id) => GetByIdAsync(id).GetAwaiter().GetResult();
+
+    public Task<Patient?> GetByIdAsync(int id) =>
+        _context.Patients
+            .Include(p => p.MedicalHistory)
+            .ThenInclude(h => h.PatientAllergies)
+            .ThenInclude(pa => pa.Allergy)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+    public List<Patient> Search(PatientFilter patientFilter) => SearchAsync(patientFilter).GetAwaiter().GetResult();
 
     public Task<List<Patient>> SearchAsync(PatientFilter patientFilter)
     {
         ArgumentNullException.ThrowIfNull(patientFilter);
 
-        // Include MedicalHistory to ensure filtering on BloodType and ChronicConditions works
-        var query = _context.Patients
+        IQueryable<Patient> query = _context.Patients
             .Include(p => p.MedicalHistory)
             .AsQueryable();
 
@@ -90,95 +134,68 @@ internal class PatientRepository : IPatientRepository
             query = query.Where(p => p.MedicalHistory != null && p.MedicalHistory.ChronicConditions.Any());
         }
 
-        return query.ToListAsync();
+        return query.AsNoTracking().ToListAsync();
     }
 
-    public async Task AddAsync(Patient p)
-    {
-        ArgumentNullException.ThrowIfNull(p);
-
-        _ = await _context.Patients.AddAsync(p);
-        _ = await _context.SaveChangesAsync();
-    }
-
-    public async Task UpdateAsync(Patient p)
-    {
-        ArgumentNullException.ThrowIfNull(p);
-
-        _ = _context.Patients.Update(p);
-        _ = await _context.SaveChangesAsync();
-    }
-
-    public async Task DeleteAsync(int id)
-    {
-        var patient = await _context.Patients.FindAsync(id);
-        if (patient is not null)
-        {
-            _ = _context.Patients.Remove(patient);
-            _ = await _context.SaveChangesAsync();
-        }
-    }
-
-    public Task<bool> ExistsAsync(string cnp)
-    {
-        return _context.Patients.AnyAsync(p => p.Cnp == cnp);
-    }
+    public void MarkAsDeceased(int id, DateTime dod) => MarkAsDeceasedAsync(id, dod).GetAwaiter().GetResult();
 
     public async Task MarkAsDeceasedAsync(int id, DateTime dod)
     {
-        var patient = await _context.Patients.FindAsync(id);
+        Patient? patient = await _context.Patients.FindAsync(id);
         if (patient is not null)
         {
             patient.Dod = dod;
+            patient.IsArchived = true;
             _ = await _context.SaveChangesAsync();
         }
     }
+
+    public List<Patient> GetCompatibleDonors(BloodType bloodType, Rh rh, Sex sex, DateTime dob, int minAge, int maxAge) =>
+        GetCompatibleDonorsAsync(bloodType, rh, sex, dob, minAge, maxAge).GetAwaiter().GetResult();
 
     public async Task<List<Patient>> GetCompatibleDonorsAsync(BloodType bloodType, Rh rh, Sex sex, DateTime dob, int minAge, int maxAge)
     {
         int currentYear = DateTime.Now.Year;
         int recipientAge = currentYear - dob.Year;
 
-        var donors = await _context.Patients
+        List<Patient> donors = await _context.Patients
             .Include(p => p.MedicalHistory)
-            .ThenInclude(mh => mh.Allergies)
+            .ThenInclude(mh => mh.PatientAllergies)
+            .ThenInclude(pa => pa.Allergy)
             .Where(p => !p.IsArchived && p.MedicalHistory != null)
-            // Age filter
             .Where(p => (currentYear - p.Dob.Year) >= minAge && (currentYear - p.Dob.Year) <= maxAge)
-            // Health filters
-            .Where(p => p.MedicalHistory.ChronicConditions.Count == 0)
-            .Where(p => !p.MedicalHistory.Allergies.Any(a => a.SeverityLevel == "anaphylactic"))
+            .Where(p => p.MedicalHistory!.ChronicConditions.Count == 0)
+            .Where(p => !p.MedicalHistory!.PatientAllergies.Any(a => a.SeverityLevel.ToLower() == "anaphylactic"))
             .ToListAsync();
 
-        var compatibleDonors = donors
-            .Where(p => IsABloodMatch(p.MedicalHistory.BloodType, bloodType) && IsARhMatch(p.MedicalHistory.Rh, rh))
+        return donors
+            .Where(p => IsABloodMatch(p.MedicalHistory?.BloodType, bloodType) && IsARhMatch(p.MedicalHistory?.Rh, rh))
             .Select(p => new
             {
                 Patient = p,
-                Score = CalculateTotalScore(p, bloodType, rh, sex, recipientAge)
+                Score = CalculateTotalScore(p, bloodType, rh, sex, recipientAge),
             })
             .OrderByDescending(x => x.Score)
             .Select(x => x.Patient)
             .ToList();
-
-        return compatibleDonors;
     }
 
-    private int CalculateTotalScore(Patient pd, BloodType targetBlood, Rh targetRh, Sex targetSex, int recipientAge)
+    private int CalculateTotalScore(Patient donor, BloodType targetBlood, Rh targetRh, Sex targetSex, int recipientAge)
     {
         int score = 0;
-        int donorAge = DateTime.Now.Year - pd.Dob.Year;
+        int donorAge = DateTime.Now.Year - donor.Dob.Year;
 
-        // Blood/Rh Score
-        if (pd.MedicalHistory.BloodType == targetBlood && pd.MedicalHistory.Rh == targetRh)
+        if (donor.MedicalHistory?.BloodType == targetBlood && donor.MedicalHistory.Rh == targetRh)
+        {
             score += 50;
+        }
         else
+        {
             score += 25;
+        }
 
-        // Sex Score
-        score += (pd.Sex == targetSex) ? 20 : 10;
+        score += donor.Sex == targetSex ? 20 : 10;
 
-        // Age Score
         int ageGap = Math.Abs(donorAge - recipientAge);
         int group = ageGap / 5;
         score += Math.Max(30 - (group * 5), 0);
@@ -189,20 +206,35 @@ internal class PatientRepository : IPatientRepository
     private static bool IsABloodMatch(BloodType? donor, BloodType receiver)
     {
         if (donor is null)
+        {
             return false;
+        }
+
         if (donor == BloodType.O)
+        {
             return true;
+        }
+
         if (donor == BloodType.A && (receiver == BloodType.A || receiver == BloodType.AB))
+        {
             return true;
+        }
+
         if (donor == BloodType.B && (receiver == BloodType.B || receiver == BloodType.AB))
+        {
             return true;
-        return (donor == BloodType.AB && receiver == BloodType.AB);
+        }
+
+        return donor == BloodType.AB && receiver == BloodType.AB;
     }
 
     private static bool IsARhMatch(Rh? donor, Rh receiver)
     {
         if (donor is null)
+        {
             return false;
+        }
+
         return donor == Rh.Negative || (donor == Rh.Positive && receiver == Rh.Positive);
     }
 }
