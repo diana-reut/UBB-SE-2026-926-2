@@ -37,7 +37,7 @@ internal class AddPatientDialogViewModel
     }
 
     public (bool Success, string? ErrorMessage, Patient? Patient) SubmitPatient(
-        string firstName, string lastName, string sex, DateTimeOffset? dob, string cnp, string phone, string emergencyContact)
+    string firstName, string lastName, string sex, DateTimeOffset? dob, string cnp, string phone, string emergencyContact)
     {
         Patient data = new()
         {
@@ -52,8 +52,15 @@ internal class AddPatientDialogViewModel
 
         try
         {
-            Patient created = _patientService.CreatePatient(data);
-            return (true, null, created);
+            // Only validate, don't save
+            bool isValid = _patientService.ValidateCNP(data.Cnp, data.Sex, data.Dob);
+            if (!isValid)
+                return (false, "Identity Mismatch: The provided CNP does not align with the selected Sex or Date of Birth.", null);
+
+            if (data.Dob >= DateTime.Today)
+                return (false, "Validation Error: Birth Date must be in the past.", null);
+
+            return (true, null, data);
         }
         catch (ArgumentException ex)
         {
