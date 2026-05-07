@@ -5,7 +5,7 @@ using Common.Data.Repository;
 
 namespace Common.API.Service;
 
-internal class AllergyService : IAllergyService
+public class AllergyService : IAllergyService
 {
     private readonly IAllergyRepository _repository;
 

@@ -13,13 +13,7 @@ public class AllergyRepository : IAllergyRepository
         _context = context;
     }
 
-    public IEnumerable<Allergy> GetAllergies() =>
-        _context.Allergies
-            .AsNoTracking()
-            .ToList();
-
-    public Task<IEnumerable<Allergy>> GetAllergiesAsync() =>
-        Task.FromResult(GetAllergies());
+    public Task<IEnumerable<Allergy>> GetAllergiesAsync() => _context.Allergies.AsNoTracking().ToListAsync();
 
     public Allergy? GetById(int id) =>
         _context.Allergies
