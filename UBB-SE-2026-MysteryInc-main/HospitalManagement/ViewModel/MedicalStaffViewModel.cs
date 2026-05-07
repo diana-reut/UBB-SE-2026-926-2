@@ -105,7 +105,7 @@ internal class MedicalStaffViewModel : INotifyPropertyChanged
         SearchCommand = new AsyncRelayCommand(ExecuteSearchAsync);
 
         FindBloodDonorsCommand = new RelayCommand(FindBloodDonors);
-        RequestTransplantCommand = new RelayCommand(RequestTransplant);
+        RequestTransplantCommand = new RelayCommand(RequestTransplantAsync);
         GhostSightingCommand = new RelayCommand(() => _ghostService.SawAGhost());
     }
 
