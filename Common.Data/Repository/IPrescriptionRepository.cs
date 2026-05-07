@@ -1,9 +1,11 @@
-using HospitalManagement.Entity;
-using HospitalManagement.Integration;
+using Common.Data.Entity;
+using Common.Data.Integration;
+using Common.Data.Entity;
+using Common.Data.Integration;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace HospitalManagement.Repository;
+namespace Common.Data.Repository;
 
 public interface IPrescriptionRepository
 {

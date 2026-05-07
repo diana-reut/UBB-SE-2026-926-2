@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using HospitalManagement.Entity;
-using HospitalManagement.Repository;
-using HospitalManagement.Integration;
+using Common.Data.Entity;
+using Common.Data.Repository;
+using Common.Data.Integration;
 
 namespace HospitalManagement.Service;
 

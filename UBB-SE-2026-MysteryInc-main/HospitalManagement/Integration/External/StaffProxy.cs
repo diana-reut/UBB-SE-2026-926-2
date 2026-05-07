@@ -1,4 +1,4 @@
-﻿using HospitalManagement.Entity.DTOs;
+﻿using Common.Data.Entity.DTOs;
 
 namespace HospitalManagement.Integration.External;
 

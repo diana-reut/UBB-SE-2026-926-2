@@ -1,9 +1,9 @@
 using System.Linq;
 using ERManagementSystem.Helpers;
-using ERManagementSystem.Models;
-using HospitalManagement.Data;
+using Common.Data.Data;
 using Microsoft.EntityFrameworkCore;
-using PatientEntity = HospitalManagement.Entity.Patient;
+using PatientEntity = Common.Data.Entity.Patient;
+using Common.Data.Entity;
 
 namespace ERManagementSystem.Repositories
 {
@@ -24,7 +24,7 @@ namespace ERManagementSystem.Repositories
                 LastName = patient.Last_Name,
                 Cnp = patient.Patient_ID,
                 Dob = patient.Date_of_Birth,
-                Sex = patient.Gender == "Female" ? HospitalManagement.Entity.Enums.Sex.F : HospitalManagement.Entity.Enums.Sex.M,
+                Sex = patient.Gender == "Female" ? Common.Data.Entity.Enums.Sex.F : Common.Data.Entity.Enums.Sex.M,
                 PhoneNo = patient.Phone,
                 EmergencyContact = patient.Emergency_Contact,
                 Transferred = patient.Transferred,
@@ -52,7 +52,7 @@ namespace ERManagementSystem.Repositories
             entity.FirstName = patient.First_Name;
             entity.LastName = patient.Last_Name;
             entity.Dob = patient.Date_of_Birth;
-            entity.Sex = patient.Gender == "Female" ? HospitalManagement.Entity.Enums.Sex.F : HospitalManagement.Entity.Enums.Sex.M;
+            entity.Sex = patient.Gender == "Female" ? Common.Data.Entity.Enums.Sex.F : Common.Data.Entity.Enums.Sex.M;
             entity.PhoneNo = patient.Phone;
             entity.EmergencyContact = patient.Emergency_Contact;
             entity.Transferred = patient.Transferred;
@@ -77,7 +77,7 @@ namespace ERManagementSystem.Repositories
                 First_Name = entity.FirstName,
                 Last_Name = entity.LastName,
                 Date_of_Birth = entity.Dob,
-                Gender = entity.Sex == HospitalManagement.Entity.Enums.Sex.F ? "Female" : "Male",
+                Gender = entity.Sex == Common.Data.Entity.Enums.Sex.F ? "Female" : "Male",
                 Phone = entity.PhoneNo,
                 Emergency_Contact = entity.EmergencyContact,
                 Transferred = entity.Transferred,

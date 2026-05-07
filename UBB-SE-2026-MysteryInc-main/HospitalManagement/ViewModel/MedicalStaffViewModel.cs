@@ -1,5 +1,5 @@
 using CommunityToolkit.Mvvm.Input;
-using HospitalManagement.Entity;
+using Common.Data.Entity;
 using HospitalManagement.Infrastructure;
 using HospitalManagement.Integration;
 using HospitalManagement.Service;

@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using HospitalManagement.Entity;
-using HospitalManagement.Entity.Enums;
+using Common.Data.Entity;
+using Common.Data.Entity.Enums;
 using HospitalManagement.Service;
 using System.Collections.ObjectModel;
 using HospitalManagement.View;
 using System.Threading.Tasks;
+using Common.Data.Entity.Enums;
+using Common.Data.Entity;
 
 namespace HospitalManagement.ViewModel;
 

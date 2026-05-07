@@ -1,5 +1,5 @@
-﻿using HospitalManagement.Entity;
-using HospitalManagement.Entity.DTOs;
+﻿using Common.Data.Entity;
+using Common.Data.Entity.DTOs;
 using HospitalManagement.Integration;
 using HospitalManagement.Service;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -10,6 +10,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 using System.Threading.Tasks;
+using Common.Data.Entity;
+using Common.Data.Integration;
 
 namespace HospitalManagement.ViewModel;
 

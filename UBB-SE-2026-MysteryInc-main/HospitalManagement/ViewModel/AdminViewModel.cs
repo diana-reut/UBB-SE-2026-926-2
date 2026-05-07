@@ -1,9 +1,9 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using Common.Data.Entity;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using HospitalManagement.Entity;
-using HospitalManagement.Entity.Enums;
+using Common.Data.Entity.Enums;
 using HospitalManagement.Infrastructure;
-using HospitalManagement.Integration;
+using Common.Data.Integration;
 using HospitalManagement.Service;
 using HospitalManagement.View;
 using HospitalManagement.View.DialogServiceAdmin;

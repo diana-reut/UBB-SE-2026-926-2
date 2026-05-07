@@ -6,7 +6,9 @@ using System.Text.Json;
 using ERManagementSystem.Helpers;
 using ERManagementSystem.Models;
 using ERManagementSystem.Repositories;
-using HospitalManagement.Data;
+using Common.Data.Data;
+using Common.Data.Models;
+using Common.Data.Entity;
 
 namespace ERManagementSystem.Services
 {
@@ -151,7 +153,7 @@ namespace ERManagementSystem.Services
                     First_Name = patient.FirstName,
                     Last_Name = patient.LastName,
                     Date_of_Birth = patient.Dob,
-                    Gender = patient.Sex == HospitalManagement.Entity.Enums.Sex.F ? "Female" : "Male",
+                    Gender = patient.Sex == Common.Data.Entity.Enums.Sex.F ? "Female" : "Male",
                     Phone = patient.PhoneNo,
                     Emergency_Contact = patient.EmergencyContact,
                     Visit_ID = visit.Visit_ID,

@@ -9,6 +9,7 @@ using ERManagementSystem.Repositories;
 
 namespace ERManagementSystem.Services
 {
+    using Common.Data.Models;
     using System;
     public class MockStaffService
     {

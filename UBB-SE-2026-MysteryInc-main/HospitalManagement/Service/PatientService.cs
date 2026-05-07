@@ -1,7 +1,7 @@
-using HospitalManagement.Entity;
-using HospitalManagement.Entity.Enums;
-using HospitalManagement.Integration;
-using HospitalManagement.Repository;
+using Common.Data.Entity;
+using Common.Data.Entity.Enums;
+using Common.Data.Integration;
+using Common.Data.Repository;
 using System;
 using System.Collections.Generic;
 using System.Globalization;

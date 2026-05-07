@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace HospitalManagement.Data;
+namespace Common.Data.Data;
 
 public class HospitalDbContextFactory : IDesignTimeDbContextFactory<EFHospitalDbContext>
 {

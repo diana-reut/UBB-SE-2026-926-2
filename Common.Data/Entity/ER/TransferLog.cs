@@ -1,6 +1,6 @@
 using System;
 
-namespace ERManagementSystem.Models
+namespace Common.Data.Models
 {
     public class Transfer_Log
     {

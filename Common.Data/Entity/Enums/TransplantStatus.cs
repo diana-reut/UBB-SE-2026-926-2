@@ -1,4 +1,4 @@
-﻿namespace HospitalManagement.Entity.Enums;
+﻿namespace Common.Data.Entity.Enums;
 
 public enum TransplantStatus
 {

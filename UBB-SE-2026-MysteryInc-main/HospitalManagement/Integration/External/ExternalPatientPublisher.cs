@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using HospitalManagement.Entity.DTOs;
+using Common.Data.Entity.DTOs;
 using HospitalManagement.Integration.PatientObserver;
 
 namespace HospitalManagement.Integration.External;

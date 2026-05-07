@@ -1,10 +1,12 @@
-using HospitalManagement.Entity;
-using HospitalManagement.Repository;
+using Common.Data.Entity;
+using Common.Data.Repository;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using Common.Data.Entity.DTOs;
+using Common.Data.Integration;
 
 namespace HospitalManagement.Service;
 
@@ -68,7 +70,7 @@ internal class AddictDetectionService : IAddictDetectionService
             throw new ArgumentException("Invalid patient data for building a police report.");
         }
 
-        var filter = new Integration.PrescriptionFilter
+        var filter = new PrescriptionFilter
         {
             PatientId = patient.Id,
             DateFrom = DateTime.Today.AddDays(-30),
@@ -85,7 +87,7 @@ internal class AddictDetectionService : IAddictDetectionService
             throw new ArgumentException("Invalid patient data for building a police report.");
         }
 
-        var filter = new Integration.PrescriptionFilter
+        var filter = new PrescriptionFilter
         {
             PatientId = patient.Id,
             DateFrom = DateTime.Today.AddDays(-30),

@@ -1,6 +1,6 @@
-using HospitalManagement.Entity;
-using HospitalManagement.Entity.Enums;
-using HospitalManagement.Integration;
+using Common.Data.Entity;
+using Common.Data.Entity.Enums;
+using Common.Data.Integration;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

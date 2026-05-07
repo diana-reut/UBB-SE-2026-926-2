@@ -2,12 +2,13 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using HospitalManagement.Infrastructure;
+using Common.Data.Entity;
 
 namespace HospitalManagement.View;
 
 internal sealed partial class AddPatientDialog : ContentDialog
 {
-    public Entity.Patient NewPatient { get; private set; } = null!;
+    public Patient NewPatient { get; private set; } = null!;
 
     private readonly ViewModel.AddPatientDialogViewModel _viewModel;
 
@@ -45,7 +46,7 @@ internal sealed partial class AddPatientDialog : ContentDialog
             return;
         }
 
-        (bool success, string? errorMessage, Entity.Patient? patient) = await _viewModel.SubmitPatientAsync(
+        (bool success, string? errorMessage, Patient? patient) = await _viewModel.SubmitPatientAsync(
             FirstNameEntry.Text,
             LastNameEntry.Text,
             sex,

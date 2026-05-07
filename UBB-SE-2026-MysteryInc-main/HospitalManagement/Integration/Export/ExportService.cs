@@ -1,6 +1,7 @@
 using System.Collections.Generic;
-using HospitalManagement.Entity;
-using HospitalManagement.Repository;
+using Common.Data.Entity;
+using Common.Data.Repository;
+using Common.Data.Entity;
 
 namespace HospitalManagement.Integration.Export;
 

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Common.Data.Models;
 using ERManagementSystem.Models;
 
 namespace ERManagementSystem.Repositories

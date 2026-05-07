@@ -2,8 +2,9 @@ using System.Collections.Generic;
 using System.Linq;
 using ERManagementSystem.Helpers;
 using ERManagementSystem.Models;
-using HospitalManagement.Data;
+using Common.Data.Data;
 using Microsoft.EntityFrameworkCore;
+using Common.Data.Models;
 
 namespace ERManagementSystem.Repositories
 {
