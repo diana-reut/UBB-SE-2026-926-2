@@ -1,3 +1,4 @@
+using Common.Data.Entity;
 using HospitalManagement.Entity;
 using System.Collections.Generic;
 using System.Threading.Tasks;

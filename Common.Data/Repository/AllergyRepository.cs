@@ -1,11 +1,8 @@
+using Common.Data.Entity;
 using HospitalManagement.Data;
-using HospitalManagement.Entity;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace HospitalManagement.Repository;
+namespace Common.Data.Repository;
 
 public class AllergyRepository : IAllergyRepository
 {

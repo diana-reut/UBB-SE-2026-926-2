@@ -18,6 +18,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Xaml;
 using ERManagementSystem.Helpers;
 using Microsoft.Extensions.Logging;
+using Common.Data.Repository;
 
 [assembly: InternalsVisibleTo("HospitalManagementTest")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
@@ -74,7 +75,7 @@ public partial class App : Application
 
         _ = services.AddTransient<IBloodCompatibilityService, BloodCompatibilityService>();
         _ = services.AddTransient<IPatientService, PatientService>();
-        _ = services.AddTransient<IAllergyService, AllergyService>();
+        _ = services.AddTransient<IAllergyRepository, AllergyRepository>();
         _ = services.AddTransient<ITransplantService, TransplantService>();
         _ = services.AddTransient<IExportService, ExportService>();
         _ = services.AddTransient<IImportService, ImportService>();

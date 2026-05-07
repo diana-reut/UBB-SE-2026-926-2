@@ -1,9 +1,9 @@
-using HospitalManagement.Entity;
-using HospitalManagement.Repository;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Common.API.Services;
+using Common.Data;
+using Common.Data.Entity;
+using Common.Data.Repository;
 
-namespace HospitalManagement.Service;
+namespace Common.API.Service;
 
 internal class AllergyService : IAllergyService
 {
@@ -12,11 +12,6 @@ internal class AllergyService : IAllergyService
     public AllergyService(IAllergyRepository allergyRepository)
     {
         _repository = allergyRepository;
-    }
-
-    public IEnumerable<Allergy> GetAllergies()
-    {
-        return _repository.GetAllergies();
     }
 
     public Task<IEnumerable<Allergy>> GetAllergiesAsync()
