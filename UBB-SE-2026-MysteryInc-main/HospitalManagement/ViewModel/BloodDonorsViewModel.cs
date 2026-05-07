@@ -87,3 +87,4 @@ internal class BloodDonorsViewModel : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }
+

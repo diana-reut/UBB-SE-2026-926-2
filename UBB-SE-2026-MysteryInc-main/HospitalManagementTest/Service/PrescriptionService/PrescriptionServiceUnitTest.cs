@@ -86,7 +86,7 @@ public class PrescriptionServiceUnitTest
             .Setup(r => r.GetTopN(20, 1))
             .Returns(expected);
 
-        var result = _prescriptionService.ApplyFilter(null);
+        var result = _prescriptionService.ApplyFilterAsync(null);
         Assert.AreEqual(expected, result);
         _repositoryMock.Verify(r => r.GetTopN(20, 1), Times.Once);
     }
@@ -105,7 +105,7 @@ public class PrescriptionServiceUnitTest
             .Setup(r => r.GetFiltered(filter))
             .Returns(expected);
 
-        var result = _prescriptionService.ApplyFilter(filter);
+        var result = _prescriptionService.ApplyFilterAsync(filter);
         Assert.AreEqual(expected, result);
     }
 
@@ -120,7 +120,7 @@ public class PrescriptionServiceUnitTest
 
         try
         {
-            _prescriptionService.ApplyFilter(filter);
+            _prescriptionService.ApplyFilterAsync(filter);
             Assert.Fail("Expected exception was not thrown.");
         }
         catch (MyNotImplementedException ex)

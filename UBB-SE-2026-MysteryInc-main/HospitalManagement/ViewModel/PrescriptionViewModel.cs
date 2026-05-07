@@ -107,20 +107,11 @@ internal partial class PrescriptionViewModel : ObservableObject
         foreach (var patient in await _addictDetectionService.GetAddictCandidatesAsync())
             AddictCandidates.Add(patient);
     }
-    private void LoadPrescriptions()
-    {
-        LoadPrescriptionsAsync().GetAwaiter().GetResult();
-    }
 
     private async Task LoadPrescriptionsAsync()
     {
         CurrentPage = 1;
         await UpdatePageDataAsync();
-    }
-
-    private void UpdatePageData()
-    {
-        UpdatePageDataAsync().GetAwaiter().GetResult();
     }
 
     private async Task UpdatePageDataAsync()

@@ -29,11 +29,6 @@ internal sealed partial class PatientProfileView : Page
         Loaded += Page_Loaded;
     }
 
-    public void Initialize(int patientId)
-    {
-        _ = InitializeAsync(patientId);
-    }
-
     public async Task InitializeAsync(int patientId)
     {
         await _viewModel.LoadFullPatientProfileAsync(patientId);
@@ -49,9 +44,9 @@ internal sealed partial class PatientProfileView : Page
         await _viewModel.ViewPrescriptionAsync();
     }
 
-    private void ExportPDF_ClickAsync(object sender, RoutedEventArgs e)
+    private async void ExportPDF_ClickAsync(object sender, RoutedEventArgs e)
     {
-        _viewModel.ExportSelectedRecord();
+        await _viewModel.ExportSelectedRecordAsync();
     }
 
     private async void ImportER_ClickAsync(object sender, RoutedEventArgs e)
