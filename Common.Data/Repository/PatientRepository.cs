@@ -29,7 +29,17 @@ public class PatientRepository : IPatientRepository
     public async Task UpdateAsync(Patient p)
     {
         ArgumentNullException.ThrowIfNull(p);
-        _ = _context.Patients.Update(p);
+
+        Patient? trackedPatient = _context.Patients.Local.FirstOrDefault(existing => existing.Id == p.Id);
+        if (trackedPatient is not null)
+        {
+            _context.Entry(trackedPatient).CurrentValues.SetValues(p);
+        }
+        else
+        {
+            _ = _context.Patients.Update(p);
+        }
+
         _ = await _context.SaveChangesAsync();
     }
 

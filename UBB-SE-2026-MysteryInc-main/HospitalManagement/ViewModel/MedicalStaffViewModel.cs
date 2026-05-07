@@ -160,7 +160,7 @@ internal class MedicalStaffViewModel : INotifyPropertyChanged
         }
     }
 
-    private void RequestTransplant()
+    private async Task RequestTransplantAsync()
     {
         if (SelectedPatient is not null)
         {

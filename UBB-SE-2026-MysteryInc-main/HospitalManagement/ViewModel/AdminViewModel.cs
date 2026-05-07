@@ -369,12 +369,8 @@ internal partial class AdminViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
-    public void SearchPatient()
-    {
-        SearchPatientAsync().GetAwaiter().GetResult();
-    }
 
+    [RelayCommand]
     public async Task SearchPatientAsync()
     {
         var filter = new PatientFilter();
