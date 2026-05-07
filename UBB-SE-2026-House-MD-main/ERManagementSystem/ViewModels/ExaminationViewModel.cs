@@ -5,10 +5,12 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Controls;
-using ERManagementSystem.Helpers;
-using ERManagementSystem.Models;
 using ERManagementSystem.Services;
 using ERManagementSystem.Repositories;
+using Common.Data.Entity;
+using Common.Data.Entity.Enums;
+using Common.Data.Entity.DTOs;
+using Common.Data.Models;
 
 namespace ERManagementSystem.ViewModels
 {

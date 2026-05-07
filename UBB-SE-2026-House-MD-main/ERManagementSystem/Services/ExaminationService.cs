@@ -8,6 +8,7 @@ using System.Data;
 using ERManagementSystem.Models;
 using ERManagementSystem.Repositories;
 using ERManagementSystem.Helpers;
+using Common.Data.Models;
 
 namespace ERManagementSystem.Services
 {

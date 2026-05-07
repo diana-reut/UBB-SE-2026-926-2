@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ERManagementSystem.Models;
 using ERManagementSystem.Repositories;
 using ERManagementSystem.Helpers;
+using Common.Data.Models;
 
 namespace ERManagementSystem.Services
 {

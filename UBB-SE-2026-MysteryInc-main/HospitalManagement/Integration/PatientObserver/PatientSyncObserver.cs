@@ -1,5 +1,5 @@
-﻿using HospitalManagement.Entity.DTOs;
-using HospitalManagement.Entity;
+﻿using Common.Data.Entity.DTOs;
+using Common.Data.Entity;
 using HospitalManagement.Service;
 using System;
 

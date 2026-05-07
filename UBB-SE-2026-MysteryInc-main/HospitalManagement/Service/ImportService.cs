@@ -1,9 +1,9 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using HospitalManagement.Entity;
-using HospitalManagement.Entity.DTOs;
-using HospitalManagement.Repository;
+using Common.Data.Entity;
+using Common.Data.Entity.DTOs;
+using Common.Data.Repository;
 using HospitalManagement.Integration.External;
 
 namespace HospitalManagement.Service;

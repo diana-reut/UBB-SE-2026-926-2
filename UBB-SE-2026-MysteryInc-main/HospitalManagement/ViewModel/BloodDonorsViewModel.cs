@@ -1,4 +1,4 @@
-﻿using HospitalManagement.Entity;
+﻿using Common.Data.Entity;
 using HospitalManagement.Service;
 using System;
 using System.Collections.Generic;

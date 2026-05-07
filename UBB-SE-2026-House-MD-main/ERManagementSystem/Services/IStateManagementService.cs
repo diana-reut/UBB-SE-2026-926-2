@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using ERManagementSystem.Models;
+using Common.Data.Models;
 
 namespace ERManagementSystem.Services
 {

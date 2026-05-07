@@ -1,14 +1,15 @@
-using HospitalManagement.Data;
-using HospitalManagement.Entity;
-using HospitalManagement.Entity.Enums;
-using HospitalManagement.Integration;
+using Common.Data.Data;
+using Common.Data.Entity;
+using Common.Data.Entity.Enums;
+using Common.Data.Entity;
+using Common.Data.Integration;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace HospitalManagement.Repository;
+namespace Common.Data.Repository;
 
 public class PatientRepository : IPatientRepository
 {

@@ -1,5 +1,5 @@
-﻿using HospitalManagement.Entity;
-using HospitalManagement.Entity.Enums;
+﻿using Common.Data.Entity;
+using Common.Data.Entity.Enums;
 using HospitalManagement.Service;
 using HospitalManagement.Validators;
 using System;

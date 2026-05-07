@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace ERManagementSystem.Models
+namespace Common.Data.Models
 {
     public class Examination
     {

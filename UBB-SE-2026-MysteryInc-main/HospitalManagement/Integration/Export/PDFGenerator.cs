@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using HospitalManagement.Entity;
+using Common.Data.Entity;
+using Common.Data.Entity;
 using iText.Kernel.Pdf;
 using iText.Layout;
 using Paragraph = iText.Layout.Element.Paragraph;

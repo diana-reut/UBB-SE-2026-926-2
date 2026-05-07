@@ -1,3 +1,6 @@
+using Common.Data.Entity;
+using Common.Data.Models;
+
 namespace ERManagementSystem.Models
 {
     public class RoomVisitDetails

@@ -1,5 +1,5 @@
 using Common.Data.Entity;
-using HospitalManagement.Data;
+using Common.Data.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Common.Data.Repository;

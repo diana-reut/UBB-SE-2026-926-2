@@ -1,12 +1,9 @@
-using HospitalManagement.Data;
-using HospitalManagement.Entity;
-using HospitalManagement.Entity.Enums;
+using Common.Data.Data;
+using Common.Data.Entity;
+using Common.Data.Entity.Enums;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace HospitalManagement.Repository;
+namespace Common.Data.Repository;
 
 public class TransplantRepository : ITransplantRepository
 {

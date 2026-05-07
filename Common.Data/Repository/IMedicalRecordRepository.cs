@@ -1,9 +1,10 @@
-using HospitalManagement.Entity;
+using Common.Data.Entity;
+using Common.Data.Entity;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace HospitalManagement.Repository;
+namespace Common.Data.Repository;
 
 public interface IMedicalRecordRepository
 {

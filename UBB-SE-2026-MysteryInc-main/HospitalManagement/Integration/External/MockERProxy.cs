@@ -1,6 +1,7 @@
 ﻿using System;
-using HospitalManagement.Entity.DTOs;
-using HospitalManagement.Entity.Enums;
+using Common.Data.Entity.DTOs;
+using Common.Data.Entity.DTOs;
+using Common.Data.Entity.Enums;
 
 namespace HospitalManagement.Integration.External;
 
