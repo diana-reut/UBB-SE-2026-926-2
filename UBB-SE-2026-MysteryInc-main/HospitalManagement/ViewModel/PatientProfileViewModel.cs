@@ -101,8 +101,8 @@ internal partial class PatientProfileViewModel : ObservableObject
                 PatientId = patient.Id,
             };
             patient.MedicalHistory.MedicalRecords ??= [];
-            
-            for(int i = 0; i < patient.MedicalHistory.MedicalRecords.Count; i++)
+
+            for (int i = 0; i < patient.MedicalHistory.MedicalRecords.Count; i++)
             {
                 MedicalRecord record = patient.MedicalHistory.MedicalRecords[i];
                 record.Prescription = await _patientService.GetPrescriptionByRecordIdAsync(record.Id);
