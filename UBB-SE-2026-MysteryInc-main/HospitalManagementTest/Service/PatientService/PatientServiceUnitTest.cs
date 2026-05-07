@@ -631,7 +631,7 @@ public class PatientServiceUnitTests
     {
         _patientRepoMock.Setup(r => r.Exists("1234567890123")).Returns(true);
 
-        Assert.IsTrue(_sut.Exists("1234567890123"));
+        Assert.IsTrue(_sut.ExistsAsync("1234567890123"));
     }
 
     [TestMethod]
@@ -639,7 +639,7 @@ public class PatientServiceUnitTests
     {
         _patientRepoMock.Setup(r => r.Exists("1234567890123")).Returns(false);
 
-        Assert.IsFalse(_sut.Exists("1234567890123"));
+        Assert.IsFalse(_sut.ExistsAsync("1234567890123"));
     }
 
     [TestMethod]

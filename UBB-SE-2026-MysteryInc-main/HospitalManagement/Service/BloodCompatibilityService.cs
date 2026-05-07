@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using HospitalManagement.Entity;
 using HospitalManagement.Entity.Enums;
 using HospitalManagement.Repository;
@@ -19,14 +20,14 @@ internal class BloodCompatibilityService : IBloodCompatibilityService
         _historyRepo = historyRepo;
     }
 
-    public List<Patient> GetTopCompatibleDonors(int recipientId)
+    public async Task<List<Patient>> GetTopCompatibleDonorsAsync(int recipientId)
     {
-        Patient? recipient = _patientRepo.GetById(recipientId);
+        Patient? recipient = await _patientRepo.GetByIdAsync(recipientId);
 
         // 2. Actually fetch the Recipient's Medical History from the Database
         if (recipient is not null)
         {
-            recipient.MedicalHistory = _historyRepo.GetByPatientId(recipientId);
+            recipient.MedicalHistory = await _historyRepo.GetByPatientIdAsync(recipientId);
         }
 
         if (recipient is null
@@ -37,7 +38,7 @@ internal class BloodCompatibilityService : IBloodCompatibilityService
             return [];
         }
 
-        List<Patient> allPatients = _patientRepo.GetAll(include_archived: false);
+        List<Patient> allPatients = await _patientRepo.GetAllAsync(include_archived: false);
         var rankedDonors = new List<(Patient Donor, int Score)>();
 
         foreach (Patient donor in allPatients)
@@ -53,7 +54,7 @@ internal class BloodCompatibilityService : IBloodCompatibilityService
             }
 
             // 3. Actually fetch the Donor's Medical History from the Database
-            donor.MedicalHistory = _historyRepo.GetByPatientId(donor.Id);
+            donor.MedicalHistory = await _historyRepo.GetByPatientIdAsync(donor.Id);
 
             // Now their strict rules will actually work!
             if (donor.MedicalHistory is null)

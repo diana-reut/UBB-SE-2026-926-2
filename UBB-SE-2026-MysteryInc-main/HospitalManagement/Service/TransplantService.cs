@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using HospitalManagement.Entity;
 using HospitalManagement.Entity.Enums;
 using HospitalManagement.Repository;
@@ -34,9 +35,9 @@ internal class TransplantService : ITransplantService
         _historyRepo = historyRepo;
     }
 
-    public void CreateWaitlistRequest(int receiverId, string organType)
+    public async Task CreateWaitlistRequestAsync(int receiverId, string organType)
     {
-        _ = _patientRepo.GetById(receiverId) ?? throw new ArgumentException("Receiver not found.");
+        _ = await _patientRepo.GetByIdAsync(receiverId) ?? throw new ArgumentException("Receiver not found.");
 
         var request = new Transplant
         {
@@ -51,28 +52,28 @@ internal class TransplantService : ITransplantService
         _transplantRepo.Add(request);
     }
 
-    public List<Transplant> GetTopMatchesForDonor(int donorId, string organType)
+    public async Task<List<Transplant>> GetTopMatchesForDonorAsync(int donorId, string organType)
     {
-        Patient? donor = _patientRepo.GetById(donorId);
+        Patient? donor = await _patientRepo.GetByIdAsync(donorId);
         if (donor?.IsDeceased != true || !donor.IsDonor)
         {
             throw new InvalidOperationException("Donor must be deceased and registered.");
         }
 
-        donor.MedicalHistory = _historyRepo.GetByPatientId(donor.Id);
+        donor.MedicalHistory = await _historyRepo.GetByPatientIdAsync(donor.Id);
 
-        List<Transplant> waitlist = _transplantRepo.GetWaitingByOrgan(organType);
+        List<Transplant> waitlist = await _transplantRepo.GetWaitingByOrganAsync(organType);
         var scoredMatches = new List<Transplant>();
 
         foreach (Transplant request in waitlist)
         {
-            Patient? receiver = _patientRepo.GetById(request.ReceiverId);
+            Patient? receiver = await _patientRepo.GetByIdAsync(request.ReceiverId);
             if (receiver is null)
             {
                 continue;
             }
 
-            receiver.MedicalHistory = _historyRepo.GetByPatientId(receiver.Id);
+            receiver.MedicalHistory = await _historyRepo.GetByPatientIdAsync(receiver.Id);
 
             if (receiver.MedicalHistory?.BloodType is null || receiver.MedicalHistory.Rh is null)
             {

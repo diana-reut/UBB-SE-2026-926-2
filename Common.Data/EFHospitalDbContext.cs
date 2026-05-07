@@ -16,11 +16,6 @@ public class EFHospitalDbContext : DbContext
         : base(options)
     {
     }
-
-    public EFHospitalDbContext()
-    {
-    }
-
     public DbSet<Prescription> Prescriptions => Set<Prescription>();
     public DbSet<PrescriptionItem> PrescriptionItems => Set<PrescriptionItem>();
     public DbSet<Transplant> Transplants => Set<Transplant>();

@@ -1,5 +1,6 @@
 ﻿using HospitalManagement.Entity;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace HospitalManagement.Service;
 
@@ -15,4 +16,5 @@ internal interface ITransplantService
 
     public List<TransplantMatch> GetTopMatchesAsDisplayModels(int donorID, string organType);
     public bool IsUrgent(int patientId);
+    Task<List<Transplant>> GetTopMatchesForDonorAsync(int donorId, string organType);
 }

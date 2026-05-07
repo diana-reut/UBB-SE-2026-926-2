@@ -19,8 +19,6 @@ public class PatientRepository : IPatientRepository
         _context = context;
     }
 
-    public void Add(Patient p) => AddAsync(p).GetAwaiter().GetResult();
-
     public async Task AddAsync(Patient p)
     {
         ArgumentNullException.ThrowIfNull(p);
@@ -28,16 +26,12 @@ public class PatientRepository : IPatientRepository
         _ = await _context.SaveChangesAsync();
     }
 
-    public void Update(Patient p) => UpdateAsync(p).GetAwaiter().GetResult();
-
     public async Task UpdateAsync(Patient p)
     {
         ArgumentNullException.ThrowIfNull(p);
         _ = _context.Patients.Update(p);
         _ = await _context.SaveChangesAsync();
     }
-
-    public void Delete(int id) => DeleteAsync(id).GetAwaiter().GetResult();
 
     public async Task DeleteAsync(int id)
     {
@@ -49,12 +43,8 @@ public class PatientRepository : IPatientRepository
         }
     }
 
-    public bool Exists(string cnp) => ExistsAsync(cnp).GetAwaiter().GetResult();
-
     public Task<bool> ExistsAsync(string cnp) =>
         _context.Patients.AnyAsync(p => p.Cnp == cnp);
-
-    public List<Patient> GetAll(bool include_archived) => GetAllAsync(include_archived).GetAwaiter().GetResult();
 
     public Task<List<Patient>> GetAllAsync(bool include_archived)
     {
@@ -69,15 +59,12 @@ public class PatientRepository : IPatientRepository
         return query.AsNoTracking().ToListAsync();
     }
 
-    public List<Patient> GetArchived() => GetArchivedAsync().GetAwaiter().GetResult();
-
     public Task<List<Patient>> GetArchivedAsync() =>
         _context.Patients
             .AsNoTracking()
             .Where(p => p.IsArchived)
             .ToListAsync();
 
-    public Patient? GetById(int id) => GetByIdAsync(id).GetAwaiter().GetResult();
 
     public Task<Patient?> GetByIdAsync(int id) =>
         _context.Patients
@@ -86,8 +73,6 @@ public class PatientRepository : IPatientRepository
             .ThenInclude(pa => pa.Allergy)
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == id);
-
-    public List<Patient> Search(PatientFilter patientFilter) => SearchAsync(patientFilter).GetAwaiter().GetResult();
 
     public Task<List<Patient>> SearchAsync(PatientFilter patientFilter)
     {
@@ -137,8 +122,6 @@ public class PatientRepository : IPatientRepository
         return query.AsNoTracking().ToListAsync();
     }
 
-    public void MarkAsDeceased(int id, DateTime dod) => MarkAsDeceasedAsync(id, dod).GetAwaiter().GetResult();
-
     public async Task MarkAsDeceasedAsync(int id, DateTime dod)
     {
         Patient? patient = await _context.Patients.FindAsync(id);
@@ -149,9 +132,6 @@ public class PatientRepository : IPatientRepository
             _ = await _context.SaveChangesAsync();
         }
     }
-
-    public List<Patient> GetCompatibleDonors(BloodType bloodType, Rh rh, Sex sex, DateTime dob, int minAge, int maxAge) =>
-        GetCompatibleDonorsAsync(bloodType, rh, sex, dob, minAge, maxAge).GetAwaiter().GetResult();
 
     public async Task<List<Patient>> GetCompatibleDonorsAsync(BloodType bloodType, Rh rh, Sex sex, DateTime dob, int minAge, int maxAge)
     {
