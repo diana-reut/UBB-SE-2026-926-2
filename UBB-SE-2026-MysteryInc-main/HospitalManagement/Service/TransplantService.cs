@@ -40,7 +40,7 @@ internal class TransplantService : ITransplantService
         _ = await _patientRepo.GetByIdAsync(receiverId) ?? throw new ArgumentException("Receiver not found.");
 
         var request = new Transplant
-        {
+        { 
             ReceiverId = receiverId,
             DonorId = null,
             OrganType = organType,
