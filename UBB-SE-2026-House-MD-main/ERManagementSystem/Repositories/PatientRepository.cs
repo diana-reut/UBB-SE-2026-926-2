@@ -1,160 +1,86 @@
-﻿using System;
-using System.Data;
-using Microsoft.Data.SqlClient;
+using System.Linq;
 using ERManagementSystem.Helpers;
 using ERManagementSystem.Models;
+using HospitalManagement.Data;
+using Microsoft.EntityFrameworkCore;
+using PatientEntity = HospitalManagement.Entity.Patient;
 
 namespace ERManagementSystem.Repositories
 {
     public class PatientRepository : IPatientRepository
     {
-        private readonly SqlHelper sqlHelper;
+        private readonly EFHospitalDbContext context;
 
-        public PatientRepository(SqlHelper sqlHelper)
+        public PatientRepository(EFHospitalDbContext context)
         {
-            this.sqlHelper = sqlHelper;
+            this.context = context;
         }
 
         public void Add(Patient patient)
         {
-            const string query = @"
-                INSERT INTO dbo.Patient
-                    (Patient_ID, First_Name, Last_Name, Date_of_Birth,
-                     Gender, Phone, Emergency_Contact, Transferred)
-                VALUES
-                    (@Patient_ID, @First_Name, @Last_Name, @Date_of_Birth,
-                     @Gender, @Phone, @Emergency_Contact, @Transferred)";
-
-            var parameters = new[]
+            PatientEntity entity = new ()
             {
-                new SqlParameter("@Patient_ID",        patient.Patient_ID),
-                new SqlParameter("@First_Name",        patient.First_Name),
-                new SqlParameter("@Last_Name",         patient.Last_Name),
-                new SqlParameter("@Date_of_Birth",     patient.Date_of_Birth),
-                new SqlParameter("@Gender",            patient.Gender),
-                new SqlParameter("@Phone",             patient.Phone),
-                new SqlParameter("@Emergency_Contact", patient.Emergency_Contact),
-                new SqlParameter("@Transferred",       patient.Transferred)
+                FirstName = patient.First_Name,
+                LastName = patient.Last_Name,
+                Cnp = patient.Patient_ID,
+                Dob = patient.Date_of_Birth,
+                Sex = patient.Gender == "Female" ? HospitalManagement.Entity.Enums.Sex.F : HospitalManagement.Entity.Enums.Sex.M,
+                PhoneNo = patient.Phone,
+                EmergencyContact = patient.Emergency_Contact,
+                Transferred = patient.Transferred,
+                IsArchived = false,
+                IsDonor = false,
             };
 
-            try
-            {
-                sqlHelper.ExecuteNonQuery(query, parameters);
-                Logger.Info($"Patient {patient.Patient_ID} ({patient.First_Name} {patient.Last_Name}) added to DB.");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"DB error in PatientRepository.Add for Patient {patient.Patient_ID}.", ex);
-                throw;
-            }
+            context.Patients.Add(entity);
+            context.SaveChanges();
+            Logger.Info($"Patient {patient.Patient_ID} added through EF Core.");
         }
 
         public Patient? GetById(string id)
         {
-            const string query = @"
-                SELECT Patient_ID, First_Name, Last_Name, Date_of_Birth,
-                       Gender, Phone, Emergency_Contact, Transferred
-                FROM   dbo.Patient
-                WHERE  Patient_ID = @Patient_ID";
+            PatientEntity? entity = context.Patients
+                .AsNoTracking()
+                .FirstOrDefault(p => p.Cnp == id);
 
-            var parameters = new[]
-            {
-                new SqlParameter("@Patient_ID", id)
-            };
-
-            try
-            {
-                using var reader = sqlHelper.ExecuteReader(query, parameters);
-                if (reader.Read())
-                {
-                    var patient = MapReaderToPatient(reader);
-                    Logger.Info($"Patient {id} retrieved from DB.");
-                    return patient;
-                }
-
-                Logger.Warning($"GetById: Patient {id} not found in DB.");
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"DB error in PatientRepository.GetById for Patient {id}.", ex);
-                throw;
-            }
+            return entity is null ? null : MapToModel(entity);
         }
 
         public void Update(Patient patient)
         {
-            const string query = @"
-                UPDATE dbo.Patient
-                SET    First_Name        = @First_Name,
-                       Last_Name         = @Last_Name,
-                       Date_of_Birth     = @Date_of_Birth,
-                       Gender            = @Gender,
-                       Phone             = @Phone,
-                       Emergency_Contact = @Emergency_Contact,
-                       Transferred       = @Transferred
-                WHERE  Patient_ID = @Patient_ID";
-
-            var parameters = new[]
-            {
-                new SqlParameter("@Patient_ID",        patient.Patient_ID),
-                new SqlParameter("@First_Name",        patient.First_Name),
-                new SqlParameter("@Last_Name",         patient.Last_Name),
-                new SqlParameter("@Date_of_Birth",     patient.Date_of_Birth),
-                new SqlParameter("@Gender",            patient.Gender),
-                new SqlParameter("@Phone",             patient.Phone),
-                new SqlParameter("@Emergency_Contact", patient.Emergency_Contact),
-                new SqlParameter("@Transferred",       patient.Transferred)
-            };
-
-            try
-            {
-                sqlHelper.ExecuteNonQuery(query, parameters);
-                Logger.Info($"Patient {patient.Patient_ID} updated in DB.");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"DB error in PatientRepository.Update for Patient {patient.Patient_ID}.", ex);
-                throw;
-            }
+            PatientEntity entity = context.Patients.First(p => p.Cnp == patient.Patient_ID);
+            entity.FirstName = patient.First_Name;
+            entity.LastName = patient.Last_Name;
+            entity.Dob = patient.Date_of_Birth;
+            entity.Sex = patient.Gender == "Female" ? HospitalManagement.Entity.Enums.Sex.F : HospitalManagement.Entity.Enums.Sex.M;
+            entity.PhoneNo = patient.Phone;
+            entity.EmergencyContact = patient.Emergency_Contact;
+            entity.Transferred = patient.Transferred;
+            context.SaveChanges();
+            Logger.Info($"Patient {patient.Patient_ID} updated through EF Core.");
         }
 
         public void Delete(Patient patient)
         {
-            const string query = @"
-                DELETE FROM dbo.Patient
-                WHERE Patient_ID = @Patient_ID";
-
-            var parameters = new[]
+            PatientEntity? entity = context.Patients.FirstOrDefault(p => p.Cnp == patient.Patient_ID);
+            if (entity is not null)
             {
-                new SqlParameter("@Patient_ID", patient.Patient_ID)
-            };
-
-            try
-            {
-                sqlHelper.ExecuteNonQuery(query, parameters);
-                Logger.Info($"Patient {patient.Patient_ID} deleted from DB.");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"DB error in PatientRepository.Delete for Patient {patient.Patient_ID}.", ex);
-                throw;
+                context.Patients.Remove(entity);
+                context.SaveChanges();
             }
         }
 
-        private Patient MapReaderToPatient(SqlDataReader reader)
-        {
-            return new Patient
+        private static Patient MapToModel(PatientEntity entity) =>
+            new ()
             {
-                Patient_ID = reader["Patient_ID"] as string ?? string.Empty,
-                First_Name = reader["First_Name"] as string ?? string.Empty,
-                Last_Name = reader["Last_Name"] as string ?? string.Empty,
-                Date_of_Birth = Convert.ToDateTime(reader["Date_of_Birth"]),
-                Gender = reader["Gender"] as string ?? string.Empty,
-                Phone = reader["Phone"] as string ?? string.Empty,
-                Emergency_Contact = reader["Emergency_Contact"] as string ?? string.Empty,
-                Transferred = Convert.ToBoolean(reader["Transferred"])
+                Patient_ID = entity.Cnp,
+                First_Name = entity.FirstName,
+                Last_Name = entity.LastName,
+                Date_of_Birth = entity.Dob,
+                Gender = entity.Sex == HospitalManagement.Entity.Enums.Sex.F ? "Female" : "Male",
+                Phone = entity.PhoneNo,
+                Emergency_Contact = entity.EmergencyContact,
+                Transferred = entity.Transferred,
             };
-        }
     }
 }

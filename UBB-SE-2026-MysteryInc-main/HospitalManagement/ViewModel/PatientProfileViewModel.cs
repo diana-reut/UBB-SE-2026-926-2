@@ -16,8 +16,6 @@ internal partial class PatientProfileViewModel : ObservableObject
     private readonly IPatientService _patientService;
     private readonly IImportService _importService;
     private readonly IExportService _exportService;
-    private readonly PrescriptionView _prescriptionView;
-
     private readonly Func<PrescriptionView> _prescriptionViewFactory;
 
     public Action<string, string>? ShowAlertAction { get; set; }
@@ -80,26 +78,24 @@ internal partial class PatientProfileViewModel : ObservableObject
         }
     }
 
-    public PatientProfileViewModel(IPatientService patientService, IExportService exportService, IImportService importService, PrescriptionView prescriptionView, Func<PrescriptionView> prescriptionViewFactory)
+    public PatientProfileViewModel(IPatientService patientService, IExportService exportService, IImportService importService, Func<PrescriptionView> prescriptionViewFactory)
     {
         _patientService = patientService;
         _exportService = exportService;
         _importService = importService;
-        _prescriptionView = prescriptionView;
         _prescriptionViewFactory = prescriptionViewFactory;
-
-
-        CurrentPatient = new Patient
-        {
-            MedicalHistory = new MedicalHistory { MedicalRecords = [], },
-        };
     }
 
     public void LoadFullPatientProfile(int id)
     {
+        LoadFullPatientProfileAsync(id).GetAwaiter().GetResult();
+    }
+
+    public async Task LoadFullPatientProfileAsync(int id)
+    {
         try
         {
-            Patient? p = _patientService.GetPatientDetails(id);
+            Patient? p = await _patientService.GetPatientDetailsAsync(id);
             if (p is null)
             {
                 return;
@@ -117,7 +113,12 @@ internal partial class PatientProfileViewModel : ObservableObject
 
     public void CheckHighRiskStatus()
     {
-        if (CurrentPatient is not null && _patientService.IsHighRiskPatient(CurrentPatient.Id))
+        CheckHighRiskStatusAsync().GetAwaiter().GetResult();
+    }
+
+    public async Task CheckHighRiskStatusAsync()
+    {
+        if (CurrentPatient is not null && await _patientService.IsHighRiskPatientAsync(CurrentPatient.Id))
             ShowAlertAction?.Invoke("High Risk Patient Alert", "Warning: This patient is flagged as High Risk.");
     }
 
@@ -144,7 +145,7 @@ internal partial class PatientProfileViewModel : ObservableObject
         if (SelectedRecord is null)
             return;
 
-        Prescription? prescription = _patientService.GetPrescriptionByRecordId(SelectedRecord.Id);
+        Prescription? prescription = await _patientService.GetPrescriptionByRecordIdAsync(SelectedRecord.Id);
 
         if (prescription is null)
         {
@@ -170,6 +171,11 @@ internal partial class PatientProfileViewModel : ObservableObject
 
     public void ImportRecords(bool isER)
     {
+        ImportRecordsAsync(isER).GetAwaiter().GetResult();
+    }
+
+    public async Task ImportRecordsAsync(bool isER)
+    {
         if (CurrentPatient is null)
         {
             return;
@@ -179,14 +185,14 @@ internal partial class PatientProfileViewModel : ObservableObject
         {
             if (isER)
             {
-                _importService.ImportFromER(CurrentPatient.Id, 1);
+                await _importService.ImportFromERAsync(CurrentPatient.Id, 1);
             }
             else
             {
-                _importService.ImportFromAppointment(CurrentPatient.Id, 1);
+                await _importService.ImportFromAppointmentAsync(CurrentPatient.Id, 1);
             }
 
-            LoadFullPatientProfile(CurrentPatient.Id);
+            await LoadFullPatientProfileAsync(CurrentPatient.Id);
             ShowAlertAction?.Invoke("Import Successful", "Records imported correctly.");
         }
         catch (Exception ex)

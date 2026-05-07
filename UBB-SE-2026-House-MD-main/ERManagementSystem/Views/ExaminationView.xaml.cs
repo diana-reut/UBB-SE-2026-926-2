@@ -1,3 +1,4 @@
+using ERManagementSystem.Infrastructure;
 using ERManagementSystem.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -12,19 +13,15 @@ namespace ERManagementSystem.Views
 
         public ExaminationView()
         {
-            this.InitializeComponent();
-            this.Loaded += ExaminationView_Loaded;
+            InitializeComponent();
+            Loaded += ExaminationView_Loaded;
         }
 
-        /// <summary>
-        /// XamlRoot is only available after the page is in the visual tree.
-        /// Setting it here guarantees ContentDialogs can be shown.
-        /// </summary>
         private void ExaminationView_Loaded(object sender, RoutedEventArgs e)
         {
             if (ViewModel != null)
             {
-                ViewModel.XamlRoot = this.XamlRoot;
+                ViewModel.XamlRoot = XamlRoot;
             }
         }
 
@@ -39,14 +36,10 @@ namespace ERManagementSystem.Views
 
             if (ViewModel == null)
             {
-                ViewModel = App.Services.GetRequiredService<ExaminationViewModel>();
+                ViewModel = ServiceRegistry.Services.GetRequiredService<ExaminationViewModel>();
             }
 
-            // Re-evaluate all x:Bind bindings now that ViewModel is set.
-            // x:Bind defaults to OneTime mode and evaluates during InitializeComponent()
-            // when ViewModel is still null — this call fixes the command bindings.
             Bindings.Update();
-
             ViewModel.LoadData();
         }
     }

@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using Microsoft.Extensions.DependencyInjection;
+using HospitalManagement.Infrastructure;
 
 
 namespace HospitalManagement.View;
@@ -12,7 +13,7 @@ internal sealed partial class AddictView : UserControl
 
     public AddictView()
     {
-        ViewModel = ((App)Application.Current).Services.GetRequiredService<ViewModel.AddictViewModel>();
+        ViewModel = ServiceRegistry.Services.GetRequiredService<ViewModel.AddictViewModel>();
         InitializeComponent();
     }
 
@@ -20,7 +21,7 @@ internal sealed partial class AddictView : UserControl
     {
         if (sender is Button btn && btn.CommandParameter is int patientId)
         {
-            string reportText = ViewModel.GetPoliceReportMessage(patientId);
+            string reportText = await ViewModel.GetPoliceReportMessageAsync(patientId);
 
 
             var dialog = new PoliceAlertDialog(reportText)

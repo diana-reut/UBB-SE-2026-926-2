@@ -36,7 +36,7 @@ internal class PatientViewModel : INotifyPropertyChanged
             if (_selectedPatient is not null)
             {
                 MedicalHistory = _selectedPatient.MedicalHistory;
-                LoadMedicalRecords();
+                _ = LoadMedicalRecordsAsync();
             }
         }
     }
@@ -93,7 +93,7 @@ internal class PatientViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             if (_selectedMedicalRecord is not null)
             {
-                LoadBillingForRecord(_selectedMedicalRecord);
+                _ = LoadBillingForRecordAsync(_selectedMedicalRecord);
             }
         }
     }
@@ -192,9 +192,14 @@ internal class PatientViewModel : INotifyPropertyChanged
 
     public void LoadFullPatientProfile(int id)
     {
+        LoadFullPatientProfileAsync(id).GetAwaiter().GetResult();
+    }
+
+    public async Task LoadFullPatientProfileAsync(int id)
+    {
         try
         {
-            Patient p = _patientService.GetPatientDetails(id);
+            Patient p = await _patientService.GetPatientDetailsAsync(id);
             if (p is null)
             {
                 return;
@@ -238,6 +243,11 @@ internal class PatientViewModel : INotifyPropertyChanged
 
     private void LoadBillingForRecord(MedicalRecord record)
     {
+        LoadBillingForRecordAsync(record).GetAwaiter().GetResult();
+    }
+
+    private async Task LoadBillingForRecordAsync(MedicalRecord record)
+    {
         if (_billingService is null || SelectedPatient is null)
         {
             return;
@@ -245,7 +255,7 @@ internal class PatientViewModel : INotifyPropertyChanged
 
         try
         {
-            BasePrice = _billingService.ComputeBasePrice(SelectedPatient.Id, record.Id);
+            BasePrice = await _billingService.ComputeBasePriceAsync(SelectedPatient.Id, record.Id);
             FinalPrice = record.FinalPrice > 0 ? record.FinalPrice : BasePrice;
             DiscountApplied = record.DiscountApplied.HasValue;
         }
@@ -257,6 +267,11 @@ internal class PatientViewModel : INotifyPropertyChanged
 
     private void LoadMedicalRecords()
     {
+        LoadMedicalRecordsAsync().GetAwaiter().GetResult();
+    }
+
+    private async Task LoadMedicalRecordsAsync()
+    {
         if (SelectedPatient is null || MedicalHistory is null)
         {
             MedicalRecords?.Clear();
@@ -266,14 +281,14 @@ internal class PatientViewModel : INotifyPropertyChanged
 
         try
         {
-            List<MedicalRecord> records = _patientService.GetMedicalRecords(MedicalHistory.Id);
+            List<MedicalRecord> records = await _patientService.GetMedicalRecordsAsync(MedicalHistory.Id);
             MedicalRecords?.Clear();
             foreach (MedicalRecord record in records.OrderByDescending(r => r.ConsultationDate))
             {
                 MedicalRecords?.Add(record);
             }
 
-            List<string> allergies = _patientService.GetPatientAllergies(SelectedPatient.Id);
+            List<string> allergies = await _patientService.GetPatientAllergiesAsync(SelectedPatient.Id);
             Allergies?.Clear();
             foreach (string allergy in allergies)
             {
@@ -315,7 +330,7 @@ internal class PatientViewModel : INotifyPropertyChanged
 
         try
         {
-            Prescription? prescription = _patientService.GetPrescriptionByRecordId(SelectedMedicalRecord.Id);
+            Prescription? prescription = await _patientService.GetPrescriptionByRecordIdAsync(SelectedMedicalRecord.Id);
             if (prescription is null)
             {
                 System.Diagnostics.Debug.WriteLine($"No prescription found for record {SelectedMedicalRecord.Id}");

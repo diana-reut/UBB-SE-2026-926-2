@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ERManagementSystem.Infrastructure;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -12,7 +13,7 @@ namespace ERManagementSystem.Helpers
     {
         public static async Task ShowErrorAsync(string title, string message)
         {
-            if (App.MainAppWindow?.Content is not FrameworkElement rootElement)
+            if (ServiceRegistry.MainWindow?.Content is not FrameworkElement rootElement)
             {
                 return;
             }

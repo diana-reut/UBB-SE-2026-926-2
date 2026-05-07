@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ERManagementSystem.Infrastructure;
 using ERManagementSystem.Models;
 using ERManagementSystem.Services;
 using Microsoft.UI.Xaml.Controls;
@@ -225,7 +226,7 @@ namespace ERManagementSystem.ViewModels
         }
 
         private Microsoft.UI.Xaml.XamlRoot? GetXamlRoot()
-            => App.MainAppWindow?.Content?.XamlRoot;
+            => ServiceRegistry.MainWindow?.Content?.XamlRoot;
 
         [RelayCommand]
         private async Task RegisterPatientAndVisit()

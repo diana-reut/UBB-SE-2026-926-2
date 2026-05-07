@@ -6,6 +6,7 @@ using HospitalManagement.Entity.Enums;
 using HospitalManagement.Service;
 using System.Collections.ObjectModel;
 using HospitalManagement.View;
+using System.Threading.Tasks;
 
 namespace HospitalManagement.ViewModel;
 
@@ -27,7 +28,12 @@ internal class MedicalHistoryDialogViewModel
 
     public void LoadAllergies()
     {
-        AvailableAllergies = [.. _allergyService.GetAllergies()];
+        LoadAllergiesAsync().GetAwaiter().GetResult();
+    }
+
+    public async Task LoadAllergiesAsync()
+    {
+        AvailableAllergies = [.. await _allergyService.GetAllergiesAsync()];
     }
 
     public bool TryAddAllergy(Allergy? selectedAllergy, string? severity)

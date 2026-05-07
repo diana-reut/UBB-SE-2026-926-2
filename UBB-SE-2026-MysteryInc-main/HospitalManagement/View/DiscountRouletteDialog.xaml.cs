@@ -1,3 +1,4 @@
+using HospitalManagement.Infrastructure;
 using HospitalManagement.ViewModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -18,7 +19,7 @@ internal sealed partial class DiscountRouletteDialog : ContentDialog
 
     public DiscountRouletteDialog()
     {
-        ViewModel = (Application.Current as App)!.Services.GetRequiredService<DiscountRouletteViewModel>();
+        ViewModel = ServiceRegistry.Services.GetRequiredService<DiscountRouletteViewModel>();
         InitializeComponent();
         DataContext = ViewModel;
 

@@ -28,7 +28,7 @@ internal class PatientSyncObserver : IPatientObserver
         {
             // map DTO to patient and update
             Patient updated = MapDTOToPatient(newPatientData);
-            _patientService.UpdatePatient(updated);
+            // _patientService.UpdatePatient(updated);
         }
         else
         {

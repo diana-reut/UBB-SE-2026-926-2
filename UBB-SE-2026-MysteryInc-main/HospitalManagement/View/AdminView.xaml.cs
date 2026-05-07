@@ -1,3 +1,4 @@
+using HospitalManagement.Infrastructure;
 using HospitalManagement.View.DialogServiceAdmin;
 using HospitalManagement.ViewModel;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,13 +29,13 @@ internal sealed partial class AdminView : Window
         InitializeComponent();
         SetupWindow();
 
-        IDialogService dialogService = (Application.Current as App)!.Services.GetRequiredService<IDialogService>();
+        IDialogService dialogService = ServiceRegistry.Services.GetRequiredService<IDialogService>();
         dialogService.SetWindow(this);
 
-        _statisticsControl = (Application.Current as App)!.Services.GetRequiredService<StatisticsView>();
+        _statisticsControl = ServiceRegistry.Services.GetRequiredService<StatisticsView>();
         StatisticsContainer.Child = _statisticsControl;
 
-        _viewModel = (Application.Current as App)!.Services.GetRequiredService<AdminViewModel>();
+        _viewModel = ServiceRegistry.Services.GetRequiredService<AdminViewModel>();
 
         RootGrid.DataContext = _viewModel;
     }

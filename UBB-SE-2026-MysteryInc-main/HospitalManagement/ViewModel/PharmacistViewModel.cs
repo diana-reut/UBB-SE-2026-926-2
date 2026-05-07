@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using HospitalManagement.Service;
 using HospitalManagement.View;
+using HospitalManagement.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using System;
@@ -26,8 +27,8 @@ public partial class PharmacistViewModel : ObservableObject
 
     public PharmacistViewModel()
     {
-        _ghostService = (Application.Current as App)!.Services.GetRequiredService<IGhostService>();
-        _services = (Application.Current as App)!.Services;
+        _ghostService = ServiceRegistry.Services.GetRequiredService<IGhostService>();
+        _services = ServiceRegistry.Services;
 
         _ghostService.ExorcismTriggered += OnExorcismTriggered;
 
@@ -77,7 +78,7 @@ public partial class PharmacistViewModel : ObservableObject
 
     public void NavigateBackToHome()
     {
-        var mainWindow = new MainWindow();
+        Window mainWindow = ServiceRegistry.MainWindow;
         mainWindow.Activate();
         RequestClose?.Invoke();
     }

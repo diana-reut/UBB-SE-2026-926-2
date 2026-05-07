@@ -1,44 +1,44 @@
-﻿using HospitalManagement.Entity;
+using HospitalManagement.Entity;
 using HospitalManagement.Entity.Enums;
 using HospitalManagement.Integration;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace HospitalManagement.Service;
 
 internal interface IPatientService
 {
-    public void ArchiveAsDeceased(int id, DateTime deathDate);
-
-    public void ArchivePatient(int id);
-
-    public void CreateMedicalHistory(int patientId, MedicalHistory history);
-
-    public Patient CreatePatient(Patient data);
-
-    public void DearchivePatient(int id);
-
-    public void DeletePatient(int id);
-
-    public bool Exists(string cnp);
-
-    public MedicalHistory? GetMedicalHistory(int patientId);
-
-    public List<MedicalRecord> GetMedicalRecords(int historyId);
-
-    public List<string> GetPatientAllergies(int patientId);
-
-    public Patient GetPatientDetails(int id);
-
-    public Prescription? GetPrescriptionByRecordId(int recordId);
-
-    public bool IsHighRiskPatient(int patientId);
-
-    public List<Patient> SearchPatients(PatientFilter filter);
-
-    public void UpdatePatient(Patient data);
-
-    public bool ValidateCNP(string cnp, Sex sex, DateTime dob);
-
-    public Patient GetById(int patientId);
+    void ArchiveAsDeceased(int id, DateTime deathDate);
+    Task ArchiveAsDeceasedAsync(int id, DateTime deathDate);
+    void ArchivePatient(int id);
+    Task ArchivePatientAsync(Patient patient);
+    void CreateMedicalHistory(int patientId, MedicalHistory history);
+    Task CreateMedicalHistoryAsync(int patientId, MedicalHistory history);
+    Patient CreatePatient(Patient data);
+    Task<Patient> CreatePatientAsync(Patient data);
+    void DearchivePatient(int id);
+    Task DearchivePatientAsync(int id);
+    void DeletePatient(int id);
+    Task DeletePatientAsync(int id);
+    bool Exists(string cnp);
+    Task<bool> ExistsAsync(string cnp);
+    Patient? GetById(int patientId);
+    Task<Patient?> GetByIdAsync(int patientId);
+    MedicalHistory? GetMedicalHistory(int patientId);
+    Task<MedicalHistory?> GetMedicalHistoryAsync(int patientId);
+    List<MedicalRecord> GetMedicalRecords(int historyId);
+    Task<List<MedicalRecord>> GetMedicalRecordsAsync(int historyId);
+    List<string> GetPatientAllergies(int patientId);
+    Task<List<string>> GetPatientAllergiesAsync(int patientId);
+    Patient GetPatientDetails(int id);
+    Task<Patient> GetPatientDetailsAsync(int id);
+    Prescription? GetPrescriptionByRecordId(int recordId);
+    Task<Prescription?> GetPrescriptionByRecordIdAsync(int recordId);
+    bool IsHighRiskPatient(int patientId);
+    Task<bool> IsHighRiskPatientAsync(int patientId);
+    List<Patient> SearchPatients(PatientFilter filter);
+    Task<List<Patient>> SearchPatientsAsync(PatientFilter filter);
+    Task UpdatePatientAsync(Patient data);
+    bool ValidateCNP(string cnp, Sex sex, DateTime dob);
 }

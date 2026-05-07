@@ -16,7 +16,7 @@ internal sealed partial class StatisticsView : UserControl
         DataContext = _statisticsViewModel;
     }
 
-    private void StatisticsMenu_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void StatisticsMenu_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (StatisticsMenu.SelectedItem is not string selected)
         {
@@ -29,7 +29,7 @@ internal sealed partial class StatisticsView : UserControl
 
         try
         {
-            _statisticsViewModel.LoadDataForSelection(selected);
+            await _statisticsViewModel.LoadDataForSelectionAsync(selected);
             ShowChartForSelection(selected);
         }
         catch (Exception error)

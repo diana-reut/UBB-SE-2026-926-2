@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using HospitalManagement.Entity;
 using HospitalManagement.Entity.Enums;
 using HospitalManagement.Repository;
@@ -21,12 +22,17 @@ internal class BloodCompatibilityService : IBloodCompatibilityService
 
     public List<Patient> GetTopCompatibleDonors(int recipientId)
     {
-        Patient? recipient = _patientRepo.GetById(recipientId);
+        return GetTopCompatibleDonorsAsync(recipientId).GetAwaiter().GetResult();
+    }
+
+    public async Task<List<Patient>> GetTopCompatibleDonorsAsync(int recipientId)
+    {
+        Patient? recipient = await _patientRepo.GetByIdAsync(recipientId);
 
         // 2. Actually fetch the Recipient's Medical History from the Database
         if (recipient is not null)
         {
-            recipient.MedicalHistory = _historyRepo.GetByPatientId(recipientId);
+            recipient.MedicalHistory = await _historyRepo.GetByPatientIdAsync(recipientId);
         }
 
         if (recipient is null
@@ -37,23 +43,18 @@ internal class BloodCompatibilityService : IBloodCompatibilityService
             return [];
         }
 
-        List<Patient> allPatients = _patientRepo.GetAll(include_archived: false);
+        List<Patient> allPatients = await _patientRepo.GetAllAsync(include_archived: true);
         var rankedDonors = new List<(Patient Donor, int Score)>();
 
         foreach (Patient donor in allPatients)
         {
-            if (donor.Id == recipientId)
-            {
-                continue;
-            }
-
-            if (!donor.IsDonor)
+            if (donor.Id == recipientId || donor.IsDeceased)
             {
                 continue;
             }
 
             // 3. Actually fetch the Donor's Medical History from the Database
-            donor.MedicalHistory = _historyRepo.GetByPatientId(donor.Id);
+            donor.MedicalHistory = await _historyRepo.GetByPatientIdAsync(donor.Id);
 
             // Now their strict rules will actually work!
             if (donor.MedicalHistory is null)
@@ -72,11 +73,6 @@ internal class BloodCompatibilityService : IBloodCompatibilityService
             }
 
             if (!IsRhMatch(donor.MedicalHistory.Rh, recipient.MedicalHistory.Rh!.Value))
-            {
-                continue;
-            }
-
-            if (donor.MedicalHistory.ChronicConditions?.Count > 0)
             {
                 continue;
             }

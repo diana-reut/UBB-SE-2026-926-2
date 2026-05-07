@@ -1,0 +1,27 @@
+<Window
+    x:Class="ERManagementSystem.ERShellWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ERManagementSystem"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="ERManagementSystem">
+
+    <NavigationView x:Name="AppNavigationView"
+                    IsBackButtonVisible="Collapsed"
+                    PaneDisplayMode="Left"
+                    SelectionChanged="AppNavigationView_SelectionChanged">
+        <NavigationView.MenuItems>
+            <NavigationViewItem Content="Patient Registration" Tag="PatientRegistration" />
+            <NavigationViewItem Content="Queue" Tag="Queue" />
+            <NavigationViewItem Content="Triage" Tag="Triage" />
+            <NavigationViewItem Content="Room Assignment" Tag="RoomAssignment" />
+            <NavigationViewItem Content="Examination" Tag="Examination" />
+            <NavigationViewItem Content="Transfer Log" Tag="TransferLog" />
+            <NavigationViewItem Content="Room Management" Tag="RoomManagement" />
+        </NavigationView.MenuItems>
+
+        <Frame x:Name="ContentFrame" />
+    </NavigationView>
+</Window>

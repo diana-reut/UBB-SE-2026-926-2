@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using ERManagementSystem.Infrastructure;
 using ERManagementSystem.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
@@ -12,7 +13,7 @@ namespace ERManagementSystem.Views
 
         public TriageView()
         {
-            this.InitializeComponent();
+            InitializeComponent();
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -25,7 +26,7 @@ namespace ERManagementSystem.Views
             }
             else if (ViewModel == null)
             {
-                ViewModel = App.Services.GetRequiredService<TriageViewModel>();
+                ViewModel = ServiceRegistry.Services.GetRequiredService<TriageViewModel>();
             }
 
             if (ViewModel == null)
@@ -50,7 +51,6 @@ namespace ERManagementSystem.Views
 
         private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            // When IsTriaged resets to false (via CancelTriage), clear all ComboBoxes
             if (e.PropertyName == nameof(ViewModel.Consciousness) && ViewModel?.Consciousness == 0)
             {
                 ConsciousnessCombo.SelectedItem = null;
@@ -77,8 +77,6 @@ namespace ERManagementSystem.Views
             }
         }
 
-        // ── ComboBox SelectionChanged handlers ──────────────────────────
-        // These read the Tag from the selected ComboBoxItem and set the ViewModel property.
         private void ConsciousnessCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (ViewModel == null)

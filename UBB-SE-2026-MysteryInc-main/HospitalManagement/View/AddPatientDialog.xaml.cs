@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
+using HospitalManagement.Infrastructure;
 
 namespace HospitalManagement.View;
 
@@ -12,12 +13,16 @@ internal sealed partial class AddPatientDialog : ContentDialog
 
     public AddPatientDialog()
     {
-        _viewModel = ((App)Application.Current).Services.GetRequiredService<ViewModel.AddPatientDialogViewModel>();
+        _viewModel = ServiceRegistry.Services.GetRequiredService<ViewModel.AddPatientDialogViewModel>();
         InitializeComponent();
     }
 
-    private void ContentDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+    private async void ContentDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
     {
+        ContentDialogButtonClickDeferral deferral = args.GetDeferral();
+
+        try
+        {
         string sex = (SexEntry.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "M";
 
         ViewModel.AddPatientDialogViewModel.FormValidationResult result = ViewModel.AddPatientDialogViewModel.ValidateForm(
@@ -40,7 +45,7 @@ internal sealed partial class AddPatientDialog : ContentDialog
             return;
         }
 
-        (bool success, string? errorMessage, Entity.Patient? patient) = _viewModel.SubmitPatient(
+        (bool success, string? errorMessage, Entity.Patient? patient) = await _viewModel.SubmitPatientAsync(
             FirstNameEntry.Text,
             LastNameEntry.Text,
             sex,
@@ -60,5 +65,10 @@ internal sealed partial class AddPatientDialog : ContentDialog
 
         ErrorLabel.Visibility = Visibility.Collapsed;
         NewPatient = patient!;
+        }
+        finally
+        {
+            deferral.Complete();
+        }
     }
 }

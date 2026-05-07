@@ -1,29 +1,30 @@
-﻿using HospitalManagement.Entity;
+using CommunityToolkit.Mvvm.Input;
+using HospitalManagement.Entity;
+using HospitalManagement.Infrastructure;
 using HospitalManagement.Integration;
 using HospitalManagement.Service;
+using HospitalManagement.View;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace HospitalManagement.ViewModel;
-//m
-internal class MedicalStaffViewModel : INotifyPropertyChanged
+
+internal partial class MedicalStaffViewModel : INotifyPropertyChanged
 {
     private string _searchQuery = "";
     private string _errorMessage = "";
     private ObservableCollection<Patient> _searchResults = [];
     private readonly IPatientService _patientService;
     private Patient? _selectedPatient;
-
     private readonly IGhostService _ghostService;
-
     private bool _isExorcismAlertVisible;
-
-    public Action<Patient>? OpenBloodDonorsAction { get; set; }
-    public Action<Patient>? OpenTransplantRequestAction { get; set; }
 
     public bool IsExorcismAlertVisible
     {
@@ -31,10 +32,19 @@ internal class MedicalStaffViewModel : INotifyPropertyChanged
 
         set
         {
+            if (_isExorcismAlertVisible == value)
+            {
+                return;
+            }
+
             _isExorcismAlertVisible = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(ExorcismAlertVisibility));
         }
     }
+
+    public Visibility ExorcismAlertVisibility =>
+        IsExorcismAlertVisible ? Visibility.Visible : Visibility.Collapsed;
 
     public Patient? SelectedPatient
     {
@@ -42,10 +52,19 @@ internal class MedicalStaffViewModel : INotifyPropertyChanged
 
         set
         {
+            if (ReferenceEquals(_selectedPatient, value))
+            {
+                return;
+            }
+
             _selectedPatient = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(SelectedPatientVisibility));
         }
     }
+
+    public Visibility SelectedPatientVisibility =>
+        SelectedPatient is null ? Visibility.Collapsed : Visibility.Visible;
 
     public string SearchQuery
     {
@@ -53,6 +72,11 @@ internal class MedicalStaffViewModel : INotifyPropertyChanged
 
         set
         {
+            if (string.Equals(_searchQuery, value, StringComparison.Ordinal))
+            {
+                return;
+            }
+
             _searchQuery = value;
             OnPropertyChanged();
         }
@@ -64,6 +88,11 @@ internal class MedicalStaffViewModel : INotifyPropertyChanged
 
         set
         {
+            if (string.Equals(_errorMessage, value, StringComparison.Ordinal))
+            {
+                return;
+            }
+
             _errorMessage = value;
             OnPropertyChanged();
         }
@@ -75,6 +104,11 @@ internal class MedicalStaffViewModel : INotifyPropertyChanged
 
         set
         {
+            if (ReferenceEquals(_searchResults, value))
+            {
+                return;
+            }
+
             _searchResults = value;
             OnPropertyChanged();
         }
@@ -86,28 +120,20 @@ internal class MedicalStaffViewModel : INotifyPropertyChanged
 
     public ICommand GhostSightingCommand { get; set; }
 
-
-    public ICommand FindBloodDonorsCommand { get; set; }
-
-    public ICommand RequestTransplantCommand { get; set; }
-
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public MedicalStaffViewModel(IPatientService patientService, IGhostService ghostService)
     {
-        _patientService =patientService;
-        _ghostService =ghostService;
+        _patientService = patientService;
+        _ghostService = ghostService;
         _ghostService.ExorcismTriggered += (s, e) => IsExorcismAlertVisible = true;
         IsExorcismAlertVisible = _ghostService.IsExorcismTriggered();
 
-        SearchCommand = new RelayCommand(ExecuteSearch);
-
-        FindBloodDonorsCommand = new RelayCommand(FindBloodDonors);
-        RequestTransplantCommand = new RelayCommand(RequestTransplant);
+        SearchCommand = new AsyncRelayCommand(ExecuteSearchAsync);
         GhostSightingCommand = new RelayCommand(() => _ghostService.SawAGhost());
     }
 
-    private void ExecuteSearch()
+    private async Task ExecuteSearchAsync()
     {
         ErrorMessage = "";
         SearchResults.Clear();
@@ -130,7 +156,7 @@ internal class MedicalStaffViewModel : INotifyPropertyChanged
 
         try
         {
-            System.Collections.Generic.List<Patient> results = _patientService.SearchPatients(filter);
+            System.Collections.Generic.List<Patient> results = await _patientService.SearchPatientsAsync(filter);
 
             if (results is null || results.Count == 0)
             {
@@ -138,9 +164,9 @@ internal class MedicalStaffViewModel : INotifyPropertyChanged
             }
             else
             {
-                foreach (Patient p in results)
+                foreach (Patient patient in results)
                 {
-                    SearchResults.Add(p);
+                    SearchResults.Add(patient);
                 }
             }
         }
@@ -150,20 +176,87 @@ internal class MedicalStaffViewModel : INotifyPropertyChanged
         }
     }
 
-    private void FindBloodDonors()
+    [RelayCommand]
+    private async Task FindBloodDonorsAsync()
     {
-        if (SelectedPatient is not null)
+        if (SelectedPatient is null)
         {
-            OpenBloodDonorsAction?.Invoke(SelectedPatient);
+            ErrorMessage = "Please select a patient first.";
+            return;
+        }
+
+        ErrorMessage = "";
+
+        try
+        {
+            var donorsWindow = new Window
+            {
+                Title = $"Compatible Donors - {SelectedPatient.FirstName} {SelectedPatient.LastName}",
+            };
+
+            IServiceProvider services = ServiceRegistry.Services;
+            BloodDonorsView donorsPage = services.GetRequiredService<BloodDonorsView>();
+            await donorsPage.InitializeAsync(SelectedPatient.Id);
+
+            donorsWindow.Content = donorsPage;
+            donorsWindow.Activate();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Could not load compatible donors: " + ex.Message;
         }
     }
 
-    private void RequestTransplant()
+    [RelayCommand]
+    public async Task RequestTransplantAsync()
     {
-        if (SelectedPatient is not null)
+        if (SelectedPatient is null)
         {
-            OpenTransplantRequestAction?.Invoke(SelectedPatient);
+            ErrorMessage = "Please select a patient first.";
+            return;
         }
+
+        ErrorMessage = "";
+
+        try
+        {
+            var requestWindow = new Window
+            {
+                Title = $"Organ Transplant Request - {SelectedPatient.FirstName} {SelectedPatient.LastName}",
+            };
+
+            var requestPage = new TransplantRequestView(SelectedPatient.Id, requestWindow);
+            await requestPage.InitializeAsync();
+
+            requestWindow.Content = requestPage;
+            requestWindow.Activate();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Could not open transplant request: " + ex.Message;
+        }
+    }
+
+
+    public async Task OpenPatientProfileAsync(Patient? patient = null)
+    {
+        Patient? selectedPatient = patient ?? SelectedPatient;
+        if (selectedPatient is null)
+        {
+            return;
+        }
+
+        var profileWindow = new Window
+        {
+            Title = "Patient Medical Profile",
+        };
+
+        IServiceProvider services = ServiceRegistry.Services;
+        PatientProfileView profilePage = services.GetRequiredService<PatientProfileView>();
+        await profilePage.InitializeAsync(selectedPatient.Id);
+
+        profileWindow.Content = profilePage;
+        profileWindow.Activate();
     }
 
     protected void OnPropertyChanged([CallerMemberName] string? name = null)

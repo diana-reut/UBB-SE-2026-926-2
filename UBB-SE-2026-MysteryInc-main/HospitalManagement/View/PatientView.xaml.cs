@@ -1,4 +1,5 @@
 using HospitalManagement.Entity;
+using HospitalManagement.Infrastructure;
 using HospitalManagement.ViewModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Windowing;
@@ -18,7 +19,7 @@ internal sealed partial class PatientView : Window
         _goBackCallback = null!;
         InitializeComponent();
 
-        _viewModel = (Application.Current as App)!.Services.GetRequiredService<PatientViewModel>();
+        _viewModel = ServiceRegistry.Services.GetRequiredService<PatientViewModel>();
 
         if (Content is FrameworkElement rootElement)
         {
@@ -33,7 +34,7 @@ internal sealed partial class PatientView : Window
     {
         _goBackCallback = goBackCallback;
         _viewModel.GoBackAction = GoBack;
-        _viewModel.LoadFullPatientProfile(patientId);
+        _ = _viewModel.LoadFullPatientProfileAsync(patientId);
     }
 
     private void SetupViewModelActions()
