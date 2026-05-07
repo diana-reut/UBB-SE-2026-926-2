@@ -43,12 +43,12 @@ internal class BloodCompatibilityService : IBloodCompatibilityService
             return [];
         }
 
-        List<Patient> allPatients = await _patientRepo.GetAllAsync(include_archived: false);
+        List<Patient> allPatients = await _patientRepo.GetAllAsync(include_archived: true);
         var rankedDonors = new List<(Patient Donor, int Score)>();
 
         foreach (Patient donor in allPatients)
         {
-            if (donor.Id == recipientId)
+            if (donor.Id == recipientId || donor.IsDeceased)
             {
                 continue;
             }
@@ -73,11 +73,6 @@ internal class BloodCompatibilityService : IBloodCompatibilityService
             }
 
             if (!IsRhMatch(donor.MedicalHistory.Rh, recipient.MedicalHistory.Rh!.Value))
-            {
-                continue;
-            }
-
-            if (donor.MedicalHistory.ChronicConditions?.Count > 0)
             {
                 continue;
             }
