@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
+using System.Globalization;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
 
@@ -86,9 +87,8 @@ internal sealed partial class PatientProfileView : Page
         var prescriptionWindow = new Window { Title = "Prescription Details" };
         PrescriptionView prescriptionPage = ServiceRegistry.Services.GetRequiredService<PrescriptionView>();
 
-        prescriptionPage.ViewModel.SearchIdText = prescriptionId.ToString();
-
-        await prescriptionPage.ViewModel.ApplyFilterCommand.ExecuteAsync(null);
+        prescriptionPage.ViewModel.SearchIdText = prescriptionId.ToString(CultureInfo.InvariantCulture);
+        await prescriptionPage.ViewModel.ShowPrescriptionAsync(prescriptionId);
 
         prescriptionWindow.Content = prescriptionPage;
         prescriptionWindow.Activate();

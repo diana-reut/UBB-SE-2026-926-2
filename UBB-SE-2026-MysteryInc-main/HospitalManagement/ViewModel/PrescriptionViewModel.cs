@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Globalization;
 using System.Threading.Tasks;
 
 namespace HospitalManagement.ViewModel;
@@ -17,6 +18,7 @@ internal partial class PrescriptionViewModel : ObservableObject
 {
     private readonly IPrescriptionService _prescriptionService;
     private readonly IAddictDetectionService _addictDetectionService;
+    private int _loadVersion;
 
     public ObservableCollection<Prescription> Prescriptions { get; } = new();
 
@@ -46,6 +48,28 @@ internal partial class PrescriptionViewModel : ObservableObject
         _addictDetectionService = addictDetectionService;
 
         _ = LoadPrescriptionsAsync();
+    }
+
+    public async Task ShowPrescriptionAsync(int prescriptionId)
+    {
+        SearchIdText = prescriptionId.ToString(CultureInfo.InvariantCulture);
+        SearchName = null;
+        SearchMedication = null;
+        DateFrom = null;
+        DateTo = null;
+
+        ActiveFilter = new PrescriptionFilter
+        {
+            PrescriptionId = prescriptionId
+        };
+
+        CurrentPage = 1;
+        await UpdatePageDataAsync();
+
+        if (Prescriptions.Count == 0)
+        {
+            InfoMessage = "No prescription found for the selected consultation.";
+        }
     }
 
 
@@ -116,7 +140,7 @@ internal partial class PrescriptionViewModel : ObservableObject
 
     private async Task UpdatePageDataAsync()
     {
-        Prescriptions.Clear();
+        int loadVersion = ++_loadVersion;
         InfoMessage = "";
 
         var fakeDoctors = MockDoctorProvider.FakeDoctors;
@@ -136,6 +160,13 @@ internal partial class PrescriptionViewModel : ObservableObject
                 .Take(PageSize)
                 .ToList()
             : await _prescriptionService.GetLatestPrescriptionsAsync(PageSize, CurrentPage);
+
+        if (loadVersion != _loadVersion)
+        {
+            return;
+        }
+
+        Prescriptions.Clear();
 
         foreach (var item in targetList)
         {
