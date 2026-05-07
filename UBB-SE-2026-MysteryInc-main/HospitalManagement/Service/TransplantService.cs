@@ -43,12 +43,13 @@ internal class TransplantService : ITransplantService
     public async Task CreateWaitlistRequestAsync(int receiverId, string organType)
     {
         _ = await _patientRepo.GetByIdAsync(receiverId) ?? throw new ArgumentException("Receiver not found.");
+        string normalizedOrganType = NormalizeOrganType(organType);
 
         var request = new Transplant
         {
             ReceiverId = receiverId,
             DonorId = null,
-            OrganType = organType,
+            OrganType = normalizedOrganType,
             RequestDate = DateTime.Now,
             Status = TransplantStatus.Pending,
             CompatibilityScore = 0,
@@ -59,6 +60,7 @@ internal class TransplantService : ITransplantService
 
     public List<Transplant> GetTopMatchesForDonor(int donorId, string organType)
     {
+        string normalizedOrganType = NormalizeOrganType(organType);
         Patient? donor = _patientRepo.GetByIdAsync(donorId).GetAwaiter().GetResult();
         if (donor?.IsDeceased != true || !donor.IsDonor)
         {
@@ -67,7 +69,7 @@ internal class TransplantService : ITransplantService
 
         donor.MedicalHistory = _historyRepo.GetByPatientId(donor.Id);
 
-        List<Transplant> waitlist = _transplantRepo.GetWaitingByOrgan(organType);
+        List<Transplant> waitlist = _transplantRepo.GetWaitingByOrgan(normalizedOrganType);
         var scoredMatches = new List<Transplant>();
 
         foreach (Transplant request in waitlist)
@@ -95,11 +97,6 @@ internal class TransplantService : ITransplantService
                 continue;
             }
 
-            if (receiver.MedicalHistory.ChronicConditions is not null && receiver.MedicalHistory.ChronicConditions.Count != 0)
-            {
-                continue;
-            }
-
             request.CompatibilityScore = CalculatePostMortemScore(donor, receiver);
             scoredMatches.Add(request);
         }
@@ -112,6 +109,7 @@ internal class TransplantService : ITransplantService
 
     public async Task<List<Transplant>> GetTopMatchesForDonorAsync(int donorId, string organType)
     {
+        string normalizedOrganType = NormalizeOrganType(organType);
         Patient? donor = await _patientRepo.GetByIdAsync(donorId);
         if (donor?.IsDeceased != true || !donor.IsDonor)
         {
@@ -120,7 +118,7 @@ internal class TransplantService : ITransplantService
 
         donor.MedicalHistory = await _historyRepo.GetByPatientIdAsync(donor.Id);
 
-        List<Transplant> waitlist = await _transplantRepo.GetWaitingByOrganAsync(organType);
+        List<Transplant> waitlist = await _transplantRepo.GetWaitingByOrganAsync(normalizedOrganType);
         var scoredMatches = new List<Transplant>();
 
         foreach (Transplant request in waitlist)
@@ -144,11 +142,6 @@ internal class TransplantService : ITransplantService
             }
 
             if (!_compatibilityService.IsRhMatch(donor.MedicalHistory?.Rh, receiver.MedicalHistory.Rh.Value))
-            {
-                continue;
-            }
-
-            if (receiver.MedicalHistory.ChronicConditions is not null && receiver.MedicalHistory.ChronicConditions.Count != 0)
             {
                 continue;
             }
@@ -293,5 +286,16 @@ internal class TransplantService : ITransplantService
         int erVisits = await _recordRepo.GetERVisitCountAsync(receiver.Id, threeMonthsAgo);
         score += erVisits >= ComparativeERVisits ? MaxScoreModifier : MinScoreModifier;
         return score;
+    }
+
+    private static string NormalizeOrganType(string organType)
+    {
+        string normalized = organType.Trim();
+
+        return normalized switch
+        {
+            "Lungs" => "Lung",
+            _ => normalized,
+        };
     }
 }
