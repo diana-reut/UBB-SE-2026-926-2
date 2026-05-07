@@ -22,25 +22,6 @@ internal class BillingService : IBillingService
         _transplantRepo = transplantRepo;
     }
 
-    public decimal ComputeBasePrice(int patientId, int recordId)
-    {
-        MedicalRecord? record = _recordRepo.GetById(recordId);
-        Prescription? prescription = _prescriptionRepo.GetByRecordId(recordId);
-        List<PrescriptionItem> prescriptionItems = prescription is not null
-            ? _prescriptionRepo.GetItems(prescription.Id)
-            : [];
-        MedicalHistory? history = _historyRepo.GetByPatientId(patientId);
-        List<string> chronicConditions = history is not null
-            ? _historyRepo.GetChronicConditions(history.Id)
-            : [];
-        List<(Allergy Allergy, string SeverityLevel)> allergies = history is not null
-            ? _historyRepo.GetAllergiesByHistoryId(history.Id)
-            : [];
-        List<Transplant> associatedTransplants = _transplantRepo.GetByReceiverId(patientId);
-
-        return CalculateBasePrice(record, history, prescriptionItems, chronicConditions, allergies, associatedTransplants);
-    }
-
     public async Task<decimal> ComputeBasePriceAsync(int patientId, int recordId)
     {
         MedicalRecord? record = await _recordRepo.GetByIdAsync(recordId);

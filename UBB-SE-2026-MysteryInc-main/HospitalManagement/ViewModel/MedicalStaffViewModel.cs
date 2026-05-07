@@ -197,10 +197,9 @@ internal partial class MedicalStaffViewModel : INotifyPropertyChanged
 
             IServiceProvider services = ServiceRegistry.Services;
             BloodDonorsView donorsPage = services.GetRequiredService<BloodDonorsView>();
-            await donorsPage.InitializeAsync(SelectedPatient.Id);
-
             donorsWindow.Content = donorsPage;
             donorsWindow.Activate();
+            await donorsPage.InitializeAsync(SelectedPatient.Id);
         }
         catch (Exception ex)
         {

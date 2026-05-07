@@ -31,7 +31,6 @@ internal interface IPatientService
     Task<List<MedicalRecord>> GetMedicalRecordsAsync(int historyId);
     List<string> GetPatientAllergies(int patientId);
     Task<List<string>> GetPatientAllergiesAsync(int patientId);
-    Patient GetPatientDetails(int id);
     Task<Patient> GetPatientDetailsAsync(int id);
     Prescription? GetPrescriptionByRecordId(int recordId);
     Task<Prescription?> GetPrescriptionByRecordIdAsync(int recordId);

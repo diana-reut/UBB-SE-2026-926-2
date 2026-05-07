@@ -86,28 +86,33 @@ internal partial class PatientProfileViewModel : ObservableObject
         _prescriptionViewFactory = prescriptionViewFactory;
     }
 
-    public void LoadFullPatientProfile(int id)
-    {
-        LoadFullPatientProfileAsync(id).GetAwaiter().GetResult();
-    }
-
-    public async Task LoadFullPatientProfileAsync(int id)
+    public async Task LoadFullPatientProfileAsync(int patientId)
     {
         try
         {
-            Patient? p = await _patientService.GetPatientDetailsAsync(id);
-            if (p is null)
+            Patient? patient = await _patientService.GetPatientDetailsAsync(patientId);
+            if (patient is null)
             {
                 return;
             }
 
-            p.MedicalHistory ??= new MedicalHistory();
-            p.MedicalHistory.MedicalRecords ??= [];
-            CurrentPatient = p;
+            patient.MedicalHistory ??= new MedicalHistory
+            {
+                PatientId = patient.Id,
+            };
+            patient.MedicalHistory.MedicalRecords ??= [];
+
+            for (int i = 0; i < patient.MedicalHistory.MedicalRecords.Count; i++)
+            {
+                MedicalRecord record = patient.MedicalHistory.MedicalRecords[i];
+                record.Prescription = await _patientService.GetPrescriptionByRecordIdAsync(record.Id);
+            }
+
+            CurrentPatient = patient;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error loading patient {id}: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Error loading patient: {ex.Message}");
         }
     }
 
@@ -122,7 +127,7 @@ internal partial class PatientProfileViewModel : ObservableObject
             ShowAlertAction?.Invoke("High Risk Patient Alert", "Warning: This patient is flagged as High Risk.");
     }
 
-    public void ExportSelectedRecord()
+    public async Task ExportSelectedRecordAsync()
     {
         if (SelectedRecord is null)
         {
@@ -131,7 +136,7 @@ internal partial class PatientProfileViewModel : ObservableObject
 
         try
         {
-            string path = _exportService.ExportRecordToPDF(SelectedRecord.Id);
+            string path = await _exportService.ExportRecordToPDFAsync(SelectedRecord.Id);
             OpenFileAction?.Invoke(path);
         }
         catch (Exception ex)
@@ -159,13 +164,10 @@ internal partial class PatientProfileViewModel : ObservableObject
         bool enqueuedCommand = prescriptionWindow.DispatcherQueue.TryEnqueue(() =>
         {
             var prescriptionPage = _prescriptionViewFactory();
-            prescriptionPage
-                .ViewModel
-                .ApplyFilterCommand
-                .Execute(null);
             var frame = new Frame();
             prescriptionWindow.Content = frame;
             frame.Content = prescriptionPage;
+            _ = prescriptionPage.ViewModel.ShowPrescriptionAsync(prescription.Id);
         });
     }
 

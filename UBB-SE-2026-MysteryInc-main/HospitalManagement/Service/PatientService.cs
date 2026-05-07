@@ -206,10 +206,6 @@ internal class PatientService : IPatientService
         }
     }
 
-    public Patient GetPatientDetails(int id)
-    {
-        return GetPatientDetailsAsync(id).GetAwaiter().GetResult();
-    }
 
     public async Task<Patient> GetPatientDetailsAsync(int id)
     {
@@ -235,8 +231,12 @@ internal class PatientService : IPatientService
             records = [.. (await _recordRepo.GetByHistoryIdAsync(history.Id)).OrderByDescending(r => r.ConsultationDate)];
         }
 
+        var prescriptions = new List<Prescription>();
+        prescriptions.AddRange(records.Where(r => r.Prescription is not null).Select(r => r.Prescription!));
+
         patient.MedicalHistory = history;
         history.MedicalRecords = records;
+        prescriptions.ForEach(p => p.MedicalRecord = records.FirstOrDefault(r => r.Id == p.RecordId)!);
         return patient;
     }
 
