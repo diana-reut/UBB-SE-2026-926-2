@@ -557,21 +557,5 @@ internal partial class AdminViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
-    private async Task ReportGhostAsync()
-    {
-        System.Diagnostics.Debug.WriteLine($">> GHOST REPORTED FROM ADMIN AT {DateTime.Now} <<");
-
-        try
-        {
-            OnPropertyChanged(nameof(IsNotDeceased));
-            await _dialogService.ShowAlertAsync("The patient has been marked as deceased. The record is now locked and moved to the archive.");
-        }
-        catch (Exception ex)
-        {
-            await _dialogService.ShowAlertAsync($"Error: {ex.Message}");
-        }
-    }
-
     #endregion Methods
 }
