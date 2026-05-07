@@ -5,15 +5,9 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:entity="using:HospitalManagement.Entity"
-    xmlns:converters="using:HospitalManagement.Converters"
     mc:Ignorable="d">
 
     <Grid Padding="24" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <Grid.Resources>
-            <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
-            <converters:BoolToVisibilityConverter x:Key="BoolToVis"/>
-        </Grid.Resources>
-
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -37,7 +31,7 @@
 
             <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Foreground="#D13438" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,16" />
 
-            <ListView Grid.Row="1" Grid.Column="0" ItemsSource="{Binding SearchResults}" SelectedItem="{Binding SelectedPatient, Mode=TwoWay}" DoubleTapped="PatientList_DoubleTapped" SelectionMode="Single">
+            <ListView Grid.Row="1" Grid.Column="0" ItemsSource="{x:Bind ViewModel.SearchResults, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedPatient, Mode=TwoWay}" DoubleTapped="PatientList_DoubleTapped" SelectionMode="Single">
                 <ListView.Header>
                     <Grid Padding="12,8" Background="{ThemeResource LayerFillColorAltBrush}" CornerRadius="4">
                         <Grid.ColumnDefinitions>
@@ -71,10 +65,10 @@
                 </ListView.ItemTemplate>
             </ListView>
 
-            <StackPanel Grid.Row="1" Grid.Column="1" Margin="20,0,0,0" Width="240" Spacing="15" VerticalAlignment="Top" Visibility="{Binding SelectedPatient, Converter={StaticResource NullToVisibilityConverter}}">
+            <StackPanel Grid.Row="1" Grid.Column="1" Margin="20,0,0,0" Width="240" Spacing="15" VerticalAlignment="Top" Visibility="{x:Bind ViewModel.SelectedPatientVisibility, Mode=OneWay}">
                 <TextBlock Text="Patient Actions" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,10"/>
-                <Button Content="Compatible Blood Donors" Command="{Binding FindBloodDonorsCommand}" HorizontalAlignment="Stretch" Style="{StaticResource AccentButtonStyle}"/>
-                <Button Content="Request Organ Transplant" Command="{Binding RequestTransplantCommand}" HorizontalAlignment="Stretch" Style="{StaticResource AccentButtonStyle}"/>
+                <Button Content="Compatible Blood Donors" Command="{x:Bind ViewModel.FindBloodDonorsCommand}" HorizontalAlignment="Stretch" Style="{StaticResource AccentButtonStyle}"/>
+                <Button Content="Request Organ Transplant" Command="{x:Bind ViewModel.RequestTransplantCommand}" HorizontalAlignment="Stretch" Style="{StaticResource AccentButtonStyle}"/>
             </StackPanel>
         </Grid>
 
@@ -82,7 +76,7 @@
             <Button Content="I saw a ghost" Command="{x:Bind ViewModel.GhostSightingCommand}" Background="DarkRed" Foreground="White"/>
         </StackPanel>
 
-        <Grid Grid.RowSpan="3" Background="#F0000000" IsHitTestVisible="True" Visibility="{Binding IsExorcismAlertVisible, Converter={StaticResource BoolToVis}}">
+        <Grid Grid.RowSpan="3" Background="#F0000000" IsHitTestVisible="True" Visibility="{x:Bind ViewModel.ExorcismAlertVisibility, Mode=OneWay}">
             <Border MaxWidth="600" CornerRadius="16" Background="#1A0000" BorderBrush="#CC0000" BorderThickness="3" Padding="48,40" VerticalAlignment="Center" HorizontalAlignment="Center">
                 <StackPanel Spacing="20" HorizontalAlignment="Center">
                     <FontIcon Glyph="&#xE7BA;" FontSize="72" Foreground="#CC0000" HorizontalAlignment="Center"/>

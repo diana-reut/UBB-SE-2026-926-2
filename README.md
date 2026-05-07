@@ -19,3 +19,6 @@ Selectati proiectul corect in care sa rulam comenzile.
 ### 5. Running Db Setup
 Rulati "Update-Database" in consola. Daca tot e ok o sa aveti un output similar sau un output extrem de lung dar fara nimica error sau rosu.
 ![Update-Database](image-4.png)
+
+### 6. Seed Data
+Open SSMS si rulati codul din fisierul ssms_seed_data_common_initialcreate_rerunnable_valid_cnp.sql .

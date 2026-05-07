@@ -110,9 +110,7 @@ public partial class App : Application
         _ = services.AddSingleton<Func<int, TransplantRequestViewModel>>(serviceProvider =>
             id =>
             {
-                TransplantRequestViewModel vm = serviceProvider.GetRequiredService<TransplantRequestViewModel>();
-                vm.Initialize(id);
-                return vm;
+                return serviceProvider.GetRequiredService<TransplantRequestViewModel>();
             });
         _ = services.AddSingleton<DiscountRouletteViewModel>();
         _ = services.AddSingleton<Func<PrescriptionView>>(sp => () => sp.GetRequiredService<PrescriptionView>());

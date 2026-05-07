@@ -10,8 +10,8 @@ internal sealed partial class BloodDonorsView : Page
 
     public BloodDonorsView(BloodDonorsViewModel viewModel)
     {
-        InitializeComponent();
         ViewModel = viewModel;
+        InitializeComponent();
         DataContext = ViewModel;
     }
 

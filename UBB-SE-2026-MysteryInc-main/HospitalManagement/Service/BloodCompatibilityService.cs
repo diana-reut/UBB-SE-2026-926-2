@@ -53,11 +53,6 @@ internal class BloodCompatibilityService : IBloodCompatibilityService
                 continue;
             }
 
-            if (!donor.IsDonor)
-            {
-                continue;
-            }
-
             // 3. Actually fetch the Donor's Medical History from the Database
             donor.MedicalHistory = await _historyRepo.GetByPatientIdAsync(donor.Id);
 
