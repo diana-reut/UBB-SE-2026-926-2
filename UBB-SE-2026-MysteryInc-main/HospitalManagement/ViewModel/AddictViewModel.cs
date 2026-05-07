@@ -20,23 +20,34 @@ internal partial class AddictViewModel : ObservableObject
     public AddictViewModel(IAddictDetectionService addictDetectionService)
     {
         _addictDetectionService = addictDetectionService ?? throw new ArgumentNullException(nameof(addictDetectionService));
-        LoadAddicts();
+        _ = LoadAddictsAsync();
     }
 
     public void LoadAddicts()
     {
-        List<Patient> candidates = _addictDetectionService.GetAddictCandidates();
+        LoadAddictsAsync().GetAwaiter().GetResult();
+    }
+
+    public async Task LoadAddictsAsync()
+    {
+        List<Patient> candidates = await _addictDetectionService.GetAddictCandidatesAsync();
         AddictCandidates = new ObservableCollection<Patient>(candidates);
     }
 
     public string GetPoliceReportMessage(int patientId)
+    {
+        return GetPoliceReportMessageAsync(patientId).GetAwaiter().GetResult();
+    }
+
+    public async Task<string> GetPoliceReportMessageAsync(int patientId)
     {
         Patient? targetPatient = AddictCandidates.FirstOrDefault(p => p.Id == patientId);
         if (targetPatient is null)
         {
             return "Error: Patient not found in the current flagged list.";
         }
-        return _addictDetectionService.BuildPoliceReport(targetPatient);
+
+        return await _addictDetectionService.BuildPoliceReportAsync(targetPatient);
     }
 
     public void RemoveFlaggedPatient(int patientId)

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace HospitalManagement.ViewModel;
 
@@ -36,11 +37,16 @@ internal class BloodDonorsViewModel : INotifyPropertyChanged
 
     public void LoadCompatibleDonors(int patientId)
     {
-        Patient? recipient = _patientService.GetPatientDetails(patientId);
-        List<Patient> topDonors = _bloodService.GetTopCompatibleDonors(patientId);
+        LoadCompatibleDonorsAsync(patientId).GetAwaiter().GetResult();
+    }
+
+    public async Task LoadCompatibleDonorsAsync(int patientId)
+    {
+        Patient? recipient = await _patientService.GetPatientDetailsAsync(patientId);
+        List<Patient> topDonors = await _bloodService.GetTopCompatibleDonorsAsync(patientId);
 
         var displayList = new ObservableCollection<DonorMatchModel>();
-        if (recipient?.MedicalHistory is not null && topDonors is not null)
+        if (recipient?.MedicalHistory is not null)
         {
             foreach (Patient donor in topDonors)
             {

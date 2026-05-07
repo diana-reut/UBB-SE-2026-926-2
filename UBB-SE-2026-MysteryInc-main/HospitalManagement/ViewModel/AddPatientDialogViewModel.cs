@@ -3,6 +3,7 @@ using HospitalManagement.Entity.Enums;
 using HospitalManagement.Service;
 using HospitalManagement.Validators;
 using System;
+using System.Threading.Tasks;
 
 namespace HospitalManagement.ViewModel;
 
@@ -39,6 +40,12 @@ internal class AddPatientDialogViewModel
     public (bool Success, string? ErrorMessage, Patient? Patient) SubmitPatient(
         string firstName, string lastName, string sex, DateTimeOffset? dob, string cnp, string phone, string emergencyContact)
     {
+        return SubmitPatientAsync(firstName, lastName, sex, dob, cnp, phone, emergencyContact).GetAwaiter().GetResult();
+    }
+
+    public async Task<(bool Success, string? ErrorMessage, Patient? Patient)> SubmitPatientAsync(
+        string firstName, string lastName, string sex, DateTimeOffset? dob, string cnp, string phone, string emergencyContact)
+    {
         Patient data = new()
         {
             FirstName = firstName,
@@ -52,7 +59,7 @@ internal class AddPatientDialogViewModel
 
         try
         {
-            Patient created = _patientService.CreatePatient(data);
+            Patient created = await _patientService.CreatePatientAsync(data);
             return (true, null, created);
         }
         catch (ArgumentException ex)

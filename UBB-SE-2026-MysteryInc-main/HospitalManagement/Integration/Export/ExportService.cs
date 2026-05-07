@@ -31,7 +31,7 @@ internal class ExportService : IExportService
         MedicalHistory history = _historyRepo.GetById(record.HistoryId)
             ?? throw new ExportException($"MedicalHistory for record ID={recordId} not found.");
 
-        Patient patient = _patientRepo.GetById(history.PatientId)
+        Patient patient = _patientRepo.GetByIdAsync(history.PatientId).GetAwaiter().GetResult()
             ?? throw new ExportException($"Patient for history ID={history.Id} not found.");
 
         var items = new List<PrescriptionItem>();

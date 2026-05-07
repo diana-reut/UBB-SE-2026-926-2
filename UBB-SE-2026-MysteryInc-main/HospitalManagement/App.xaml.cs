@@ -16,6 +16,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Xaml;
+using ERManagementSystem.Helpers;
+using Microsoft.Extensions.Logging;
 
 [assembly: InternalsVisibleTo("HospitalManagementTest")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
@@ -58,7 +60,10 @@ public partial class App : Application
         _ = services.AddSingleton(AppConfiguration);
 
         _ = services.AddDbContext<EFHospitalDbContext>(options =>
-            options.UseSqlServer(AppConfiguration.GetConnectionString("DefaultConnection")));
+            options.UseSqlServer(AppConfiguration.GetConnectionString("DefaultConnection"))
+            .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
+        .EnableSensitiveDataLogging()
+        .EnableDetailedErrors());
 
         _ = services.AddScoped<IPatientRepository, PatientRepository>();
         _ = services.AddScoped<IMedicalHistoryRepository, MedicalHistoryRepository>();

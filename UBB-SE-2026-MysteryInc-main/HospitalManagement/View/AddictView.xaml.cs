@@ -21,7 +21,7 @@ internal sealed partial class AddictView : UserControl
     {
         if (sender is Button btn && btn.CommandParameter is int patientId)
         {
-            string reportText = ViewModel.GetPoliceReportMessage(patientId);
+            string reportText = await ViewModel.GetPoliceReportMessageAsync(patientId);
 
 
             var dialog = new PoliceAlertDialog(reportText)

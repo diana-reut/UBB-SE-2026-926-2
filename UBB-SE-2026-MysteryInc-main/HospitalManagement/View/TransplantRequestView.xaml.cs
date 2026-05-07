@@ -29,7 +29,7 @@ internal sealed partial class TransplantRequestView : Page
 
         ViewModel.ShowDialogAction = ShowDialogAsync;
 
-        ViewModel.Initialize(patientId);
+        _ = ViewModel.InitializeAsync(patientId);
     }
 
     private async Task ShowDialogAsync(string title, string content)

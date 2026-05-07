@@ -7,6 +7,7 @@ using HospitalManagement.Service;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace HospitalManagement.ViewModel;
 
@@ -79,6 +80,11 @@ internal class StatisticsViewModel : INotifyPropertyChanged
 
     public void LoadDataForSelection(string selection)
     {
+        LoadDataForSelectionAsync(selection).GetAwaiter().GetResult();
+    }
+
+    public async Task LoadDataForSelectionAsync(string selection)
+    {
         ErrorMessage = "";
 
         StatisticsType result = GetByString(selection);
@@ -87,31 +93,31 @@ internal class StatisticsViewModel : INotifyPropertyChanged
         {
             case StatisticsType.PatientDistribution:
             {
-                LoadPatientDistribution();
+                await LoadPatientDistributionAsync();
                 break;
             }
 
             case StatisticsType.ConsultationSource:
             {
-                LoadConsultationSources();
+                await LoadConsultationSourcesAsync();
                 break;
             }
 
             case StatisticsType.TopDiagnoses:
             {
-                LoadTopDiagnoses();
+                await LoadTopDiagnosesAsync();
                 break;
             }
 
             case StatisticsType.TopMedications:
             {
-                LoadTopMedications();
+                await LoadTopMedicationsAsync();
                 break;
             }
 
             case StatisticsType.Demographics:
             {
-                LoadDemographics();
+                await LoadDemographicsAsync();
                 break;
             }
 
@@ -144,9 +150,14 @@ internal class StatisticsViewModel : INotifyPropertyChanged
     /// </summary>
     public void LoadPatientDistribution()
     {
+        LoadPatientDistributionAsync().GetAwaiter().GetResult();
+    }
+
+    public async Task LoadPatientDistributionAsync()
+    {
         try
         {
-            Dictionary<string, int> data = _statisticsService.GetActiveVsArchivedRatio();
+            Dictionary<string, int> data = await _statisticsService.GetActiveVsArchivedRatioAsync();
 
             if (data is null || data.Count == 0)
             {
@@ -190,9 +201,14 @@ internal class StatisticsViewModel : INotifyPropertyChanged
     // labels (e.g., "Emergency Department", "Scheduled Appointments").
     private void LoadConsultationSources()
     {
+        LoadConsultationSourcesAsync().GetAwaiter().GetResult();
+    }
+
+    private async Task LoadConsultationSourcesAsync()
+    {
         try
         {
-            Dictionary<string, int> data = _statisticsService.GetConsultationDistribution();
+            Dictionary<string, int> data = await _statisticsService.GetConsultationDistributionAsync();
 
             if (data is null || data.Count == 0)
             {
@@ -252,9 +268,14 @@ internal class StatisticsViewModel : INotifyPropertyChanged
     /// </summary>
     private void LoadTopDiagnoses()
     {
+        LoadTopDiagnosesAsync().GetAwaiter().GetResult();
+    }
+
+    private async Task LoadTopDiagnosesAsync()
+    {
         try
         {
-            Dictionary<string, int> data = _statisticsService.GetTopDiagnoses();
+            Dictionary<string, int> data = await _statisticsService.GetTopDiagnosesAsync();
 
             if (data is null || data.Count == 0)
             {
@@ -314,9 +335,14 @@ internal class StatisticsViewModel : INotifyPropertyChanged
     /// </summary>
     private void LoadTopMedications()
     {
+        LoadTopMedicationsAsync().GetAwaiter().GetResult();
+    }
+
+    private async Task LoadTopMedicationsAsync()
+    {
         try
         {
-            Dictionary<string, int> data = _statisticsService.GetMostPrescribedMeds();
+            Dictionary<string, int> data = await _statisticsService.GetMostPrescribedMedsAsync();
 
             if (data is null || data.Count == 0)
             {
@@ -376,10 +402,14 @@ internal class StatisticsViewModel : INotifyPropertyChanged
     /// </summary>
     private void LoadDemographics()
     {
+        LoadDemographicsAsync().GetAwaiter().GetResult();
+    }
+
+    private async Task LoadDemographicsAsync()
+    {
         try
         {
-            // 1. Fetch Gender Data (Pie Chart) - Map SexEnum counts into pie chart
-            Dictionary<string, int> genderData = _statisticsService.GetPatientGenderDistribution();
+            Dictionary<string, int> genderData = await _statisticsService.GetPatientGenderDistributionAsync();
 
             if (genderData is null || genderData.Count == 0)
             {
@@ -404,7 +434,7 @@ internal class StatisticsViewModel : INotifyPropertyChanged
             }
 
             // 2. Fetch Age Data (Bar Chart) - Map age buckets to bar chart
-            Dictionary<string, int>? ageData = _statisticsService.GetAgeDistribution();
+            Dictionary<string, int>? ageData = await _statisticsService.GetAgeDistributionAsync();
 
             if (ageData is null || ageData.Count == 0)
             {
@@ -461,4 +491,3 @@ internal class StatisticsViewModel : INotifyPropertyChanged
         };
     }
 }
-

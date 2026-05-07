@@ -35,11 +35,6 @@
     <None Remove="Views\TriageView.xaml" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Database\script1_create_database.sql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\Common.Data\Common.Data.csproj" />
   </ItemGroup>
   <ItemGroup>
@@ -103,6 +98,9 @@
     <Page Update="Styles\Controls.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Database\" />
   </ItemGroup>
 
   <PropertyGroup>

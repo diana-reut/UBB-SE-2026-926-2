@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Threading.Tasks;
 
 namespace HospitalManagement.ViewModel;
 
@@ -44,13 +45,13 @@ internal partial class PrescriptionViewModel : ObservableObject
         _prescriptionService = prescriptionService;
         _addictDetectionService = addictDetectionService;
 
-        LoadPrescriptions();
+        _ = LoadPrescriptionsAsync();
     }
 
 
 
     [RelayCommand]
-    private void ApplyFilter()
+    private async Task ApplyFilter()
     {
         InfoMessage = "";
         CurrentPage = 1;
@@ -67,7 +68,7 @@ internal partial class PrescriptionViewModel : ObservableObject
 
         try
         {
-            UpdatePageData();
+            await UpdatePageDataAsync();
 
             if (Prescriptions.Count == 0)
                 InfoMessage = "No prescriptions found matching those criteria.";
@@ -79,40 +80,50 @@ internal partial class PrescriptionViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void NextPage()
+    private async Task NextPage()
     {
         if (Prescriptions.Count == PageSize)
         {
             CurrentPage++;
-            UpdatePageData();
+            await UpdatePageDataAsync();
         }
     }
 
     [RelayCommand]
-    private void PrevPage()
+    private async Task PrevPage()
     {
         if (CurrentPage > 1)
         {
             CurrentPage--;
-            UpdatePageData();
+            await UpdatePageDataAsync();
         }
     }
 
     [RelayCommand]
-    private void SeeAllAddicts()
+    private async Task SeeAllAddicts()
     {
         AddictCandidates.Clear();
 
-        foreach (var patient in _addictDetectionService.GetAddictCandidates())
+        foreach (var patient in await _addictDetectionService.GetAddictCandidatesAsync())
             AddictCandidates.Add(patient);
     }
     private void LoadPrescriptions()
     {
+        LoadPrescriptionsAsync().GetAwaiter().GetResult();
+    }
+
+    private async Task LoadPrescriptionsAsync()
+    {
         CurrentPage = 1;
-        UpdatePageData();
+        await UpdatePageDataAsync();
     }
 
     private void UpdatePageData()
+    {
+        UpdatePageDataAsync().GetAwaiter().GetResult();
+    }
+
+    private async Task UpdatePageDataAsync()
     {
         Prescriptions.Clear();
         InfoMessage = "";
@@ -129,11 +140,11 @@ internal partial class PrescriptionViewModel : ObservableObject
 
         List<Prescription> targetList =
             hasFilter
-            ? _prescriptionService.ApplyFilter(ActiveFilter)
+            ? (await _prescriptionService.ApplyFilterAsync(ActiveFilter))
                 .Skip((CurrentPage - 1) * PageSize)
                 .Take(PageSize)
                 .ToList()
-            : _prescriptionService.GetLatestPrescriptions(PageSize, CurrentPage);
+            : await _prescriptionService.GetLatestPrescriptionsAsync(PageSize, CurrentPage);
 
         foreach (var item in targetList)
         {

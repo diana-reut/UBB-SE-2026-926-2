@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using HospitalManagement.Repository;
 using HospitalManagement.Entity.Enums;
 using HospitalManagement.Entity;
@@ -23,29 +24,61 @@ internal class BillingService : IBillingService
 
     public decimal ComputeBasePrice(int patientId, int recordId)
     {
-        decimal score = 0;
         MedicalRecord? record = _recordRepo.GetById(recordId);
         Prescription? prescription = _prescriptionRepo.GetByRecordId(recordId);
-        List<PrescriptionItem> prescriptionItems;
-        if (prescription is not null)
-        {
-            prescriptionItems = _prescriptionRepo.GetItems(prescription.Id);
-        }
-        else
-        {
-            prescriptionItems = [];
-        }
-
+        List<PrescriptionItem> prescriptionItems = prescription is not null
+            ? _prescriptionRepo.GetItems(prescription.Id)
+            : [];
         MedicalHistory? history = _historyRepo.GetByPatientId(patientId);
+        List<string> chronicConditions = history is not null
+            ? _historyRepo.GetChronicConditions(history.Id)
+            : [];
+        List<(Allergy Allergy, string SeverityLevel)> allergies = history is not null
+            ? _historyRepo.GetAllergiesByHistoryId(history.Id)
+            : [];
+        List<Transplant> associatedTransplants = _transplantRepo.GetByReceiverId(patientId);
+
+        return CalculateBasePrice(record, history, prescriptionItems, chronicConditions, allergies, associatedTransplants);
+    }
+
+    public async Task<decimal> ComputeBasePriceAsync(int patientId, int recordId)
+    {
+        MedicalRecord? record = await _recordRepo.GetByIdAsync(recordId);
+        Prescription? prescription = await _prescriptionRepo.GetByRecordIdAsync(recordId);
+        List<PrescriptionItem> prescriptionItems = prescription is not null
+            ? await _prescriptionRepo.GetItemsAsync(prescription.Id)
+            : [];
+        MedicalHistory? history = await _historyRepo.GetByPatientIdAsync(patientId);
+        List<string> chronicConditions = history is not null
+            ? await _historyRepo.GetChronicConditionsAsync(history.Id)
+            : [];
+        List<(Allergy Allergy, string SeverityLevel)> allergies = history is not null
+            ? await _historyRepo.GetAllergiesByHistoryIdAsync(history.Id)
+            : [];
+        List<Transplant> associatedTransplants = await _transplantRepo.GetByReceiverIdAsync(patientId);
+
+        return CalculateBasePrice(record, history, prescriptionItems, chronicConditions, allergies, associatedTransplants);
+    }
+
+    public decimal ApplyDiscount(decimal basePrice, int discount)
+    {
+        return basePrice - basePrice * discount / 100;
+    }
+
+    private static decimal CalculateBasePrice(
+        MedicalRecord? record,
+        MedicalHistory? history,
+        List<PrescriptionItem> prescriptionItems,
+        List<string> chronicConditions,
+        List<(Allergy Allergy, string SeverityLevel)> allergies,
+        List<Transplant> associatedTransplants)
+    {
+        decimal score = 0;
 
         if (history is null || record is null)
         {
             return score;
         }
-
-        List<string> chronicConditions = _historyRepo.GetChronicConditions(history.Id);
-        List<(Allergy Allergy, string SeverityLevel)> allergies = _historyRepo.GetAllergiesByHistoryId(history.Id);
-        List<Transplant> associatedTransplants = _transplantRepo.GetByReceiverId(patientId);
 
         if (record.SourceType == SourceType.ER)
         {
@@ -57,7 +90,6 @@ internal class BillingService : IBillingService
         }
 
         score += 50 * prescriptionItems.Count;
-
         score += 100 * chronicConditions.Count;
 
         foreach ((Allergy Allergy, string SeverityLevel) allergy in allergies)
@@ -78,10 +110,5 @@ internal class BillingService : IBillingService
         }
 
         return score;
-    }
-
-    public decimal ApplyDiscount(decimal basePrice, int discount)
-    {
-        return basePrice - basePrice * discount / 100;
     }
 }

@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using HospitalManagement.Entity;
 using HospitalManagement.Repository;
 using HospitalManagement.Integration;
@@ -16,18 +17,16 @@ internal class PrescriptionService : IPrescriptionService
         _prescriptionRepository = prescriptionRepository ?? throw new ArgumentNullException(nameof(prescriptionRepository));
     }
 
-
-    // <param name="n">Number of items per page</param>
-    // <param name="page">Page number (starting from 1)</param>
-    // <returns>List of Prescriptions</returns>
     public List<Prescription> GetLatestPrescriptions(int n, int page)
     {
         return _prescriptionRepository.GetTopN(n, page);
     }
 
+    public Task<List<Prescription>> GetLatestPrescriptionsAsync(int n, int page)
+    {
+        return _prescriptionRepository.GetTopNAsync(n, page);
+    }
 
-    // <param name="id">The ID of the prescription</param>
-    // <returns>The specified Prescription</returns>
     public Prescription GetPrescriptionDetails(int id)
     {
         var filter = new PrescriptionFilter { PrescriptionId = id, };
@@ -36,8 +35,13 @@ internal class PrescriptionService : IPrescriptionService
         return prescription;
     }
 
-    // <param name="filter">The complex filter for finding prescriptions</param>
-    // <returns>A filtered list of Prescriptions sorted by Date descending.</returns>
+    public async Task<Prescription> GetPrescriptionDetailsAsync(int id)
+    {
+        var filter = new PrescriptionFilter { PrescriptionId = id, };
+        List<Prescription> prescriptions = await _prescriptionRepository.GetFilteredAsync(filter);
+        return prescriptions.FirstOrDefault() ?? throw new ArgumentException($"Prescription with ID {id} does not exist.");
+    }
+
     public List<Prescription> ApplyFilter(PrescriptionFilter filter)
     {
         if (filter is null)
@@ -47,9 +51,24 @@ internal class PrescriptionService : IPrescriptionService
 
         try
         {
-            List<Prescription> results = _prescriptionRepository.GetFiltered(filter);
+            return _prescriptionRepository.GetFiltered(filter);
+        }
+        catch (Exception)
+        {
+            throw new MyNotImplementedException("The medication search could not be completed at this time due to high system load or complex parameters. Please try simplifying your search or try again later.");
+        }
+    }
 
-            return results;
+    public async Task<List<Prescription>> ApplyFilterAsync(PrescriptionFilter filter)
+    {
+        if (filter is null)
+        {
+            return await _prescriptionRepository.GetTopNAsync(20, 1);
+        }
+
+        try
+        {
+            return await _prescriptionRepository.GetFilteredAsync(filter);
         }
         catch (Exception)
         {

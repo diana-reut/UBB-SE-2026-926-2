@@ -2,6 +2,7 @@ using HospitalManagement.Entity;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
 using HospitalManagement.ViewModel;
+using System.Threading.Tasks;
 
 namespace HospitalManagement.View;
 //m
@@ -32,6 +33,14 @@ internal sealed partial class MedicalHistoryDialog : ContentDialog
         AllergyNameEntry.DisplayMemberPath = AllergyDisplayMemberPath;
         AllergyNameEntry.SelectedValuePath = AllergySelectedValuePath;
 
+    }
+
+    public async Task InitializeAsync()
+    {
+        await _viewModel.LoadAllergiesAsync();
+        AllergyNameEntry.ItemsSource = _viewModel.AvailableAllergies;
+        AllergyNameEntry.DisplayMemberPath = AllergyDisplayMemberPath;
+        AllergyNameEntry.SelectedValuePath = AllergySelectedValuePath;
     }
 
     private void MedicalHistoryDialog_Closing(ContentDialog sender, ContentDialogClosingEventArgs args)

@@ -22,7 +22,7 @@ internal sealed partial class MedicalStaffView : Window
             rootElement.DataContext = ViewModel;
         }
 
-        ViewModel.OpenBloodDonorsAction = selectedPatient =>
+        ViewModel.OpenBloodDonorsAction = async selectedPatient =>
         {
             var donorsWindow = new Window
             {
@@ -32,7 +32,7 @@ internal sealed partial class MedicalStaffView : Window
             IServiceProvider scope = ServiceRegistry.Services;
             BloodDonorsView donorsPage = scope.GetRequiredService<BloodDonorsView>();
 
-            donorsPage.Initialize(selectedPatient.Id);
+            await donorsPage.InitializeAsync(selectedPatient.Id);
 
             donorsWindow.Content = donorsPage;
             donorsWindow.Activate();
@@ -52,7 +52,7 @@ internal sealed partial class MedicalStaffView : Window
         };
     }
 
-    private void PatientList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+    private async void PatientList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
     {
         if (sender is Microsoft.UI.Xaml.Controls.ListView listView
             && listView.SelectedItem is Entity.Patient selectedPatient)
@@ -65,7 +65,7 @@ internal sealed partial class MedicalStaffView : Window
             // 3. Instantiate your Page passing the actual Patient Id
             IServiceProvider scope = ServiceRegistry.Services;
             PatientProfileView profilePage = scope.GetRequiredService<PatientProfileView>();
-            profilePage.Initialize(selectedPatient.Id);
+            await profilePage.InitializeAsync(selectedPatient.Id);
 
             newWindow.Content = profilePage;
             newWindow.Activate();

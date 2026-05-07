@@ -31,12 +31,17 @@ internal sealed partial class PatientProfileView : Page
 
     public void Initialize(int patientId)
     {
-        _viewModel.LoadFullPatientProfile(patientId);
+        _ = InitializeAsync(patientId);
     }
 
-    private void Page_Loaded(object sender, RoutedEventArgs e)
+    public async Task InitializeAsync(int patientId)
     {
-        _viewModel.CheckHighRiskStatus();
+        await _viewModel.LoadFullPatientProfileAsync(patientId);
+    }
+
+    private async void Page_Loaded(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.CheckHighRiskStatusAsync();
     }
 
     private async void ViewPrescription_ClickAsync(object sender, RoutedEventArgs e)
@@ -49,14 +54,14 @@ internal sealed partial class PatientProfileView : Page
         _viewModel.ExportSelectedRecord();
     }
 
-    private void ImportER_ClickAsync(object sender, RoutedEventArgs e)
+    private async void ImportER_ClickAsync(object sender, RoutedEventArgs e)
     {
-        _viewModel.ImportRecords(isER: true);
+        await _viewModel.ImportRecordsAsync(isER: true);
     }
 
-    private void ImportStaff_ClickAsync(object sender, RoutedEventArgs e)
+    private async void ImportStaff_ClickAsync(object sender, RoutedEventArgs e)
     {
-        _viewModel.ImportRecords(isER: false);
+        await _viewModel.ImportRecordsAsync(isER: false);
     }
 
     private void RecordList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
@@ -88,7 +93,7 @@ internal sealed partial class PatientProfileView : Page
 
         prescriptionPage.ViewModel.SearchIdText = prescriptionId.ToString();
 
-        prescriptionPage.ViewModel.ApplyFilterCommand.Execute(null);
+        await prescriptionPage.ViewModel.ApplyFilterCommand.ExecuteAsync(null);
 
         prescriptionWindow.Content = prescriptionPage;
         prescriptionWindow.Activate();

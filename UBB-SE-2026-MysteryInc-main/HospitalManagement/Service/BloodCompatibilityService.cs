@@ -20,6 +20,11 @@ internal class BloodCompatibilityService : IBloodCompatibilityService
         _historyRepo = historyRepo;
     }
 
+    public List<Patient> GetTopCompatibleDonors(int recipientId)
+    {
+        return GetTopCompatibleDonorsAsync(recipientId).GetAwaiter().GetResult();
+    }
+
     public async Task<List<Patient>> GetTopCompatibleDonorsAsync(int recipientId)
     {
         Patient? recipient = await _patientRepo.GetByIdAsync(recipientId);

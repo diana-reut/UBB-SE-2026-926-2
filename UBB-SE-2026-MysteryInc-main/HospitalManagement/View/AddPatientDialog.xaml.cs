@@ -17,8 +17,12 @@ internal sealed partial class AddPatientDialog : ContentDialog
         InitializeComponent();
     }
 
-    private void ContentDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+    private async void ContentDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
     {
+        ContentDialogButtonClickDeferral deferral = args.GetDeferral();
+
+        try
+        {
         string sex = (SexEntry.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "M";
 
         ViewModel.AddPatientDialogViewModel.FormValidationResult result = ViewModel.AddPatientDialogViewModel.ValidateForm(
@@ -41,7 +45,7 @@ internal sealed partial class AddPatientDialog : ContentDialog
             return;
         }
 
-        (bool success, string? errorMessage, Entity.Patient? patient) = _viewModel.SubmitPatient(
+        (bool success, string? errorMessage, Entity.Patient? patient) = await _viewModel.SubmitPatientAsync(
             FirstNameEntry.Text,
             LastNameEntry.Text,
             sex,
@@ -61,5 +65,10 @@ internal sealed partial class AddPatientDialog : ContentDialog
 
         ErrorLabel.Visibility = Visibility.Collapsed;
         NewPatient = patient!;
+        }
+        finally
+        {
+            deferral.Complete();
+        }
     }
 }

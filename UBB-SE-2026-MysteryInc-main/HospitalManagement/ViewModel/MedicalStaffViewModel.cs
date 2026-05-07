@@ -7,6 +7,8 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
+using System.Threading.Tasks;
 
 namespace HospitalManagement.ViewModel;
 //m
@@ -100,14 +102,14 @@ internal class MedicalStaffViewModel : INotifyPropertyChanged
         _ghostService.ExorcismTriggered += (s, e) => IsExorcismAlertVisible = true;
         IsExorcismAlertVisible = _ghostService.IsExorcismTriggered();
 
-        SearchCommand = new RelayCommand(ExecuteSearch);
+        SearchCommand = new AsyncRelayCommand(ExecuteSearchAsync);
 
         FindBloodDonorsCommand = new RelayCommand(FindBloodDonors);
         RequestTransplantCommand = new RelayCommand(RequestTransplant);
         GhostSightingCommand = new RelayCommand(() => _ghostService.SawAGhost());
     }
 
-    private void ExecuteSearch()
+    private async Task ExecuteSearchAsync()
     {
         ErrorMessage = "";
         SearchResults.Clear();
@@ -130,7 +132,7 @@ internal class MedicalStaffViewModel : INotifyPropertyChanged
 
         try
         {
-            System.Collections.Generic.List<Patient> results = _patientService.SearchPatients(filter);
+            System.Collections.Generic.List<Patient> results = await _patientService.SearchPatientsAsync(filter);
 
             if (results is null || results.Count == 0)
             {

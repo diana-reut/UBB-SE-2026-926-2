@@ -80,7 +80,7 @@ internal class DialogService : IDialogService
             XamlRoot = XamlRoot,
         };
 
-        dialog.Initialize();
+        await dialog.InitializeAsync();
 
         _ = await dialog.ShowAsync();
 
