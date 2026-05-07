@@ -31,7 +31,7 @@ namespace ERManagementSystem.ViewModels
         partial void OnSelectedOccupiedRoomChanged(ER_Room? value)
         {
             if (value != null) LoadRoomVisit(value);
-            else if (SelectedChangedRoom == null) ClearVisitDetails();
+            else if (SelectedCleaningRoom == null) ClearVisitDetails();
         }
 
         partial void OnSelectedCleaningRoomChanged(ER_Room? value)

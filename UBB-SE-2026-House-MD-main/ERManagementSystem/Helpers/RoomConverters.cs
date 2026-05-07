@@ -3,6 +3,7 @@ using Microsoft.UI;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using ERManagementSystem.Models;
+using Common.Data.Models;
 
 namespace ERManagementSystem.Helpers
 {

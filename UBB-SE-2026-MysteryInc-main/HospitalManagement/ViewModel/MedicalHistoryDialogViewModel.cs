@@ -9,13 +9,14 @@ using HospitalManagement.View;
 using System.Threading.Tasks;
 using Common.Data.Entity.Enums;
 using Common.Data.Entity;
+using HospitalManagement.Proxy.AllergyProxy;
 
 namespace HospitalManagement.ViewModel;
 
 
 internal class MedicalHistoryDialogViewModel
 {
-    private readonly IAllergyService _allergyService;
+    private readonly IAllergyProxy _allergyProxy;
 
     public ObservableCollection<AllergyEntry> AllergyList { get; } = [];
 
@@ -23,9 +24,9 @@ internal class MedicalHistoryDialogViewModel
 
     public MedicalHistory? MedicalHistory { get; private set; }
 
-    public MedicalHistoryDialogViewModel(IAllergyService allergyService)
+    public MedicalHistoryDialogViewModel(IAllergyProxy allergyService)
     {
-        _allergyService = allergyService;
+        _allergyProxy = allergyService;
     }
 
     public void LoadAllergies()
@@ -35,7 +36,7 @@ internal class MedicalHistoryDialogViewModel
 
     public async Task LoadAllergiesAsync()
     {
-        AvailableAllergies = [.. await _allergyService.GetAllergiesAsync()];
+        AvailableAllergies = [.. await _allergyProxy.GetAllAsync()];
     }
 
     public bool TryAddAllergy(Allergy? selectedAllergy, string? severity)

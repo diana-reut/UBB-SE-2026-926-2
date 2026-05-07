@@ -2,7 +2,7 @@
     x:Class="HospitalManagement.View.AdminView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:entity="using:HospitalManagement.Entity"
+    xmlns:entity="using:Common.Data.Entity"
     xmlns:converters="using:HospitalManagement.Converters"
     Title="Admin Dashboard - Hospital Management" >
 

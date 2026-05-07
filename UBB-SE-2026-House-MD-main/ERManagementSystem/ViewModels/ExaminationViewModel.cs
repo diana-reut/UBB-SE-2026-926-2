@@ -233,7 +233,7 @@ namespace ERManagementSystem.ViewModels
                     {
                         // Even if Triage Parameters are corrupted/missing in the seed, we can still recover the doctor.
                         var triageParams = triageParamsRepo.GetByTriageId(triage.Triage_ID);
-                        int recoveredDoctorId = mockStaffService.RequestDoctor(triage.Specialization, triageParams ?? new ERManagementSystem.Models.Triage_Parameters());
+                        int recoveredDoctorId = mockStaffService.RequestDoctor(triage.Specialization, triageParams ?? new Triage_Parameters());
 
                         DoctorId = recoveredDoctorId;
                         var doctor = mockStaffService.GetDoctorByID(recoveredDoctorId);

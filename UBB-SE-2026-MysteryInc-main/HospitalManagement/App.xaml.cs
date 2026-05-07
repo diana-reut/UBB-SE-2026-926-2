@@ -19,6 +19,7 @@ using Microsoft.UI.Xaml;
 using ERManagementSystem.Helpers;
 using Microsoft.Extensions.Logging;
 using Common.Data.Repository;
+using HospitalManagement.Proxy.AllergyProxy;
 
 [assembly: InternalsVisibleTo("HospitalManagementTest")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
@@ -61,21 +62,16 @@ public partial class App : Application
         _ = services.AddSingleton(AppConfiguration);
 
         _ = services.AddDbContext<EFHospitalDbContext>(options =>
-            options.UseSqlServer(AppConfiguration.GetConnectionString("DefaultConnection"))
-            .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
-        .EnableSensitiveDataLogging()
-        .EnableDetailedErrors());
+            options.UseSqlServer(AppConfiguration.GetConnectionString("DefaultConnection")));
 
         _ = services.AddScoped<IPatientRepository, PatientRepository>();
         _ = services.AddScoped<IMedicalHistoryRepository, MedicalHistoryRepository>();
         _ = services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
-        _ = services.AddScoped<IAllergyRepository, AllergyRepository>();
         _ = services.AddScoped<ITransplantRepository, TransplantRepository>();
         _ = services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
 
         _ = services.AddTransient<IBloodCompatibilityService, BloodCompatibilityService>();
         _ = services.AddTransient<IPatientService, PatientService>();
-        _ = services.AddTransient<IAllergyRepository, AllergyRepository>();
         _ = services.AddTransient<ITransplantService, TransplantService>();
         _ = services.AddTransient<IExportService, ExportService>();
         _ = services.AddTransient<IImportService, ImportService>();
@@ -84,6 +80,20 @@ public partial class App : Application
         _ = services.AddTransient<IPrescriptionService, PrescriptionService>();
         _ = services.AddTransient<IStatisticsService, StatisticsService>();
         _ = services.AddSingleton<IGhostService, GhostService>();
+
+        _ = services.AddHttpClient<IAllergyProxy, AllergyProxy>((client) =>
+        {
+            var uriString = AppConfiguration["ApiSettings:BaseUri"];
+
+            if (string.IsNullOrEmpty(uriString))
+            {
+                throw new InvalidOperationException("BaseUri is missing from appsettings.local.json");
+            }
+
+            client.BaseAddress = new Uri(uriString);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
 
         _ = services.AddTransient<AdminViewModel>();
         _ = services.AddTransient<AdminView>();

@@ -14,7 +14,7 @@ public class AllergyService : IAllergyService
         _repository = allergyRepository;
     }
 
-    public Task<IEnumerable<Allergy>> GetAllergiesAsync()
+    public Task<List<Allergy>> GetAllergiesAsync()
     {
         return _repository.GetAllergiesAsync();
     }

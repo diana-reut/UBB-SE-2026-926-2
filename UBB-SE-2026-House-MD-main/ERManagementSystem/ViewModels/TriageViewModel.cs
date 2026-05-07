@@ -54,7 +54,7 @@ namespace ERManagementSystem.ViewModels
         [ObservableProperty]
         private bool isTriaged;
 
-        public bool IsNotTriaged => !IsTriage;
+        public bool IsNotTriaged => !IsTriaged;
 
         // ── Last triage result (needed for display) ─────────────────────────
         private Triage? lastTriageResult;

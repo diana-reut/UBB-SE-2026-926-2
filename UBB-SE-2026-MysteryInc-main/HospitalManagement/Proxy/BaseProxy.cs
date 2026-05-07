@@ -20,8 +20,7 @@ public abstract class ProxyBase
 
     protected async Task<T?> GetAsync<T>(string uri)
     {
-        var requestUri = new Uri(uri, UriKind.RelativeOrAbsolute);
-        using HttpResponseMessage response = await HttpClient.GetAsync(requestUri);
+        using HttpResponseMessage response = await HttpClient.GetAsync(uri);
         HttpResponseMessage _ = response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<T>(Options);
     }

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace HospitalManagement.Proxy;
+namespace HospitalManagement.Proxy.AllergyProxy;
 
-public class AllergyProxy : ProxyBase
+internal class AllergyProxy : ProxyBase, IAllergyProxy
 {
     private const string BaseUri = "api/allergies";
 

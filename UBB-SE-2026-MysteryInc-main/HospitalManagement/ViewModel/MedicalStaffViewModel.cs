@@ -13,6 +13,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Common.Data.Integration;
 
 namespace HospitalManagement.ViewModel;
 
