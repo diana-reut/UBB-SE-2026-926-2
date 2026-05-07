@@ -205,11 +205,8 @@ namespace Common.Data.Migrations
             modelBuilder.Entity("ERManagementSystem.Models.Triage_Parameters", b =>
                 {
                     b.Property<int>("Triage_ID")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasColumnName("Triage_ID");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Triage_ID"));
 
                     b.Property<int>("Bleeding")
                         .HasColumnType("int")

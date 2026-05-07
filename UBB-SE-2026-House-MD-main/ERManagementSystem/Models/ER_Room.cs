@@ -19,9 +19,9 @@ namespace ERManagementSystem.Models
 
         public static class RoomStatus
         {
-            public const string Available = "available";
-            public const string Occupied = "occupied";
-            public const string Cleaning = "cleaning";
+            public const string Available = "Available";
+            public const string Occupied = "Occupied";
+            public const string Cleaning = "Cleaning";
         }
 
         public static class RoomType
@@ -48,25 +48,37 @@ namespace ERManagementSystem.Models
             { RoomStatus.Cleaning,  RoomStatus.Available }
         };
 
+        public static bool StatusEquals(string? left, string? right)
+            => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
+
+        public static string NormalizeStatus(string? status)
+        {
+            string? knownStatus = AllowedStatuses.FirstOrDefault(allowedStatus => StatusEquals(allowedStatus, status));
+            return knownStatus ?? status ?? string.Empty;
+        }
+
         public void UpdateAvailabilityStatus(string newStatus)
         {
-            if (!AllowedStatuses.Contains(newStatus))
+            string normalizedCurrentStatus = NormalizeStatus(Availability_Status);
+            string normalizedNewStatus = NormalizeStatus(newStatus);
+
+            if (!AllowedStatuses.Any(status => StatusEquals(status, normalizedNewStatus)))
             {
                 throw new ArgumentException(
                     $"'{newStatus}' is not a valid room status. " +
                     $"Allowed values: {string.Join(", ", AllowedStatuses)}.");
             }
 
-            if (!ValidTransitions.TryGetValue(Availability_Status, out string? expectedNext)
-                || expectedNext != newStatus)
+            if (!ValidTransitions.TryGetValue(normalizedCurrentStatus, out string? expectedNext)
+                || !StatusEquals(expectedNext, normalizedNewStatus))
             {
                 throw new InvalidOperationException(
                     $"Invalid room status transition: cannot move Room {Room_ID} " +
                     $"from '{Availability_Status}' to '{newStatus}'. " +
-                    $"Expected next status: '{(ValidTransitions.TryGetValue(Availability_Status, out var next) ? next : "none")}'.");
+                    $"Expected next status: '{(ValidTransitions.TryGetValue(normalizedCurrentStatus, out var next) ? next : "none")}'.");
             }
 
-            Availability_Status = newStatus;
+            Availability_Status = normalizedNewStatus;
         }
 
         public override string ToString() =>

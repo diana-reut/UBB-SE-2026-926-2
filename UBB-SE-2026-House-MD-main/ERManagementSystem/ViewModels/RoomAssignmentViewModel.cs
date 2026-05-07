@@ -31,6 +31,9 @@ namespace ERManagementSystem.ViewModels
         [ObservableProperty] private string statusMessage = string.Empty;
 
         partial void OnSelectedVisitChanged(ER_Visit? value)
+            => _ = HandleSelectedVisitChangedAsync(value);
+
+        private async Task HandleSelectedVisitChangedAsync(ER_Visit? value)
         {
             if (value == null)
             {
@@ -41,8 +44,8 @@ namespace ERManagementSystem.ViewModels
 
             try
             {
-                SelectedPatient = roomAssignmentService.GetPatientById(value.Patient_ID);
-                SelectedTriage = roomAssignmentService.GetTriageByVisitId(value.Visit_ID);
+                SelectedPatient = await roomAssignmentService.GetPatientByIdAsync(value.Patient_ID);
+                SelectedTriage = await roomAssignmentService.GetTriageByVisitIdAsync(value.Visit_ID);
             }
             catch
             {
@@ -52,19 +55,21 @@ namespace ERManagementSystem.ViewModels
         }
 
         [RelayCommand]
-        public void LoadData()
+        public async Task LoadData()
         {
             try
             {
                 IsBusy = true;
                 StatusMessage = string.Empty;
 
-                var waitingWithTriage = roomAssignmentService.GetWaitingVisitsWithTriage();
+                var waitingWithTriage = await roomAssignmentService.GetWaitingVisitsWithTriageAsync();
                 WaitingVisits = new ObservableCollection<ER_Visit>();
                 foreach (var (visit, _) in waitingWithTriage)
+                {
                     WaitingVisits.Add(visit);
+                }
 
-                AvailableRooms = new ObservableCollection<ER_Room>(roomAssignmentService.GetAvailableRooms());
+                AvailableRooms = new ObservableCollection<ER_Room>(await roomAssignmentService.GetAvailableRoomsAsync());
             }
             catch (Exception ex)
             {
@@ -88,11 +93,11 @@ namespace ERManagementSystem.ViewModels
             try
             {
                 IsBusy = true;
-                bool assigned = roomAssignmentService.AutoAssignRoom();
+                bool assigned = await roomAssignmentService.AutoAssignRoomAsync();
                 if (assigned)
                 {
                     await ShowDialog("Room Assigned", "The highest-priority visit has been automatically assigned to a matching room.");
-                    LoadData();
+                    await LoadData();
                 }
                 else
                 {
@@ -117,7 +122,7 @@ namespace ERManagementSystem.ViewModels
                 await ShowDialog("Selection Required", "Please select both a waiting visit and an available room.");
                 return;
             }
-            if (SelectedRoom.Availability_Status != ER_Room.RoomStatus.Available)
+            if (!ER_Room.StatusEquals(SelectedRoom.Availability_Status, ER_Room.RoomStatus.Available))
             {
                 await ShowDialog("Room Not Available", $"Room {SelectedRoom.Room_ID} is '{SelectedRoom.Availability_Status}'. Only available rooms can be assigned.");
                 return;
@@ -130,11 +135,11 @@ namespace ERManagementSystem.ViewModels
             try
             {
                 IsBusy = true;
-                roomAssignmentService.AssignRoomToVisit(SelectedVisit.Visit_ID, SelectedRoom.Room_ID);
+                await roomAssignmentService.AssignRoomToVisitAsync(SelectedVisit.Visit_ID, SelectedRoom.Room_ID);
                 await ShowDialog("Room Assigned", $"Visit {SelectedVisit.Visit_ID} → Room {SelectedRoom.Room_ID} ({SelectedRoom.Room_Type}).");
                 SelectedVisit = null;
                 SelectedRoom = null;
-                LoadData();
+                await LoadData();
             }
             catch (Exception ex)
             {

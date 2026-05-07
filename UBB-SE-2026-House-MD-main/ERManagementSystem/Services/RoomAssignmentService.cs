@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using ERManagementSystem.Helpers;
 using ERManagementSystem.Models;
 using ERManagementSystem.Repositories;
@@ -33,8 +34,11 @@ namespace ERManagementSystem.Services
         }
 
         public IReadOnlyList<(ER_Visit visit, Triage triage)> GetWaitingVisitsWithTriage()
+            => GetWaitingVisitsWithTriageAsync().GetAwaiter().GetResult();
+
+        public async Task<IReadOnlyList<(ER_Visit visit, Triage triage)>> GetWaitingVisitsWithTriageAsync()
         {
-            return erVisitRepository.GetActiveVisitsWithTriage()
+            return (await erVisitRepository.GetActiveVisitsWithTriageAsync())
                 .Where(queueEntry => queueEntry.visit.Status == ER_Visit.VisitStatus.WAITING_FOR_ROOM)
                 .OrderBy(queueEntry => queueEntry.triage.Triage_Level)
                 .ThenBy(queueEntry => queueEntry.visit.Arrival_date_time)
@@ -42,38 +46,47 @@ namespace ERManagementSystem.Services
         }
 
         public IReadOnlyList<ER_Room> GetAvailableRooms()
-        {
-            return roomRepository.GetAvailableRooms();
-        }
+            => GetAvailableRoomsAsync().GetAwaiter().GetResult();
+
+        public async Task<IReadOnlyList<ER_Room>> GetAvailableRoomsAsync()
+            => await roomRepository.GetAvailableRoomsAsync();
 
         public Patient? GetPatientById(string patientId)
-        {
-            return patientRepository.GetById(patientId);
-        }
+            => GetPatientByIdAsync(patientId).GetAwaiter().GetResult();
+
+        public Task<Patient?> GetPatientByIdAsync(string patientId)
+            => patientRepository.GetByIdAsync(patientId);
 
         public Triage? GetTriageByVisitId(int visitId)
-        {
-            return triageRepository.GetByVisitId(visitId);
-        }
+            => GetTriageByVisitIdAsync(visitId).GetAwaiter().GetResult();
+
+        public Task<Triage?> GetTriageByVisitIdAsync(int visitId)
+            => triageRepository.GetByVisitIdAsync(visitId);
 
         public ER_Room? FindAvailableRoom(string requiredRoomType)
+            => FindAvailableRoomAsync(requiredRoomType).GetAwaiter().GetResult();
+
+        public async Task<ER_Room?> FindAvailableRoomAsync(string requiredRoomType)
         {
-            return roomRepository.GetAvailableRooms()
-                                  .FirstOrDefault(r => r.Room_Type == requiredRoomType);
+            IReadOnlyList<ER_Room> rooms = await GetAvailableRoomsAsync();
+            return rooms.FirstOrDefault(r => r.Room_Type == requiredRoomType);
         }
 
         public void AssignRoomToVisit(int visitId, int roomId)
+            => AssignRoomToVisitAsync(visitId, roomId).GetAwaiter().GetResult();
+
+        public async Task AssignRoomToVisitAsync(int visitId, int roomId)
         {
-            ER_Room room = roomRepository.GetById(roomId)
+            ER_Room room = await roomRepository.GetByIdAsync(roomId)
                 ?? throw new InvalidOperationException($"Room {roomId} was not found.");
 
-            if (room.Availability_Status != ER_Room.RoomStatus.Available)
+            if (!ER_Room.StatusEquals(room.Availability_Status, ER_Room.RoomStatus.Available))
             {
                 throw new InvalidOperationException(
                     $"Room {roomId} is not available (current: '{room.Availability_Status}').");
             }
 
-            ER_Visit visit = erVisitRepository.GetByVisitId(visitId)
+            ER_Visit visit = await erVisitRepository.GetByVisitIdAsync(visitId)
                 ?? throw new InvalidOperationException($"Visit {visitId} was not found.");
 
             if (visit.Status != ER_Visit.VisitStatus.WAITING_FOR_ROOM)
@@ -82,19 +95,22 @@ namespace ERManagementSystem.Services
                     $"Visit {visitId} is not in WAITING_FOR_ROOM (current: '{visit.Status}').");
             }
 
-            UpdateRoomAvailability(roomId, ER_Room.RoomStatus.Occupied);
-            roomRepository.SetCurrentVisit(roomId, visitId);
-            stateManagementService.ChangeVisitStatus(visitId, ER_Visit.VisitStatus.IN_ROOM);
+            await UpdateRoomAvailabilityAsync(roomId, ER_Room.RoomStatus.Occupied);
+            await roomRepository.SetCurrentVisitAsync(roomId, visitId);
+            await stateManagementService.ChangeVisitStatusAsync(visitId, ER_Visit.VisitStatus.IN_ROOM);
             Logger.Info($"Visit {visitId} assigned to Room {roomId}.");
         }
 
         public void UpdateRoomAvailability(int roomId, string newStatus)
+            => UpdateRoomAvailabilityAsync(roomId, newStatus).GetAwaiter().GetResult();
+
+        public async Task UpdateRoomAvailabilityAsync(int roomId, string newStatus)
         {
-            ER_Room room = roomRepository.GetById(roomId)
+            ER_Room room = await roomRepository.GetByIdAsync(roomId)
                 ?? throw new InvalidOperationException($"Room {roomId} was not found.");
 
             room.UpdateAvailabilityStatus(newStatus);
-            roomRepository.UpdateAvailabilityStatus(roomId, newStatus);
+            await roomRepository.UpdateAvailabilityStatusAsync(roomId, newStatus);
         }
 
         /// <summary>
@@ -104,9 +120,12 @@ namespace ERManagementSystem.Services
         /// Uses ERVisitRepository.GetActiveVisitsWithTriage() — same data QueueService uses.
         /// </summary>
         public bool AutoAssignRoom()
+            => AutoAssignRoomAsync().GetAwaiter().GetResult();
+
+        public async Task<bool> AutoAssignRoomAsync()
         {
             // Get waiting visits with triage, ordered by priority (same as QueueService)
-            var waitingWithTriage = GetWaitingVisitsWithTriage();
+            IReadOnlyList<(ER_Visit visit, Triage triage)> waitingWithTriage = await GetWaitingVisitsWithTriageAsync();
 
             if (waitingWithTriage.Count == 0)
             {
@@ -115,7 +134,7 @@ namespace ERManagementSystem.Services
 
             var (topVisit, topTriage) = waitingWithTriage.First();
 
-            var parameters = triageParamsRepository.GetByTriageId(topTriage.Triage_ID);
+            Triage_Parameters? parameters = await triageParamsRepository.GetByTriageIdAsync(topTriage.Triage_ID);
 
             // Defaulting parameters to 1 if missing for safety
             int bleeding = parameters?.Bleeding ?? 1;
@@ -126,14 +145,14 @@ namespace ERManagementSystem.Services
             string requiredType = RoomTypeHelper.DetermineRoomType(
                 topTriage.Specialization, bleeding, injuryType, consciousness, breathing);
 
-            ER_Room? room = FindAvailableRoom(requiredType);
+            ER_Room? room = await FindAvailableRoomAsync(requiredType);
             if (room == null)
             {
                 Logger.Warning($"AutoAssignRoom: No '{requiredType}' room available for Visit {topVisit.Visit_ID}.");
                 return false;
             }
 
-            AssignRoomToVisit(topVisit.Visit_ID, room.Room_ID);
+            await AssignRoomToVisitAsync(topVisit.Visit_ID, room.Room_ID);
             return true;
         }
     }

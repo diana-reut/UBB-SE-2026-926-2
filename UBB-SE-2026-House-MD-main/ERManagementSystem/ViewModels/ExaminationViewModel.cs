@@ -306,7 +306,7 @@ namespace ERManagementSystem.ViewModels
             try
             {
                 int visitId = SelectedVisit.Visit_ID;
-                int assignedDoctorId = examinationService.RequestDoctor(visitId);
+                int assignedDoctorId = await examinationService.RequestDoctorAsync(visitId);
 
                 var doctor = mockStaffService.GetDoctorByID(assignedDoctorId);
 
@@ -357,7 +357,7 @@ namespace ERManagementSystem.ViewModels
                 int assignedRoomId;
                 if (roomRepository != null)
                 {
-                    assignedRoomId = roomRepository.GetAssignedRoomIdForVisit(SelectedVisit.Visit_ID)
+                    assignedRoomId = await roomRepository.GetAssignedRoomIdForVisitAsync(SelectedVisit.Visit_ID)
                                      ?? examRepository.GetFirstRoomId();
                 }
                 else
@@ -374,7 +374,7 @@ namespace ERManagementSystem.ViewModels
                     Notes = Notes
                 };
 
-                examinationService.SaveExamination(examination);
+                await examinationService.SaveExaminationAsync(examination);
 
                 await ShowDialog("Examination Saved",
                     $"Examination for Visit {SelectedVisit.Visit_ID} has been saved.\n" +

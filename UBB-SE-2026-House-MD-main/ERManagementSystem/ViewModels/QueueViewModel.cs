@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ERManagementSystem.Models;
@@ -20,10 +21,10 @@ namespace ERManagementSystem.ViewModels
         public ObservableCollection<QueueItemDisplay> ActiveVisits { get; } = new ObservableCollection<QueueItemDisplay>();
 
         [RelayCommand]
-        private void LoadQueue()
+        private async Task LoadQueue()
         {
             ActiveVisits.Clear();
-            var queue = queueService.GetOrderedQueue();
+            var queue = await queueService.GetOrderedQueueAsync();
             foreach (var (visit, triage) in queue)
             {
                 ActiveVisits.Add(new QueueItemDisplay(visit, triage));
@@ -31,9 +32,9 @@ namespace ERManagementSystem.ViewModels
         }
 
         [RelayCommand]
-        private void RefreshQueue()
+        private Task RefreshQueue()
         {
-            LoadQueue();
+            return LoadQueue();
         }
     }
 }

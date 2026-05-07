@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using ERManagementSystem.Models;
 
 namespace ERManagementSystem.Services
@@ -5,6 +6,8 @@ namespace ERManagementSystem.Services
     public interface IExaminationService
     {
         int RequestDoctor(int visitId);
+        Task<int> RequestDoctorAsync(int visitId);
         void SaveExamination(Examination examination);
+        Task SaveExaminationAsync(Examination examination);
     }
 }
