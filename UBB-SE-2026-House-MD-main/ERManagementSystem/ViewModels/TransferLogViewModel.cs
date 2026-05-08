@@ -138,11 +138,11 @@ namespace ERManagementSystem.ViewModels
             try
             {
                 // Task 6.4 & 6.5: send data, save JSON, log attempt
-                transferService.SendPatientData(SelectedVisit.Visit_ID);
+                await transferService.SendPatientDataAsync(SelectedVisit.Visit_ID);
 
                 // Task 6.10: transition visit + mark patient as transferred
-                transferService.TransitionVisitToTransferred(SelectedVisit.Visit_ID);
-                transferService.MarkPatientAsTransferred(SelectedVisit.Visit_ID);
+                await transferService.TransitionVisitToTransferredAsync(SelectedVisit.Visit_ID);
+                await transferService.MarkPatientAsTransferredAsync(SelectedVisit.Visit_ID);
 
                 SelectedVisit.Status = ER_Visit.VisitStatus.TRANSFERRED;
                 SelectedVisit.Transferred = true;
@@ -180,12 +180,12 @@ namespace ERManagementSystem.ViewModels
 
             try
             {
-                var result = transferService.RetryTransfer(SelectedVisit.Visit_ID);
+                var result = await transferService.RetryTransferAsync(SelectedVisit.Visit_ID);
 
                 if (result.Status == "SUCCESS")
                 {
-                    transferService.TransitionVisitToTransferred(SelectedVisit.Visit_ID);
-                    transferService.MarkPatientAsTransferred(SelectedVisit.Visit_ID);
+                    await transferService.TransitionVisitToTransferredAsync(SelectedVisit.Visit_ID);
+                    await transferService.MarkPatientAsTransferredAsync(SelectedVisit.Visit_ID);
 
                     SelectedVisit.Status = ER_Visit.VisitStatus.TRANSFERRED;
                     SelectedVisit.Transferred = true;
@@ -228,7 +228,7 @@ namespace ERManagementSystem.ViewModels
 
             try
             {
-                transferService.CloseVisit(visitId);
+                await transferService.CloseVisitAsync(visitId);
 
                 SelectedVisit.Status = ER_Visit.VisitStatus.CLOSED;
 

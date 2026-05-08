@@ -261,7 +261,7 @@ namespace ERManagementSystem.ViewModels
                     Emergency_Contact = EmergencyContact
                 };
 
-                ER_Visit visit = registrationService.RegisterPatientAndVisit(patient, ChiefComplaint);
+                ER_Visit visit = await registrationService.RegisterPatientAndVisitAsync(patient, ChiefComplaint);
 
                 var successDialog = new ContentDialog
                 {

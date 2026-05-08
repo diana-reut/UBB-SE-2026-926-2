@@ -1,5 +1,5 @@
-using Common.Data.Models;
 using System;
+using Common.Data.Models;
 
 namespace ERManagementSystem.Models
 {
