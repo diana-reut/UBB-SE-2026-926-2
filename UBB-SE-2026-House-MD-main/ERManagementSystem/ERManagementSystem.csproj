@@ -19,12 +19,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Models\Patients.cs" />
-    <Compile Remove="Models\ER_Visit.cs" />
-    <Compile Remove="Models\ER_Room.cs" />
-    <Compile Remove="Models\Triage.cs" />
-    <Compile Remove="Models\Triage_Parameters.cs" />
-    <Compile Remove="Models\Examination.cs" />
-    <Compile Remove="Models\TransferLog.cs" />
     <None Remove="Styles\Controls.xaml" />
     <None Remove="Views\ExaminationView.xaml" />
     <None Remove="Views\PatientRegistrationView.xaml" />
