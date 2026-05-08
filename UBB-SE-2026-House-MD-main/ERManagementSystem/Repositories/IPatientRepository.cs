@@ -1,3 +1,4 @@
+using Common.Data.Entity;
 using ERManagementSystem.Models;
 
 namespace ERManagementSystem.Repositories

@@ -1,5 +1,5 @@
 using CommunityToolkit.Mvvm.Input;
-using HospitalManagement.Entity;
+using Common.Data.Entity;
 using HospitalManagement.Infrastructure;
 using HospitalManagement.Integration;
 using HospitalManagement.Service;
@@ -13,6 +13,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Common.Data.Integration;
 
 namespace HospitalManagement.ViewModel;
 
@@ -196,10 +197,9 @@ internal partial class MedicalStaffViewModel : INotifyPropertyChanged
 
             IServiceProvider services = ServiceRegistry.Services;
             BloodDonorsView donorsPage = services.GetRequiredService<BloodDonorsView>();
-            await donorsPage.InitializeAsync(SelectedPatient.Id);
-
             donorsWindow.Content = donorsPage;
             donorsWindow.Activate();
+            await donorsPage.InitializeAsync(SelectedPatient.Id);
         }
         catch (Exception ex)
         {

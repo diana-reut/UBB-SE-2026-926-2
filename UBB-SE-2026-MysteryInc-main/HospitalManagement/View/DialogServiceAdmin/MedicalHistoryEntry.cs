@@ -1,4 +1,4 @@
-﻿using HospitalManagement.Entity;
+﻿using Common.Data.Entity;
 
 namespace HospitalManagement.View.DialogServiceAdmin;
 

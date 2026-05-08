@@ -1,6 +1,6 @@
-using HospitalManagement.Entity;
-using HospitalManagement.Entity.Enums;
-using HospitalManagement.Integration;
+using Common.Data.Entity;
+using Common.Data.Entity.Enums;
+using Common.Data.Integration;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -31,7 +31,6 @@ internal interface IPatientService
     Task<List<MedicalRecord>> GetMedicalRecordsAsync(int historyId);
     List<string> GetPatientAllergies(int patientId);
     Task<List<string>> GetPatientAllergiesAsync(int patientId);
-    Patient GetPatientDetails(int id);
     Task<Patient> GetPatientDetailsAsync(int id);
     Prescription? GetPrescriptionByRecordId(int recordId);
     Task<Prescription?> GetPrescriptionByRecordIdAsync(int recordId);

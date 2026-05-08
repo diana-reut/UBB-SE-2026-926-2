@@ -1,3 +1,5 @@
+using Common.Data.Entity;
+using Common.Data.Models;
 using ERManagementSystem.Models;
 
 namespace ERManagementSystem.Services

@@ -1,9 +1,9 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using Common.Data.Entity;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using HospitalManagement.Entity;
-using HospitalManagement.Entity.Enums;
+using Common.Data.Entity.Enums;
 using HospitalManagement.Infrastructure;
-using HospitalManagement.Integration;
+using Common.Data.Integration;
 using HospitalManagement.Service;
 using HospitalManagement.View;
 using HospitalManagement.View.DialogServiceAdmin;
@@ -554,22 +554,6 @@ internal partial class AdminViewModel : ObservableObject
         catch (Exception ex)
         {
             await _dialogService.ShowAlertAsync($"Error marking patient as organ donor: {ex.Message}");
-        }
-    }
-
-    [RelayCommand]
-    private async Task ReportGhostAsync()
-    {
-        System.Diagnostics.Debug.WriteLine($">> GHOST REPORTED FROM ADMIN AT {DateTime.Now} <<");
-
-        try
-        {
-            OnPropertyChanged(nameof(IsNotDeceased));
-            await _dialogService.ShowAlertAsync("The patient has been marked as deceased. The record is now locked and moved to the archive.");
-        }
-        catch (Exception ex)
-        {
-            await _dialogService.ShowAlertAsync($"Error: {ex.Message}");
         }
     }
 

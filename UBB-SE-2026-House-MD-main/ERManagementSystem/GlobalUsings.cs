@@ -1,2 +1,2 @@
-global using HospitalManagement.Entity;
-global using HospitalManagement.Entity.Enums;
+global using Common.Data.Entity;
+global using Common.Data.Entity.Enums;

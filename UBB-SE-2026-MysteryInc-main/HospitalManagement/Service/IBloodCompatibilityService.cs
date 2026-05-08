@@ -1,5 +1,5 @@
-using HospitalManagement.Entity;
-using HospitalManagement.Entity.Enums;
+using Common.Data.Entity;
+using Common.Data.Entity.Enums;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 

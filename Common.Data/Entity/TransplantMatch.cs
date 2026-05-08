@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-namespace HospitalManagement.Entity;
+namespace Common.Data.Entity;
 
 /// <summary>
 /// View model representation of a transplant match for display in the DataGrid.

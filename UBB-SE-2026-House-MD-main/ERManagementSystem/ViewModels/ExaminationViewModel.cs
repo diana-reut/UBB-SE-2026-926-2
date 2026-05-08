@@ -5,10 +5,12 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Controls;
-using ERManagementSystem.Helpers;
-using ERManagementSystem.Models;
 using ERManagementSystem.Services;
 using ERManagementSystem.Repositories;
+using Common.Data.Entity;
+using Common.Data.Entity.Enums;
+using Common.Data.Entity.DTOs;
+using Common.Data.Models;
 
 namespace ERManagementSystem.ViewModels
 {
@@ -231,7 +233,7 @@ namespace ERManagementSystem.ViewModels
                     {
                         // Even if Triage Parameters are corrupted/missing in the seed, we can still recover the doctor.
                         var triageParams = triageParamsRepo.GetByTriageId(triage.Triage_ID);
-                        int recoveredDoctorId = mockStaffService.RequestDoctor(triage.Specialization, triageParams ?? new ERManagementSystem.Models.Triage_Parameters());
+                        int recoveredDoctorId = mockStaffService.RequestDoctor(triage.Specialization, triageParams ?? new Triage_Parameters());
 
                         DoctorId = recoveredDoctorId;
                         var doctor = mockStaffService.GetDoctorByID(recoveredDoctorId);

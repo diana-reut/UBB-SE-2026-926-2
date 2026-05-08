@@ -1,3 +1,4 @@
+using Common.Data.Models;
 using System;
 
 namespace ERManagementSystem.Models

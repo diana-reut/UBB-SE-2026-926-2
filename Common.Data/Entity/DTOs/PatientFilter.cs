@@ -1,7 +1,7 @@
 using System;
-using HospitalManagement.Entity.Enums;
+using Common.Data.Entity.Enums;
 
-namespace HospitalManagement.Integration;
+namespace Common.Data.Integration;
 
 public class PatientFilter
 {

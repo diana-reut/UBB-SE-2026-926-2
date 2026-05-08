@@ -1,4 +1,4 @@
-﻿using HospitalManagement.Entity;
+﻿using Common.Data.Entity;
 using HospitalManagement.Service;
 using System;
 using System.Collections.Generic;
@@ -13,15 +13,22 @@ internal class BloodDonorsViewModel : INotifyPropertyChanged
 {
     private readonly IBloodCompatibilityService _bloodService;
     private readonly IPatientService _patientService;
-    private ObservableCollection<DonorMatchModel>? _donors;
+    private string _statusMessage = string.Empty;
 
-    public ObservableCollection<DonorMatchModel>? Donors
+    public ObservableCollection<DonorMatchModel> Donors { get; } = [];
+
+    public string StatusMessage
     {
-        get => _donors;
+        get => _statusMessage;
 
         set
         {
-            _donors = value;
+            if (string.Equals(_statusMessage, value, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _statusMessage = value;
             OnPropertyChanged();
         }
     }
@@ -32,7 +39,6 @@ internal class BloodDonorsViewModel : INotifyPropertyChanged
     {
         _bloodService = bloodService ?? throw new ArgumentNullException(nameof(bloodService));
         _patientService = patientService ?? throw new ArgumentNullException(nameof(patientService));
-        Donors = [];
     }
 
     public void LoadCompatibleDonors(int patientId)
@@ -42,29 +48,38 @@ internal class BloodDonorsViewModel : INotifyPropertyChanged
 
     public async Task LoadCompatibleDonorsAsync(int patientId)
     {
+        StatusMessage = string.Empty;
+        Donors.Clear();
+
         Patient? recipient = await _patientService.GetPatientDetailsAsync(patientId);
-        List<Patient> topDonors = await _bloodService.GetTopCompatibleDonorsAsync(patientId);
-
-        var displayList = new ObservableCollection<DonorMatchModel>();
-        if (recipient?.MedicalHistory is not null)
+        if (recipient?.MedicalHistory is null
+            || recipient.MedicalHistory.BloodType is null
+            || recipient.MedicalHistory.Rh is null)
         {
-            foreach (Patient donor in topDonors)
-            {
-                int matchScore = _bloodService.CalculateScore(donor, recipient);
-
-                displayList.Add(new DonorMatchModel
-                {
-                    FirstName = donor.FirstName,
-                    LastName = donor.LastName,
-                    Cnp = donor.Cnp,
-                    BloodType = donor.MedicalHistory?.BloodType?.ToString() ?? "Unknown",
-                    RhFactor = donor.MedicalHistory?.Rh?.ToString() ?? "Unknown",
-                    Score = matchScore,
-                });
-            }
+            StatusMessage = "The selected patient needs a blood type and Rh factor in their medical history first.";
+            return;
         }
 
-        Donors = displayList;
+        List<Patient> topDonors = await _bloodService.GetTopCompatibleDonorsAsync(patientId);
+        foreach (Patient donor in topDonors)
+        {
+            int matchScore = _bloodService.CalculateScore(donor, recipient);
+
+            Donors.Add(new DonorMatchModel
+            {
+                FirstName = donor.FirstName,
+                LastName = donor.LastName,
+                Cnp = donor.Cnp,
+                BloodType = donor.MedicalHistory?.BloodType?.ToString() ?? "Unknown",
+                RhFactor = donor.MedicalHistory?.Rh?.ToString() ?? "Unknown",
+                Score = matchScore,
+            });
+        }
+
+        if (Donors.Count == 0)
+        {
+            StatusMessage = "No compatible blood donors were found for this patient.";
+        }
     }
 
     protected void OnPropertyChanged([CallerMemberName] string? name = null)
@@ -72,3 +87,4 @@ internal class BloodDonorsViewModel : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }
+

@@ -1,8 +1,7 @@
-using HospitalManagement.Entity;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Common.Data.Entity;
+using Common.Data.Entity;
 
-namespace HospitalManagement.Repository;
+namespace Common.Data.Repository;
 
 public interface IMedicalHistoryRepository
 {

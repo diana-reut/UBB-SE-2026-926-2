@@ -1,5 +1,5 @@
 using CommunityToolkit.Mvvm.Input;
-using HospitalManagement.Entity;
+using Common.Data.Entity;
 using HospitalManagement.Integration.Export;
 using HospitalManagement.Service;
 using System;
@@ -185,7 +185,7 @@ internal class PatientViewModel : INotifyPropertyChanged
         MedicalRecords = [];
         Allergies = [];
         BackCommand = new RelayCommand(GoBack);
-        ExportRecordCommand = new RelayCommand(ExportSelectedRecord, CanExportRecord);
+        ExportRecordCommand = new AsyncRelayCommand(ExportSelectedRecordAsync, CanExportRecord);
         ApplyDiscountCommand = new AsyncRelayCommand(ApplyDiscountAsync, CanApplyDiscount);
         ViewPrescriptionCommand = new AsyncRelayCommand(ViewSelectedPrescriptionAsync, CanViewPrescription);
     }
@@ -361,7 +361,7 @@ internal class PatientViewModel : INotifyPropertyChanged
         }
     }
 
-    private void ExportSelectedRecord()
+    private async Task ExportSelectedRecordAsync()
     {
         if (SelectedMedicalRecord is null || _exportService is null)
         {
@@ -370,7 +370,7 @@ internal class PatientViewModel : INotifyPropertyChanged
 
         try
         {
-            _ = _exportService.ExportRecordToPDF(SelectedMedicalRecord.Id);
+            _ = await _exportService.ExportRecordToPDFAsync(SelectedMedicalRecord.Id);
             System.Diagnostics.Debug.WriteLine($"Successfully exported record {SelectedMedicalRecord.Id} to PDF");
         }
         catch (Exception ex)
