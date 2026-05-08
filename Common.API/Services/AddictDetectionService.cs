@@ -1,14 +1,15 @@
+﻿using Common.API.Services;
 using Common.Data.Entity;
+using Common.Data.Entity.DTOs;
+using Common.Data.Integration;
 using Common.Data.Repository;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
-using Common.Data.Entity.DTOs;
-using Common.Data.Integration;
 
-namespace HospitalManagement.Service;
+namespace Common.API.Services;
 
 internal class AddictDetectionService : IAddictDetectionService
 {

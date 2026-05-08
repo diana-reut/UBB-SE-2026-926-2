@@ -5,7 +5,7 @@ using Common.Data.Repository;
 using Common.Data.Entity.Enums;
 using Common.Data.Entity;
 
-namespace HospitalManagement.Service;
+namespace Common.API.Services;
 
 internal class BillingService : IBillingService
 {

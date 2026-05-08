@@ -1,6 +1,7 @@
 ﻿using Common.Data.Entity.DTOs;
 using System.Net.Http;
 using System.Threading.Tasks;
+using HospitalManagement.Proxy;
 
 namespace HospitalManagement.Proxy.BillingProxy;
 

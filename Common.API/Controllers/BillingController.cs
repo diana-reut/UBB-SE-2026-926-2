@@ -1,10 +1,9 @@
-﻿using HospitalManagement.Service;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Threading.Tasks;
 using Common.Data.Entity.DTOs;
+using Common.API.Services;
 
-namespace HospitalManagement.Controller;
+namespace Common.API.Controllers;
 
 [ApiController]
 [Route("api/billing")]

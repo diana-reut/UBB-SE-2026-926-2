@@ -1,15 +1,14 @@
-using Common.Data.Entity;
+﻿using Common.Data.Entity;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace HospitalManagement.Service;
+namespace HospitalManagement.Proxy.AddictDetectionProxy;
 
-public interface IAddictDetectionService
+public interface IAddictDetectionProxy
 {
     Task<List<Patient>> GetAddictCandidatesAsync();
 
     Task<string> BuildPoliceReportAsync(Patient patient);
 
     Task<string> GetChronicConditionsAsync(int patientId);
-
 }
