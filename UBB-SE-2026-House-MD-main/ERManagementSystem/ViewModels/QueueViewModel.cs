@@ -1,20 +1,24 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Common.Data.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ERManagementSystem.Models;
-using ERManagementSystem.Services;
+using ERManagementSystem.Proxy.ERVisitProxy;
+using ERManagementSystem.Proxy.TriageProxy;
 
 namespace ERManagementSystem.ViewModels
 {
     public partial class QueueViewModel : BaseViewModel
     {
-        private readonly IQueueService queueService;
+        private readonly IERVisitProxy erVisitProxy;
+        private readonly ITriageProxy triageProxy;
 
-        public QueueViewModel(IQueueService queueService)
+        public QueueViewModel(IERVisitProxy erVisitProxy, ITriageProxy triageProxy)
         {
-            this.queueService = queueService;
+            this.erVisitProxy = erVisitProxy;
+            this.triageProxy = triageProxy;
         }
 
         // ── Observable collection for DataGrid ──────────────────────────────
@@ -24,7 +28,17 @@ namespace ERManagementSystem.ViewModels
         private async Task LoadQueue()
         {
             ActiveVisits.Clear();
-            var queue = await queueService.GetOrderedQueueAsync();
+            var waitingVisits = await erVisitProxy.GetByStatusAsync(ER_Visit.VisitStatus.WAITING_FOR_ROOM);
+            var triages = await triageProxy.GetAllAsync();
+            var queue = waitingVisits
+                .Join(
+                    triages,
+                    visit => visit.Visit_ID,
+                    triage => triage.Visit_ID,
+                    (visit, triage) => (visit, triage))
+                .OrderBy(queueEntry => queueEntry.triage.Triage_Level)
+                .ThenBy(queueEntry => queueEntry.visit.Arrival_date_time);
+
             foreach (var (visit, triage) in queue)
             {
                 ActiveVisits.Add(new QueueItemDisplay(visit, triage));
