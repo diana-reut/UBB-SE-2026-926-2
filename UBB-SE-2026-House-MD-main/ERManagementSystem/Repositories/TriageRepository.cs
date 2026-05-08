@@ -1,8 +1,8 @@
 using System.Linq;
 using System.Threading.Tasks;
+using Common.Data.Models;
 using ERManagementSystem.Helpers;
-using ERManagementSystem.Models;
-using HospitalManagement.Data;
+using Common.Data.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERManagementSystem.Repositories

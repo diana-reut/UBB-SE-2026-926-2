@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Common.Data.Models;
+using Common.Data.Data;
 using ERManagementSystem.Helpers;
 using ERManagementSystem.Models;
 using ERManagementSystem.Repositories;
-using HospitalManagement.Data;
 
 namespace ERManagementSystem.Services
 {

@@ -22,3 +22,9 @@ Rulati "Update-Database" in consola. Daca tot e ok o sa aveti un output similar 
 
 ### 6. Seed Data
 Open SSMS si rulati codul din fisierul ssms_seed_data_common_initialcreate_rerunnable_valid_cnp.sql .
+
+
+
+### TO RUN:
+
+Open the HospitalManagement project (NO FOLDER VIEW, use the sln for the whole project) and run HospitalManagement in Unpackaged mode.

@@ -1,4 +1,4 @@
-using HospitalManagement.Entity;
+using Common.Data.Entity;
 using HospitalManagement.Infrastructure;
 using HospitalManagement.ViewModel;
 using Microsoft.Extensions.DependencyInjection;

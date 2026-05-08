@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace ERManagementSystem.Models
+namespace Common.Data.Models
 {
     public class Triage_Parameters
     {

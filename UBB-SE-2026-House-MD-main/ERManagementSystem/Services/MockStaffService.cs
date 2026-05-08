@@ -1,15 +1,9 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+using Common.Data.Models;
 using ERManagementSystem.Models;
-using ERManagementSystem.Repositories;
 
 namespace ERManagementSystem.Services
 {
-    using System;
     public class MockStaffService
     {
         // Simulates requesting a doctor from Staff Management system

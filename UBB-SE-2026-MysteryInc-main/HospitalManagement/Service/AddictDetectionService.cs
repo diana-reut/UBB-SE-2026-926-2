@@ -1,10 +1,12 @@
-using HospitalManagement.Entity;
-using HospitalManagement.Repository;
+using Common.Data.Entity;
+using Common.Data.Repository;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using Common.Data.Entity.DTOs;
+using Common.Data.Integration;
 
 namespace HospitalManagement.Service;
 
@@ -21,25 +23,6 @@ internal class AddictDetectionService : IAddictDetectionService
     {
         _prescriptionRepository = prescriptionRepository ?? throw new ArgumentNullException(nameof(prescriptionRepository));
         _medicalHistoryRepository = medicalHistoryRepository ?? throw new ArgumentNullException(nameof(medicalHistoryRepository));
-    }
-
-    public List<Patient> GetAddictCandidates()
-    {
-        List<Patient> flaggedPatients = _prescriptionRepository.GetAddictCandidatePatients();
-
-        foreach (Patient patient in flaggedPatients)
-        {
-            patient.MedicalHistory = _medicalHistoryRepository.GetByPatientId(patient.Id);
-
-            if (patient.MedicalHistory is not null)
-            {
-                patient.MedicalHistory.ChronicConditions = _medicalHistoryRepository.GetChronicConditions(patient.MedicalHistory.Id);
-            }
-
-            NormalizeMedicalHistory(patient);
-        }
-
-        return flaggedPatients;
     }
 
     public async Task<List<Patient>> GetAddictCandidatesAsync()
@@ -61,23 +44,6 @@ internal class AddictDetectionService : IAddictDetectionService
         return flaggedPatients;
     }
 
-    public string BuildPoliceReport(Patient patient)
-    {
-        if (patient is null || patient.Id <= 0)
-        {
-            throw new ArgumentException("Invalid patient data for building a police report.");
-        }
-
-        var filter = new Integration.PrescriptionFilter
-        {
-            PatientId = patient.Id,
-            DateFrom = DateTime.Today.AddDays(-30),
-        };
-
-        List<Prescription> recentPrescriptions = _prescriptionRepository.GetFiltered(filter);
-        return BuildPoliceReportText(patient, recentPrescriptions);
-    }
-
     public async Task<string> BuildPoliceReportAsync(Patient patient)
     {
         if (patient is null || patient.Id <= 0)
@@ -85,7 +51,7 @@ internal class AddictDetectionService : IAddictDetectionService
             throw new ArgumentException("Invalid patient data for building a police report.");
         }
 
-        var filter = new Integration.PrescriptionFilter
+        var filter = new PrescriptionFilter
         {
             PatientId = patient.Id,
             DateFrom = DateTime.Today.AddDays(-30),

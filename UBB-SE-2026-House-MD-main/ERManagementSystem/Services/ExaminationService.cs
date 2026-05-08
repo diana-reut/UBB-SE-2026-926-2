@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using ERManagementSystem.Models;
 using ERManagementSystem.Repositories;
 using ERManagementSystem.Helpers;
+using Common.Data.Models;
 
 namespace ERManagementSystem.Services
 {

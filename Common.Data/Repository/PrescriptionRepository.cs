@@ -1,13 +1,14 @@
-using HospitalManagement.Data;
-using HospitalManagement.Entity;
-using HospitalManagement.Integration;
+using Common.Data.Data;
+using Common.Data.Entity;
+using Common.Data.Integration;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Common.Data.Entity;
 
-namespace HospitalManagement.Repository;
+namespace Common.Data.Repository;
 
 public class PrescriptionRepository : IPrescriptionRepository
 {
@@ -18,16 +19,12 @@ public class PrescriptionRepository : IPrescriptionRepository
         _context = context;
     }
 
-    public void Add(Prescription prescription) => AddAsync(prescription).GetAwaiter().GetResult();
-
     public async Task AddAsync(Prescription prescription)
     {
         ArgumentNullException.ThrowIfNull(prescription);
         await _context.Prescriptions.AddAsync(prescription);
         await _context.SaveChangesAsync();
     }
-
-    public void Update(Prescription prescription) => UpdateAsync(prescription).GetAwaiter().GetResult();
 
     public async Task UpdateAsync(Prescription prescription)
     {
@@ -50,8 +47,6 @@ public class PrescriptionRepository : IPrescriptionRepository
         await _context.SaveChangesAsync();
     }
 
-    public void Delete(int id) => DeleteAsync(id).GetAwaiter().GetResult();
-
     public async Task DeleteAsync(int id)
     {
         Prescription? prescription = await _context.Prescriptions.FindAsync(id);
@@ -62,7 +57,6 @@ public class PrescriptionRepository : IPrescriptionRepository
         }
     }
 
-    public List<Prescription> GetTopN(int n, int page) => GetTopNAsync(n, page).GetAwaiter().GetResult();
 
     public Task<List<Prescription>> GetTopNAsync(int n, int page)
     {
@@ -77,15 +71,11 @@ public class PrescriptionRepository : IPrescriptionRepository
             .ToListAsync();
     }
 
-    public List<PrescriptionItem> GetItems(int prescriptionId) => GetItemsAsync(prescriptionId).GetAwaiter().GetResult();
-
     public Task<List<PrescriptionItem>> GetItemsAsync(int prescriptionId) =>
         _context.PrescriptionItems
             .Where(pi => pi.PrescriptionId == prescriptionId)
             .AsNoTracking()
             .ToListAsync();
-
-    public List<Prescription> GetFiltered(PrescriptionFilter filter) => GetFilteredAsync(filter).GetAwaiter().GetResult();
 
     public async Task<List<Prescription>> GetFilteredAsync(PrescriptionFilter filter)
     {
@@ -127,12 +117,8 @@ public class PrescriptionRepository : IPrescriptionRepository
             .ToListAsync();
     }
 
-    public List<Prescription> GetAll() => GetAllAsync().GetAwaiter().GetResult();
-
     public Task<List<Prescription>> GetAllAsync() =>
         BaseQuery().ToListAsync();
-
-    public Prescription? GetByRecordId(int recordId) => GetByRecordIdAsync(recordId).GetAwaiter().GetResult();
 
     public Task<Prescription?> GetByRecordIdAsync(int recordId) =>
         BaseQuery().FirstOrDefaultAsync(p => p.RecordId == recordId);

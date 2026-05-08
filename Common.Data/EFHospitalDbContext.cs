@@ -1,14 +1,15 @@
-using HospitalManagement.Entity;
-using HospitalManagement.Entity.Enums;
-using ERManagementSystem.Models;
+using Common.Data.Entity;
+using Common.Data.Entity.Enums;
+using Common.Data.Entity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using Common.Data.Models;
 
-namespace HospitalManagement.Data;
+namespace Common.Data.Data;
 
 public class EFHospitalDbContext : DbContext
 {

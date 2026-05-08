@@ -1,4 +1,4 @@
-using HospitalManagement.Entity;
+using Common.Data.Entity;
 using HospitalManagement.ViewModel;
 using Microsoft.UI.Xaml.Controls;
 using System;

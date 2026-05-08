@@ -1,3 +1,4 @@
+using Common.Data.Entity;
 using HospitalManagement.Infrastructure;
 using HospitalManagement.ViewModel;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,7 +24,7 @@ internal sealed partial class MedicalStaffView : Window
     private async void PatientList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
     {
         if (sender is Microsoft.UI.Xaml.Controls.ListView listView
-            && listView.SelectedItem is Entity.Patient selectedPatient)
+            && listView.SelectedItem is Patient selectedPatient)
         {
             await ViewModel.OpenPatientProfileAsync(selectedPatient);
         }

@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Common.Data.Entity;
+using Common.Data.Models;
 using ERManagementSystem.Models;
 using ERManagementSystem.Services;
 using Microsoft.UI;

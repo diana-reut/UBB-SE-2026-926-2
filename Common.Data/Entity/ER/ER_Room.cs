@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ERManagementSystem.Models
+namespace Common.Data.Models
 {
     public class ER_Room
     {

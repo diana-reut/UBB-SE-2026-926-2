@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Common.Data.Models;
 using ERManagementSystem.Helpers;
 using ERManagementSystem.Models;
 using ERManagementSystem.Repositories;

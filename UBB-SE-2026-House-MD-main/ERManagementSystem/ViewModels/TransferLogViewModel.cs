@@ -4,9 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using ERManagementSystem.Models;
 using ERManagementSystem.Services;
 using Microsoft.UI.Xaml.Controls;
+using Common.Data.Models;
 
 namespace ERManagementSystem.ViewModels
 {
@@ -46,7 +46,7 @@ namespace ERManagementSystem.ViewModels
         [ObservableProperty]
         private bool canRetry = false;
 
-        public bool HasSelectedVisit => SelectedVisit != null;
+        public bool HasSelectedVisit => selectedVisit != null;
 
         // Constructor
         public TransferLogViewModel(ITransferService transferService)

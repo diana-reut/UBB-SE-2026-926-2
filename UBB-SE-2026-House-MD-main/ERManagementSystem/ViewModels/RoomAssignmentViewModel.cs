@@ -1,10 +1,11 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
+using Common.Data.Entity;
+using Common.Data.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ERManagementSystem.Helpers;
-using ERManagementSystem.Models;
 using ERManagementSystem.Services;
 using Microsoft.UI.Xaml.Controls;
 

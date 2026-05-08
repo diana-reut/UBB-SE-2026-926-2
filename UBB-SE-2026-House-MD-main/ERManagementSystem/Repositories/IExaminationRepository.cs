@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Common.Data.Models;
 using ERManagementSystem.Models;
 
 namespace ERManagementSystem.Repositories

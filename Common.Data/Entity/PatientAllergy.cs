@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace HospitalManagement.Entity;
+namespace Common.Data.Entity;
 
 public class PatientAllergy
 {
