@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Linq;
-using HospitalManagement.Service;
+using Common.API.Service;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Common.API.Services;
 
 namespace HospitalManagement.ViewModel;
 

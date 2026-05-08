@@ -20,6 +20,7 @@ using ERManagementSystem.Helpers;
 using Microsoft.Extensions.Logging;
 using Common.Data.Repository;
 using HospitalManagement.Proxy.AllergyProxy;
+using Common.API.Services;
 
 [assembly: InternalsVisibleTo("HospitalManagementTest")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
