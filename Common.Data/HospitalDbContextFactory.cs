@@ -9,7 +9,7 @@ public class HospitalDbContextFactory : IDesignTimeDbContextFactory<EFHospitalDb
     {
         var optionsBuilder = new DbContextOptionsBuilder<EFHospitalDbContext>();
 
-        optionsBuilder.UseSqlServer("Server=MIHI;Database=HospitalManagementDbEF;Trusted_Connection=True;TrustServerCertificate=True;");
+        optionsBuilder.UseSqlServer("Server=localhost;Database=HospitalManagementDbEF;Trusted_Connection=True;TrustServerCertificate=True;");
         
         return new EFHospitalDbContext(optionsBuilder.Options);
     }

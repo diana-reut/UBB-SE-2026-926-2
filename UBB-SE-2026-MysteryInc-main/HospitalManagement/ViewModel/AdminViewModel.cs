@@ -158,7 +158,11 @@ internal partial class AdminViewModel : ObservableObject
     {
         _ghostService = ServiceRegistry.Services.GetRequiredService<IGhostService>();
         _patientService = ServiceRegistry.Services.GetRequiredService<IPatientService>();
-        _transplantService = ServiceRegistry.Services.GetRequiredService<ITransplantService>();
+        _transplantService = ServiceRegistry.Services.GetService<ITransplantService>();
+        if (_transplantService == null)
+        {
+            return; // or disable transplant features
+        }
         _dialogService = ServiceRegistry.Services.GetRequiredService<IDialogService>();
 
         Patients = [];
