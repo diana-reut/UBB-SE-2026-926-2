@@ -61,29 +61,6 @@ internal class AddictDetectionService : IAddictDetectionService
         return BuildPoliceReportText(patient, recentPrescriptions);
     }
 
-    public string GetChronicConditions(int patientId)
-    {
-        if (patientId <= 0)
-        {
-            throw new ArgumentException("Invalid Patient ID.");
-        }
-
-        MedicalHistory? history = _medicalHistoryRepository.GetByPatientId(patientId);
-        if (history is null)
-        {
-            return "None reported.";
-        }
-
-        if (history.ChronicConditions is null || history.ChronicConditions.Count == 0)
-        {
-            history.ChronicConditions = _medicalHistoryRepository.GetChronicConditions(history.Id);
-        }
-
-        return history.ChronicConditions is null || history.ChronicConditions.Count == 0
-            ? "None reported."
-            : string.Join(", ", history.ChronicConditions);
-    }
-
     public async Task<string> GetChronicConditionsAsync(int patientId)
     {
         if (patientId <= 0)

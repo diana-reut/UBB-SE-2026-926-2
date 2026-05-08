@@ -4,9 +4,12 @@ using System.Threading.Tasks;
 
 namespace HospitalManagement.Service;
 
-internal interface IAddictDetectionService
+public interface IAddictDetectionService
 {
-    public Task<string> BuildPoliceReportAsync(Patient patient);
+    Task<List<Patient>> GetAddictCandidatesAsync();
 
-    public Task<List<Patient>> GetAddictCandidatesAsync();
+    Task<string> BuildPoliceReportAsync(Patient patient);
+
+    Task<string> GetChronicConditionsAsync(int patientId);
+
 }

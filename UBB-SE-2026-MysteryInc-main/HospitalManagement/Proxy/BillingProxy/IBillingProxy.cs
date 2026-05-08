@@ -1,8 +1,8 @@
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
-namespace HospitalManagement.Service;
+namespace HospitalManagement.Proxy.BillingProxy;
 
-public interface IBillingService
+public interface IBillingProxy
 {
     Task<decimal> ComputeBasePriceAsync(int patientId, int recordId);
 

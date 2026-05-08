@@ -41,9 +41,9 @@ internal class BillingService : IBillingService
         return CalculateBasePrice(record, history, prescriptionItems, chronicConditions, allergies, associatedTransplants);
     }
 
-    public decimal ApplyDiscount(decimal basePrice, int discount)
+    public async Task<decimal> ApplyDiscountAsync(decimal basePrice, int discount)
     {
-        return basePrice - basePrice * discount / 100;
+        return await Task.FromResult(basePrice - basePrice * discount / 100);
     }
 
     private static decimal CalculateBasePrice(

@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using HospitalManagement.Proxy.BillingProxy;
 
 namespace HospitalManagement.ViewModel;
 
@@ -21,7 +22,7 @@ internal class PatientViewModel : INotifyPropertyChanged
 {
     private readonly IPatientService _patientService;
     private readonly IExportService? _exportService;
-    private readonly IBillingService? _billingService;
+    private readonly IBillingProxy? _billingProxy;
 
     private Patient? _selectedPatient;
 
@@ -177,11 +178,11 @@ internal class PatientViewModel : INotifyPropertyChanged
 
     public Func<Prescription, Task>? OpenPrescriptionDialogAction { get; set; }
 
-    public PatientViewModel(IPatientService patientService, IExportService exportService, IBillingService billingService)
+    public PatientViewModel(IPatientService patientService, IExportService exportService, IBillingProxy billingProxy)
     {
         _patientService = patientService;
         _exportService = exportService;
-        _billingService = billingService;
+        _billingProxy = billingProxy;
         MedicalRecords = [];
         Allergies = [];
         BackCommand = new RelayCommand(GoBack);
@@ -217,14 +218,17 @@ internal class PatientViewModel : INotifyPropertyChanged
 
     public void HandleRouletteResult(int discount, decimal finalPrice)
     {
-        if (SelectedMedicalRecord is null || _billingService is null)
+        if (SelectedMedicalRecord is null || _billingProxy is null)
         {
             return;
         }
 
         try
         {
-            decimal calculatedFinalPrice = _billingService.ApplyDiscount(BasePrice, discount);
+            decimal calculatedFinalPrice = _billingProxy
+                .ApplyDiscountAsync(BasePrice, discount)
+                   .GetAwaiter()
+                   .GetResult();
 
             SelectedMedicalRecord.DiscountApplied = discount;
             SelectedMedicalRecord.FinalPrice = calculatedFinalPrice;
@@ -248,14 +252,14 @@ internal class PatientViewModel : INotifyPropertyChanged
 
     private async Task LoadBillingForRecordAsync(MedicalRecord record)
     {
-        if (_billingService is null || SelectedPatient is null)
+        if (_billingProxy is null || SelectedPatient is null)
         {
             return;
         }
 
         try
         {
-            BasePrice = await _billingService.ComputeBasePriceAsync(SelectedPatient.Id, record.Id);
+            BasePrice = await _billingProxy.ComputeBasePriceAsync(SelectedPatient.Id, record.Id);
             FinalPrice = record.FinalPrice > 0 ? record.FinalPrice : BasePrice;
             DiscountApplied = record.DiscountApplied.HasValue;
         }
@@ -318,7 +322,7 @@ internal class PatientViewModel : INotifyPropertyChanged
 
     private bool CanApplyDiscount()
     {
-        return SelectedMedicalRecord is not null && !DiscountApplied && _billingService is not null;
+        return SelectedMedicalRecord is not null && !DiscountApplied && _billingProxy is not null;
     }
 
     private async Task ViewSelectedPrescriptionAsync()
@@ -350,7 +354,7 @@ internal class PatientViewModel : INotifyPropertyChanged
 
     private async Task ApplyDiscountAsync()
     {
-        if (SelectedMedicalRecord is null || _billingService is null)
+        if (SelectedMedicalRecord is null || _billingProxy is null)
         {
             return;
         }
