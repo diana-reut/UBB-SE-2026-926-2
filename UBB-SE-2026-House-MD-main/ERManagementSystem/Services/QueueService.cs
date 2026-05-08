@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ERManagementSystem.Models;
+using System.Threading.Tasks;
+using Common.Data.Models;
 using ERManagementSystem.Repositories;
 using ERManagementSystem.Helpers;
+using Common.Data.Models;
 
 namespace ERManagementSystem.Services
 {
@@ -20,12 +22,15 @@ namespace ERManagementSystem.Services
         /// Fetches all active visits with their triage data and orders them.
         /// </summary>
         public List<(ER_Visit visit, Triage triage)> GetOrderedQueue()
+            => GetOrderedQueueAsync().GetAwaiter().GetResult();
+
+        public async Task<List<(ER_Visit visit, Triage triage)>> GetOrderedQueueAsync()
         {
             Logger.Info("[QueueService] Fetching active queue");
 
             try
             {
-                var queueWithTriage = visitRepository.GetActiveVisitsWithTriage();
+                var queueWithTriage = await visitRepository.GetActiveVisitsWithTriageAsync();
 
                 Logger.Info($"[QueueService] Retrieved {queueWithTriage.Count} active visits");
 
@@ -60,12 +65,15 @@ namespace ERManagementSystem.Services
         /// Removes a visit from the queue.
         /// </summary>
         public void RemoveFromQueue(int visitId)
+            => RemoveFromQueueAsync(visitId).GetAwaiter().GetResult();
+
+        public async Task RemoveFromQueueAsync(int visitId)
         {
             Logger.Info($"[QueueService] Removing visit {visitId} from queue");
 
             try
             {
-                var visit = visitRepository.GetByVisitId(visitId);
+                var visit = await visitRepository.GetByVisitIdAsync(visitId);
 
                 if (visit == null)
                 {
@@ -74,7 +82,7 @@ namespace ERManagementSystem.Services
                 }
 
                 visit.Status = ER_Visit.VisitStatus.IN_ROOM;
-                visitRepository.UpdateStatus(visitId, visit.Status);
+                await visitRepository.UpdateStatusAsync(visitId, visit.Status);
 
                 Logger.Info($"[QueueService] Visit {visitId} moved to IN_ROOM");
             }

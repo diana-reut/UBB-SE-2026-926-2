@@ -1,5 +1,5 @@
-﻿using HospitalManagement.Entity;
-using HospitalManagement.Entity.DTOs;
+﻿using Common.Data.Entity;
+using Common.Data.Entity.DTOs;
 using HospitalManagement.Integration;
 using HospitalManagement.Service;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -9,6 +9,10 @@ using System.Security.Cryptography;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Globalization;
+using System.Threading.Tasks;
+using Common.Data.Entity;
+using Common.Data.Integration;
 
 namespace HospitalManagement.ViewModel;
 
@@ -16,6 +20,7 @@ internal partial class PrescriptionViewModel : ObservableObject
 {
     private readonly IPrescriptionService _prescriptionService;
     private readonly IAddictDetectionService _addictDetectionService;
+    private int _loadVersion;
 
     public ObservableCollection<Prescription> Prescriptions { get; } = new();
 
@@ -44,13 +49,35 @@ internal partial class PrescriptionViewModel : ObservableObject
         _prescriptionService = prescriptionService;
         _addictDetectionService = addictDetectionService;
 
-        LoadPrescriptions();
+        _ = LoadPrescriptionsAsync();
+    }
+
+    public async Task ShowPrescriptionAsync(int prescriptionId)
+    {
+        SearchIdText = prescriptionId.ToString(CultureInfo.InvariantCulture);
+        SearchName = null;
+        SearchMedication = null;
+        DateFrom = null;
+        DateTo = null;
+
+        ActiveFilter = new PrescriptionFilter
+        {
+            PrescriptionId = prescriptionId
+        };
+
+        CurrentPage = 1;
+        await UpdatePageDataAsync();
+
+        if (Prescriptions.Count == 0)
+        {
+            InfoMessage = "No prescription found for the selected consultation.";
+        }
     }
 
 
 
     [RelayCommand]
-    private void ApplyFilter()
+    private async Task ApplyFilter()
     {
         InfoMessage = "";
         CurrentPage = 1;
@@ -67,7 +94,7 @@ internal partial class PrescriptionViewModel : ObservableObject
 
         try
         {
-            UpdatePageData();
+            await UpdatePageDataAsync();
 
             if (Prescriptions.Count == 0)
                 InfoMessage = "No prescriptions found matching those criteria.";
@@ -79,42 +106,43 @@ internal partial class PrescriptionViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void NextPage()
+    private async Task NextPage()
     {
         if (Prescriptions.Count == PageSize)
         {
             CurrentPage++;
-            UpdatePageData();
+            await UpdatePageDataAsync();
         }
     }
 
     [RelayCommand]
-    private void PrevPage()
+    private async Task PrevPage()
     {
         if (CurrentPage > 1)
         {
             CurrentPage--;
-            UpdatePageData();
+            await UpdatePageDataAsync();
         }
     }
 
     [RelayCommand]
-    private void SeeAllAddicts()
+    private async Task SeeAllAddicts()
     {
         AddictCandidates.Clear();
 
-        foreach (var patient in _addictDetectionService.GetAddictCandidates())
+        foreach (var patient in await _addictDetectionService.GetAddictCandidatesAsync())
             AddictCandidates.Add(patient);
     }
-    private void LoadPrescriptions()
+
+    private async Task LoadPrescriptionsAsync()
     {
         CurrentPage = 1;
-        UpdatePageData();
+        await UpdatePageDataAsync();
     }
 
-    private void UpdatePageData()
+    private async Task UpdatePageDataAsync()
     {
-        Prescriptions.Clear();
+        int loadVersion = ++_loadVersion;
         InfoMessage = "";
 
         var fakeDoctors = MockDoctorProvider.FakeDoctors;
@@ -129,11 +157,18 @@ internal partial class PrescriptionViewModel : ObservableObject
 
         List<Prescription> targetList =
             hasFilter
-            ? _prescriptionService.ApplyFilter(ActiveFilter)
+            ? (await _prescriptionService.ApplyFilterAsync(ActiveFilter))
                 .Skip((CurrentPage - 1) * PageSize)
                 .Take(PageSize)
                 .ToList()
-            : _prescriptionService.GetLatestPrescriptions(PageSize, CurrentPage);
+            : await _prescriptionService.GetLatestPrescriptionsAsync(PageSize, CurrentPage);
+
+        if (loadVersion != _loadVersion)
+        {
+            return;
+        }
+
+        Prescriptions.Clear();
 
         foreach (var item in targetList)
         {

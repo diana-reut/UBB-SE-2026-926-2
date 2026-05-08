@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Linq;
-using HospitalManagement.Entity;
-using HospitalManagement.Entity.DTOs;
-using HospitalManagement.Repository;
+using System.Threading.Tasks;
+using Common.Data.Entity;
+using Common.Data.Entity.DTOs;
+using Common.Data.Repository;
 using HospitalManagement.Integration.External;
 
 namespace HospitalManagement.Service;
@@ -29,23 +30,31 @@ internal class ImportService : IImportService
         _externalAppointment = externalAppointment;
     }
 
-    // SV10: Import from ER. PatientId = id , ExternalId = CNP
     public void ImportFromER(int patientId, int externalId)
     {
-        RecordDTO dto = _externalER.FetchRecordByPatientId(externalId);
-        ProcessImport(dto, patientId);
+        ImportFromERAsync(patientId, externalId).GetAwaiter().GetResult();
     }
 
     public void ImportFromAppointment(int patientId, int externalId)
     {
-        RecordDTO dto = _externalAppointment.FetchRecordByPatientId(externalId);
-        ProcessImport(dto, patientId);
+        ImportFromAppointmentAsync(patientId, externalId).GetAwaiter().GetResult();
     }
 
-    // main flow
-    private void ProcessImport(RecordDTO dto, int patientId)
+    public async Task ImportFromERAsync(int patientId, int externalId)
     {
-        Patient patient = _patientService.GetPatientDetails(patientId);
+        RecordDTO dto = _externalER.FetchRecordByPatientId(externalId);
+        await ProcessImportAsync(dto, patientId);
+    }
+
+    public async Task ImportFromAppointmentAsync(int patientId, int externalId)
+    {
+        RecordDTO dto = _externalAppointment.FetchRecordByPatientId(externalId);
+        await ProcessImportAsync(dto, patientId);
+    }
+
+    private async Task ProcessImportAsync(RecordDTO dto, int patientId)
+    {
+        Patient patient = await _patientService.GetPatientDetailsAsync(patientId);
 
         if (patient.MedicalHistory is null)
         {
@@ -53,20 +62,15 @@ internal class ImportService : IImportService
         }
 
         MedicalRecord record = BuildRecordFromDTO(dto, patient.MedicalHistory.Id);
+        int recordId = await _recordRepo.AddAsync(record);
 
-        // save Record and get the new ID
-        int recordId = _recordRepo.Add(record);
-
-        // mape and save prescription
         if (!string.IsNullOrWhiteSpace(dto.PrescribedMeds))
         {
-            CreatePrescription(dto.PrescribedMeds, recordId);
+            await CreatePrescriptionAsync(dto.PrescribedMeds, recordId);
         }
     }
 
-    // create linked prescription
-    // SV11 - Prescription with prescription items
-    private void CreatePrescription(string medsString, int recordId)
+    private Task CreatePrescriptionAsync(string medsString, int recordId)
     {
         string[] meds = medsString.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
@@ -82,10 +86,9 @@ internal class ImportService : IImportService
             })],
         };
 
-        _prescriptionRepo.Add(prescription);
+        return _prescriptionRepo.AddAsync(prescription);
     }
 
-    // Built Record from DTO logic
     private static MedicalRecord BuildRecordFromDTO(RecordDTO dto, int historyId)
     {
         return new MedicalRecord
@@ -93,7 +96,7 @@ internal class ImportService : IImportService
             HistoryId = historyId,
             SourceType = dto.SourceType,
             SourceId = dto.ExternalRecordId,
-            StaffId = 1, // TODO : next team, replace this with staff id when you have login/Sign up logic and id actually makes sense
+            StaffId = 1,
             Symptoms = dto.Symptoms,
             Diagnosis = dto.TemporaryDiagnosis,
             ConsultationDate = dto.ConsultationDate,

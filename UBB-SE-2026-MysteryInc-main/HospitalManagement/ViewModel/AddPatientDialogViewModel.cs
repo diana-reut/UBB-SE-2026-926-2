@@ -1,8 +1,9 @@
-﻿using HospitalManagement.Entity;
-using HospitalManagement.Entity.Enums;
+﻿using Common.Data.Entity;
+using Common.Data.Entity.Enums;
 using HospitalManagement.Service;
 using HospitalManagement.Validators;
 using System;
+using System.Threading.Tasks;
 
 namespace HospitalManagement.ViewModel;
 
@@ -39,6 +40,12 @@ internal class AddPatientDialogViewModel
     public (bool Success, string? ErrorMessage, Patient? Patient) SubmitPatient(
     string firstName, string lastName, string sex, DateTimeOffset? dob, string cnp, string phone, string emergencyContact)
     {
+        return SubmitPatientAsync(firstName, lastName, sex, dob, cnp, phone, emergencyContact).GetAwaiter().GetResult();
+    }
+
+    public async Task<(bool Success, string? ErrorMessage, Patient? Patient)> SubmitPatientAsync(
+        string firstName, string lastName, string sex, DateTimeOffset? dob, string cnp, string phone, string emergencyContact)
+    {
         Patient data = new()
         {
             FirstName = firstName,
@@ -52,15 +59,8 @@ internal class AddPatientDialogViewModel
 
         try
         {
-            // Only validate, don't save
-            bool isValid = _patientService.ValidateCNP(data.Cnp, data.Sex, data.Dob);
-            if (!isValid)
-                return (false, "Identity Mismatch: The provided CNP does not align with the selected Sex or Date of Birth.", null);
-
-            if (data.Dob >= DateTime.Today)
-                return (false, "Validation Error: Birth Date must be in the past.", null);
-
-            return (true, null, data);
+            Patient created = await _patientService.CreatePatientAsync(data);
+            return (true, null, created);
         }
         catch (ArgumentException ex)
         {

@@ -1,6 +1,6 @@
 using System;
 
-namespace HospitalManagement.Integration;
+namespace Common.Data.Integration;
 
 public class PrescriptionFilter
 {

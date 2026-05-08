@@ -1,14 +1,15 @@
-using HospitalManagement.Entity;
-using HospitalManagement.Entity.Enums;
-using ERManagementSystem.Models;
+using Common.Data.Entity;
+using Common.Data.Entity.Enums;
+using Common.Data.Entity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using Common.Data.Models;
 
-namespace HospitalManagement.Data;
+namespace Common.Data.Data;
 
 public class EFHospitalDbContext : DbContext
 {
@@ -16,11 +17,6 @@ public class EFHospitalDbContext : DbContext
         : base(options)
     {
     }
-
-    public EFHospitalDbContext()
-    {
-    }
-
     public DbSet<Prescription> Prescriptions => Set<Prescription>();
     public DbSet<PrescriptionItem> PrescriptionItems => Set<PrescriptionItem>();
     public DbSet<Transplant> Transplants => Set<Transplant>();
@@ -205,7 +201,9 @@ public class EFHospitalDbContext : DbContext
         {
             entity.ToTable("Triage_Parameters");
             entity.HasKey(tp => tp.Triage_ID);
-            entity.Property(tp => tp.Triage_ID).HasColumnName("Triage_ID");
+            entity.Property(tp => tp.Triage_ID)
+                .HasColumnName("Triage_ID")
+                .ValueGeneratedNever();
             entity.Property(tp => tp.Consciousness).HasColumnName("Consciousness");
             entity.Property(tp => tp.Breathing).HasColumnName("Breathing");
             entity.Property(tp => tp.Bleeding).HasColumnName("Bleeding");

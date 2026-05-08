@@ -2,7 +2,7 @@
 using Microsoft.UI.Xaml;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using HospitalManagement.Entity;
+using Common.Data.Entity;
 
 namespace HospitalManagement.ViewModel;
 

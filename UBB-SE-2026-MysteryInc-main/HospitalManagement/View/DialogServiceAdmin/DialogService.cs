@@ -1,4 +1,4 @@
-﻿using HospitalManagement.Entity;
+﻿using Common.Data.Entity;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -80,7 +80,7 @@ internal class DialogService : IDialogService
             XamlRoot = XamlRoot,
         };
 
-        dialog.Initialize();
+        await dialog.InitializeAsync();
 
         _ = await dialog.ShowAsync();
 

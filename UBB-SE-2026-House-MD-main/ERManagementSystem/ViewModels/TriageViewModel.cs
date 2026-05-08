@@ -2,10 +2,10 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Common.Data.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ERManagementSystem.Infrastructure;
-using ERManagementSystem.Models;
 using ERManagementSystem.Services;
 using Microsoft.UI.Xaml.Controls;
 
@@ -60,6 +60,9 @@ namespace ERManagementSystem.ViewModels
         private Triage? lastTriageResult;
 
         partial void OnSelectedVisitChanged(ER_Visit? value)
+            => _ = HandleSelectedVisitChangedAsync(value);
+
+        private async Task HandleSelectedVisitChangedAsync(ER_Visit? value)
         {
             if (value == null)
             {
@@ -71,7 +74,7 @@ namespace ERManagementSystem.ViewModels
 
             if (IsTriaged)
             {
-                var triage = triageService.GetByVisitId(value.Visit_ID);
+                var triage = await triageService.GetByVisitIdAsync(value.Visit_ID);
 
                 if (triage != null)
                 {
@@ -83,17 +86,8 @@ namespace ERManagementSystem.ViewModels
 
         // ── Commands ────────────────────────────────────────────────────────
         [RelayCommand]
-        private void LoadVisitsForTriage()
-        {
-            RegisteredVisits.Clear();
-
-            var visits = triageService.GetVisitsForTriage();
-
-            foreach (var v in visits)
-            {
-                RegisteredVisits.Add(v);
-            }
-        }
+        private Task LoadVisitsForTriage()
+            => LoadVisitsForTriageAsync();
 
         [RelayCommand]
         private async Task PerformTriage()
@@ -131,7 +125,7 @@ namespace ERManagementSystem.ViewModels
                     Pain_Level = PainLevel
                 };
 
-                lastTriageResult = triageService.CreateTriage(SelectedVisit.Visit_ID, parameters);
+                lastTriageResult = await triageService.CreateTriageAsync(SelectedVisit.Visit_ID, parameters);
 
                 CalculatedSeverity = lastTriageResult.Triage_Level;
                 CalculatedSpecialization = lastTriageResult.Specialization;
@@ -146,7 +140,7 @@ namespace ERManagementSystem.ViewModels
                 var previousVisitId = SelectedVisit.Visit_ID;
 
                 // Reload the whole list
-                LoadVisitsForTriage();
+                await LoadVisitsForTriageAsync();
 
                 // Reselect the same visit by ID
                 SelectedVisit = RegisteredVisits.FirstOrDefault(v => v.Visit_ID == previousVisitId);
@@ -167,13 +161,13 @@ namespace ERManagementSystem.ViewModels
 
             try
             {
-                triageService.MoveVisitToQueue(SelectedVisit.Visit_ID);
+                await triageService.MoveVisitToQueueAsync(SelectedVisit.Visit_ID);
 
                 await ShowDialog("Moved to Queue",
                     $"Visit {SelectedVisit.Visit_ID} is now WAITING_FOR_ROOM.");
 
                 ResetForm();
-                LoadVisitsForTriage();
+                await LoadVisitsForTriageAsync();
             }
             catch (Exception ex)
             {
@@ -191,12 +185,12 @@ namespace ERManagementSystem.ViewModels
                 return;
             }
 
-            triageService.CloseVisit(SelectedVisit.Visit_ID);
+            await triageService.CloseVisitAsync(SelectedVisit.Visit_ID);
 
             await ShowDialog("Visit closed",
                 $"The visit {SelectedVisit.Visit_ID} has been closed!");
 
-            LoadVisitsForTriage();
+            await LoadVisitsForTriageAsync();
         }
 
         // ── Helpers ─────────────────────────────────────────────────────────
@@ -216,6 +210,18 @@ namespace ERManagementSystem.ViewModels
 
         private Microsoft.UI.Xaml.XamlRoot? GetXamlRoot()
             => ServiceRegistry.MainWindow?.Content?.XamlRoot;
+
+        private async Task LoadVisitsForTriageAsync()
+        {
+            RegisteredVisits.Clear();
+
+            var visits = await triageService.GetVisitsForTriageAsync();
+
+            foreach (var visit in visits)
+            {
+                RegisteredVisits.Add(visit);
+            }
+        }
 
         private async Task ShowDialog(string title, string content)
         {

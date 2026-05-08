@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Common.Data.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ERManagementSystem.Infrastructure;
@@ -260,7 +261,7 @@ namespace ERManagementSystem.ViewModels
                     Emergency_Contact = EmergencyContact
                 };
 
-                ER_Visit visit = registrationService.RegisterPatientAndVisit(patient, ChiefComplaint);
+                ER_Visit visit = await registrationService.RegisterPatientAndVisitAsync(patient, ChiefComplaint);
 
                 var successDialog = new ContentDialog
                 {

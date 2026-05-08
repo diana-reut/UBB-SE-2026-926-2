@@ -1,8 +1,8 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
-using HospitalManagement.Entity.Enums;
+using Common.Data.Entity.Enums;
 
-namespace HospitalManagement.Entity;
+namespace Common.Data.Entity;
 
 public class Transplant
 {

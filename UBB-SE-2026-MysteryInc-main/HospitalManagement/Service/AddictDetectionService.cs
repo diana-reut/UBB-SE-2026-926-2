@@ -1,9 +1,12 @@
-﻿using HospitalManagement.Entity;
-using HospitalManagement.Repository;
+using Common.Data.Entity;
+using Common.Data.Repository;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
+using Common.Data.Entity.DTOs;
+using Common.Data.Integration;
 
 namespace HospitalManagement.Service;
 
@@ -22,31 +25,40 @@ internal class AddictDetectionService : IAddictDetectionService
         _medicalHistoryRepository = medicalHistoryRepository ?? throw new ArgumentNullException(nameof(medicalHistoryRepository));
     }
 
-    public List<Patient> GetAddictCandidates()
+    public async Task<List<Patient>> GetAddictCandidatesAsync()
     {
-        List<Patient> flaggedPatients = _prescriptionRepository.GetAddictCandidatePatients();
+        List<Patient> flaggedPatients = await _prescriptionRepository.GetAddictCandidatePatientsAsync();
 
         foreach (Patient patient in flaggedPatients)
         {
-            patient.MedicalHistory = _medicalHistoryRepository.GetByPatientId(patient.Id);
+            patient.MedicalHistory = await _medicalHistoryRepository.GetByPatientIdAsync(patient.Id);
 
             if (patient.MedicalHistory is not null)
             {
-                patient.MedicalHistory.ChronicConditions = _medicalHistoryRepository.GetChronicConditions(patient.MedicalHistory.Id);
+                patient.MedicalHistory.ChronicConditions = await _medicalHistoryRepository.GetChronicConditionsAsync(patient.MedicalHistory.Id);
             }
 
-            patient.MedicalHistory ??= new MedicalHistory
-            {
-                ChronicConditions = ["None reported."],
-            };
-
-            if (patient.MedicalHistory.ChronicConditions is null || patient.MedicalHistory.ChronicConditions.Count == 0)
-            {
-                patient.MedicalHistory.ChronicConditions = ["None reported."];
-            }
+            NormalizeMedicalHistory(patient);
         }
 
         return flaggedPatients;
+    }
+
+    public async Task<string> BuildPoliceReportAsync(Patient patient)
+    {
+        if (patient is null || patient.Id <= 0)
+        {
+            throw new ArgumentException("Invalid patient data for building a police report.");
+        }
+
+        var filter = new PrescriptionFilter
+        {
+            PatientId = patient.Id,
+            DateFrom = DateTime.Today.AddDays(-30),
+        };
+
+        List<Prescription> recentPrescriptions = await _prescriptionRepository.GetFilteredAsync(filter);
+        return BuildPoliceReportText(patient, recentPrescriptions);
     }
 
     public string GetChronicConditions(int patientId)
@@ -72,21 +84,44 @@ internal class AddictDetectionService : IAddictDetectionService
             : string.Join(", ", history.ChronicConditions);
     }
 
-    public string BuildPoliceReport(Patient patient)
+    public async Task<string> GetChronicConditionsAsync(int patientId)
     {
-        if (patient is null || patient.Id <= 0)
+        if (patientId <= 0)
         {
-            throw new ArgumentException("Invalid patient data for building a police report.");
+            throw new ArgumentException("Invalid Patient ID.");
         }
 
-        var filter = new Integration.PrescriptionFilter
+        MedicalHistory? history = await _medicalHistoryRepository.GetByPatientIdAsync(patientId);
+        if (history is null)
         {
-            PatientId = patient.Id,
-            DateFrom = DateTime.Today.AddDays(-30),
+            return "None reported.";
+        }
+
+        if (history.ChronicConditions is null || history.ChronicConditions.Count == 0)
+        {
+            history.ChronicConditions = await _medicalHistoryRepository.GetChronicConditionsAsync(history.Id);
+        }
+
+        return history.ChronicConditions is null || history.ChronicConditions.Count == 0
+            ? "None reported."
+            : string.Join(", ", history.ChronicConditions);
+    }
+
+    private static void NormalizeMedicalHistory(Patient patient)
+    {
+        patient.MedicalHistory ??= new MedicalHistory
+        {
+            ChronicConditions = ["None reported."],
         };
 
-        List<Prescription> recentPrescriptions = _prescriptionRepository.GetFiltered(filter);
+        if (patient.MedicalHistory.ChronicConditions is null || patient.MedicalHistory.ChronicConditions.Count == 0)
+        {
+            patient.MedicalHistory.ChronicConditions = ["None reported."];
+        }
+    }
 
+    private static string BuildPoliceReportText(Patient patient, List<Prescription> recentPrescriptions)
+    {
         var reportBuilder = new System.Text.StringBuilder();
 
         _ = reportBuilder.AppendLine(ReportHeader)
@@ -118,7 +153,6 @@ internal class AddictDetectionService : IAddictDetectionService
         }
 
         _ = reportBuilder.AppendLine(ReportPharmacistFooter);
-
         return reportBuilder.ToString();
     }
 }

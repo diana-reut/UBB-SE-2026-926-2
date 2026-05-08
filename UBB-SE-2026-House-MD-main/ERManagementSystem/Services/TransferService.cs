@@ -3,10 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
+using Common.Data.Data;
+using Common.Data.Entity;
+using Common.Data.Models;
 using ERManagementSystem.Helpers;
 using ERManagementSystem.Models;
 using ERManagementSystem.Repositories;
-using HospitalManagement.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace ERManagementSystem.Services
 {
@@ -32,6 +36,9 @@ namespace ERManagementSystem.Services
         }
 
         public Transfer_Log SendPatientData(int visitId)
+            => SendPatientDataAsync(visitId).GetAwaiter().GetResult();
+
+        public async Task<Transfer_Log> SendPatientDataAsync(int visitId)
         {
             var log = new Transfer_Log
             {
@@ -43,11 +50,11 @@ namespace ERManagementSystem.Services
 
             try
             {
-                PatientDataPackage package = BuildPatientDataPackage(visitId);
+                PatientDataPackage package = await BuildPatientDataPackageAsync(visitId);
                 string json = JsonSerializer.Serialize(package, new JsonSerializerOptions { WriteIndented = true });
                 string fileName = $"transfer_visit_{visitId}_{DateTime.Now:yyyyMMdd_HHmmss}.json";
                 string filePath = Path.Combine(transferDirectory, fileName);
-                File.WriteAllText(filePath, json);
+                await File.WriteAllTextAsync(filePath, json);
                 log.FilePath = filePath;
                 log.Status = "SUCCESS";
             }
@@ -56,15 +63,18 @@ namespace ERManagementSystem.Services
                 log.Status = "FAILED";
                 log.FilePath = null;
                 Logger.Error($"[TransferService] SendPatientData failed for Visit {visitId}", ex);
-                transferLogRepository.Add(log);
+                await transferLogRepository.AddAsync(log);
                 throw;
             }
 
-            transferLogRepository.Add(log);
+            await transferLogRepository.AddAsync(log);
             return log;
         }
 
         public void LogTransfer(int visitId, string status)
+            => LogTransferAsync(visitId, status).GetAwaiter().GetResult();
+
+        public async Task LogTransferAsync(int visitId, string status)
         {
             var log = new Transfer_Log
             {
@@ -74,45 +84,58 @@ namespace ERManagementSystem.Services
                 Status = status
             };
             log.Validate();
-            transferLogRepository.Add(log);
+            await transferLogRepository.AddAsync(log);
         }
 
-        public List<Transfer_Log> GetLogs(int visitId) => transferLogRepository.GetByVisitId(visitId);
+        public List<Transfer_Log> GetLogs(int visitId) => GetLogsAsync(visitId).GetAwaiter().GetResult();
+
+        public Task<List<Transfer_Log>> GetLogsAsync(int visitId) => transferLogRepository.GetByVisitIdAsync(visitId);
 
         public Transfer_Log RetryTransfer(int visitId)
+            => RetryTransferAsync(visitId).GetAwaiter().GetResult();
+
+        public async Task<Transfer_Log> RetryTransferAsync(int visitId)
         {
-            LogTransfer(visitId, "RETRYING");
-            return SendPatientData(visitId);
+            await LogTransferAsync(visitId, "RETRYING");
+            return await SendPatientDataAsync(visitId);
         }
 
         public void MarkPatientAsTransferred(int visitId)
+            => MarkPatientAsTransferredAsync(visitId).GetAwaiter().GetResult();
+
+        public async Task MarkPatientAsTransferredAsync(int visitId)
         {
-            string? cnp = context.ERVisits
+            string? cnp = await context.ERVisits
                 .Where(v => v.Visit_ID == visitId)
                 .Select(v => v.Patient_ID)
-                .FirstOrDefault();
+                .FirstOrDefaultAsync();
 
             if (cnp is null)
             {
                 return;
             }
 
-            Patient patient = context.Patients.First(p => p.Cnp == cnp);
+            Patient patient = await context.Patients.FirstAsync(p => p.Cnp == cnp);
             patient.Transferred = true;
-            context.SaveChanges();
+            await context.SaveChangesAsync();
         }
 
         public void TransitionVisitToTransferred(int visitId)
-        {
-            stateManagementService.ChangeVisitStatus(visitId, ER_Visit.VisitStatus.TRANSFERRED);
-        }
+            => TransitionVisitToTransferredAsync(visitId).GetAwaiter().GetResult();
+
+        public Task TransitionVisitToTransferredAsync(int visitId)
+            => stateManagementService.ChangeVisitStatusAsync(visitId, ER_Visit.VisitStatus.TRANSFERRED);
 
         public void CloseVisit(int visitId)
-        {
-            stateManagementService.CloseVisit(visitId);
-        }
+            => CloseVisitAsync(visitId).GetAwaiter().GetResult();
+
+        public Task CloseVisitAsync(int visitId)
+            => stateManagementService.CloseVisitAsync(visitId);
 
         public List<TransferEligibleVisit> GetEligibleVisitsForTransfer()
+            => GetEligibleVisitsForTransferAsync().GetAwaiter().GetResult();
+
+        public Task<List<TransferEligibleVisit>> GetEligibleVisitsForTransferAsync()
         {
             return (
                 from visit in context.ERVisits
@@ -127,12 +150,12 @@ namespace ERManagementSystem.Services
                     PatientFirstName = patient.FirstName,
                     PatientLastName = patient.LastName,
                     IsTransferred = patient.Transferred,
-                }).ToList();
+                }).ToListAsync();
         }
 
-        private PatientDataPackage BuildPatientDataPackage(int visitId)
+        private async Task<PatientDataPackage> BuildPatientDataPackageAsync(int visitId)
         {
-            var package = (
+            PatientDataPackage? package = await (
                 from visit in context.ERVisits
                 join patient in context.Patients on visit.Patient_ID equals patient.Cnp
                 join triage in context.Triages on visit.Visit_ID equals triage.Visit_ID into triageJoin
@@ -151,7 +174,7 @@ namespace ERManagementSystem.Services
                     First_Name = patient.FirstName,
                     Last_Name = patient.LastName,
                     Date_of_Birth = patient.Dob,
-                    Gender = patient.Sex == HospitalManagement.Entity.Enums.Sex.F ? "Female" : "Male",
+                    Gender = patient.Sex == Common.Data.Entity.Enums.Sex.F ? "Female" : "Male",
                     Phone = patient.PhoneNo,
                     Emergency_Contact = patient.EmergencyContact,
                     Visit_ID = visit.Visit_ID,
@@ -168,7 +191,7 @@ namespace ERManagementSystem.Services
                     Exam_Time = exam != null ? exam.Exam_Time : null,
                     Notes = exam != null ? exam.Notes : null,
                     Doctor_ID = exam != null ? exam.Doctor_ID : null,
-                }).FirstOrDefault();
+                }).FirstOrDefaultAsync();
 
             return package ?? throw new InvalidOperationException($"No visit found with ID {visitId}.");
         }

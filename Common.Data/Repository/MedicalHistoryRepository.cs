@@ -1,12 +1,9 @@
-using HospitalManagement.Data;
-using HospitalManagement.Entity;
+using Common.Data.Entity;
+using Common.Data.Data;
+using Common.Data.Entity;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace HospitalManagement.Repository;
+namespace Common.Data.Repository;
 
 public class MedicalHistoryRepository : IMedicalHistoryRepository
 {

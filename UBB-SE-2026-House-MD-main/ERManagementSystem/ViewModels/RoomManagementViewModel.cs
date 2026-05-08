@@ -1,6 +1,8 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
+using Common.Data.Entity;
+using Common.Data.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ERManagementSystem.Helpers;
@@ -27,22 +29,40 @@ namespace ERManagementSystem.ViewModels
         [ObservableProperty] private Triage? selectedTriage;
 
         partial void OnSelectedOccupiedRoomChanged(ER_Room? value)
-        {
-            if (value != null) LoadRoomVisit(value);
-            else if (SelectedCleaningRoom == null) ClearVisitDetails();
-        }
+            => _ = HandleSelectedOccupiedRoomChangedAsync(value);
 
         partial void OnSelectedCleaningRoomChanged(ER_Room? value)
+            => _ = HandleSelectedCleaningRoomChangedAsync(value);
+
+        private async Task HandleSelectedOccupiedRoomChangedAsync(ER_Room? value)
         {
-            if (value != null) LoadRoomVisit(value);
-            else if (SelectedOccupiedRoom == null) ClearVisitDetails();
+            if (value != null)
+            {
+                await LoadRoomVisit(value);
+            }
+            else if (SelectedCleaningRoom == null)
+            {
+                ClearVisitDetails();
+            }
         }
 
-        private void LoadRoomVisit(ER_Room room)
+        private async Task HandleSelectedCleaningRoomChangedAsync(ER_Room? value)
+        {
+            if (value != null)
+            {
+                await LoadRoomVisit(value);
+            }
+            else if (SelectedOccupiedRoom == null)
+            {
+                ClearVisitDetails();
+            }
+        }
+
+        private async Task LoadRoomVisit(ER_Room room)
         {
             try
             {
-                var roomVisitDetails = roomManagementService.GetRoomVisitDetails(room.Room_ID);
+                var roomVisitDetails = await roomManagementService.GetRoomVisitDetailsAsync(room.Room_ID);
                 if (roomVisitDetails == null)
                 {
                     ClearVisitDetails();
@@ -80,16 +100,16 @@ namespace ERManagementSystem.ViewModels
         [ObservableProperty] private string statusMessage = string.Empty;
 
         [RelayCommand]
-        public void LoadRooms()
+        public async Task LoadRooms()
         {
             try
             {
                 IsBusy = true;
                 StatusMessage = string.Empty;
 
-                AvailableRooms = new ObservableCollection<ER_Room>(roomManagementService.GetAvailableRooms());
-                OccupiedRooms = new ObservableCollection<ER_Room>(roomManagementService.GetOccupiedRooms());
-                CleaningRooms = new ObservableCollection<ER_Room>(roomManagementService.GetCleaningRooms());
+                AvailableRooms = new ObservableCollection<ER_Room>(await roomManagementService.GetAvailableRoomsAsync());
+                OccupiedRooms = new ObservableCollection<ER_Room>(await roomManagementService.GetOccupiedRoomsAsync());
+                CleaningRooms = new ObservableCollection<ER_Room>(await roomManagementService.GetCleaningRoomsAsync());
 
                 AvailableCount = AvailableRooms.Count;
                 OccupiedCount = OccupiedRooms.Count;
@@ -118,10 +138,10 @@ namespace ERManagementSystem.ViewModels
             try
             {
                 IsBusy = true;
-                roomManagementService.MarkRoomAsCleaning(SelectedOccupiedRoom.Room_ID);
+                await roomManagementService.MarkRoomAsCleaningAsync(SelectedOccupiedRoom.Room_ID);
                 await ShowDialog("Room Cleaning", $"Room {SelectedOccupiedRoom.Room_ID} ({SelectedOccupiedRoom.Room_Type}) is now being cleaned.");
                 SelectedOccupiedRoom = null;
-                LoadRooms();
+                await LoadRooms();
             }
             catch (Exception ex)
             {
@@ -144,10 +164,10 @@ namespace ERManagementSystem.ViewModels
             try
             {
                 IsBusy = true;
-                roomManagementService.MarkRoomAsCleaned(SelectedCleaningRoom.Room_ID);
+                await roomManagementService.MarkRoomAsCleanedAsync(SelectedCleaningRoom.Room_ID);
                 await ShowDialog("Room Ready", $"Room {SelectedCleaningRoom.Room_ID} ({SelectedCleaningRoom.Room_Type}) is now available.");
                 SelectedCleaningRoom = null;
-                LoadRooms();
+                await LoadRooms();
             }
             catch (Exception ex)
             {

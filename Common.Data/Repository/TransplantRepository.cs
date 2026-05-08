@@ -1,12 +1,9 @@
-using HospitalManagement.Data;
-using HospitalManagement.Entity;
-using HospitalManagement.Entity.Enums;
+using Common.Data.Data;
+using Common.Data.Entity;
+using Common.Data.Entity.Enums;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace HospitalManagement.Repository;
+namespace Common.Data.Repository;
 
 public class TransplantRepository : ITransplantRepository
 {
@@ -27,11 +24,15 @@ public class TransplantRepository : ITransplantRepository
 
     public List<Transplant> GetWaitingByOrgan(string organType) => GetWaitingByOrganAsync(organType).GetAwaiter().GetResult();
 
-    public Task<List<Transplant>> GetWaitingByOrganAsync(string organType) =>
-        _context.Transplants
-            .Where(t => t.OrganType == organType && t.Status == TransplantStatus.Pending)
+    public Task<List<Transplant>> GetWaitingByOrganAsync(string organType)
+    {
+        List<string> acceptableOrganTypes = ExpandOrganAliases(organType);
+
+        return _context.Transplants
+            .Where(t => acceptableOrganTypes.Contains(t.OrganType) && t.Status == TransplantStatus.Pending)
             .OrderBy(t => t.RequestDate)
             .ToListAsync();
+    }
 
     public void Update(int id, int donorId, float score) => UpdateAsync(id, donorId, score).GetAwaiter().GetResult();
 
@@ -46,12 +47,16 @@ public class TransplantRepository : ITransplantRepository
 
     public List<Transplant> GetTopMatches(string organType) => GetTopMatchesAsync(organType).GetAwaiter().GetResult();
 
-    public Task<List<Transplant>> GetTopMatchesAsync(string organType) =>
-        _context.Transplants
-            .Where(t => t.OrganType == organType && t.Status == TransplantStatus.Pending)
+    public Task<List<Transplant>> GetTopMatchesAsync(string organType)
+    {
+        List<string> acceptableOrganTypes = ExpandOrganAliases(organType);
+
+        return _context.Transplants
+            .Where(t => acceptableOrganTypes.Contains(t.OrganType) && t.Status == TransplantStatus.Pending)
             .OrderByDescending(t => t.CompatibilityScore)
             .Take(5)
             .ToListAsync();
+    }
 
     public List<Transplant> GetByReceiverId(int receiverId) => GetByReceiverIdAsync(receiverId).GetAwaiter().GetResult();
 
@@ -67,4 +72,15 @@ public class TransplantRepository : ITransplantRepository
 
     public Task<Transplant?> GetByIdAsync(int id) =>
         _context.Transplants.FirstOrDefaultAsync(t => t.TransplantId == id);
+
+    private static List<string> ExpandOrganAliases(string organType)
+    {
+        string normalized = organType.Trim();
+
+        return normalized switch
+        {
+            "Lung" or "Lungs" => ["Lung", "Lungs"],
+            _ => [normalized],
+        };
+    }
 }

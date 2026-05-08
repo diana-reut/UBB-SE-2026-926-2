@@ -1,18 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using HospitalManagement.Entity;
-using HospitalManagement.Entity.Enums;
+using Common.Data.Entity;
+using Common.Data.Entity.Enums;
 using HospitalManagement.Service;
 using System.Collections.ObjectModel;
 using HospitalManagement.View;
+using System.Threading.Tasks;
+using Common.Data.Entity.Enums;
+using Common.Data.Entity;
+using HospitalManagement.Proxy.AllergyProxy;
 
 namespace HospitalManagement.ViewModel;
 
 
 internal class MedicalHistoryDialogViewModel
 {
-    private readonly IAllergyService _allergyService;
+    private readonly IAllergyProxy _allergyProxy;
 
     public ObservableCollection<AllergyEntry> AllergyList { get; } = [];
 
@@ -20,14 +24,19 @@ internal class MedicalHistoryDialogViewModel
 
     public MedicalHistory? MedicalHistory { get; private set; }
 
-    public MedicalHistoryDialogViewModel(IAllergyService allergyService)
+    public MedicalHistoryDialogViewModel(IAllergyProxy allergyService)
     {
-        _allergyService = allergyService;
+        _allergyProxy = allergyService;
     }
 
     public void LoadAllergies()
     {
-        AvailableAllergies = [.. _allergyService.GetAllergies()];
+        LoadAllergiesAsync().GetAwaiter().GetResult();
+    }
+
+    public async Task LoadAllergiesAsync()
+    {
+        AvailableAllergies = [.. await _allergyProxy.GetAllAsync()];
     }
 
     public bool TryAddAllergy(Allergy? selectedAllergy, string? severity)

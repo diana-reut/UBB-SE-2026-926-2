@@ -1,4 +1,4 @@
-using HospitalManagement.Entity;
+using Common.Data.Entity;
 using HospitalManagement.ViewModel;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -18,12 +18,21 @@ internal sealed partial class OrganDonorDialog : ContentDialog
         PrimaryButtonClick += OnPrimaryButtonClick;
     }
 
-    private void OnPrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs e)
+    private async void OnPrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs e)
     {
-        if (!ViewModel.TryConfirmAssignment(out string? error))
+        ContentDialogButtonClickDeferral deferral = e.GetDeferral();
+        try
         {
-            e.Cancel = true;
-            ViewModel.ErrorMessage = error;
+            (bool success, string? error) = await ViewModel.TryConfirmAssignmentAsync();
+            if (!success)
+            {
+                e.Cancel = true;
+                ViewModel.ErrorMessage = error;
+            }
+        }
+        finally
+        {
+            deferral.Complete();
         }
     }
 

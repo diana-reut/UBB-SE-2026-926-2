@@ -1,10 +1,11 @@
-using HospitalManagement.Entity;
+using Common.Data.Entity;
 using HospitalManagement.Infrastructure;
 using HospitalManagement.ViewModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
+using System.Globalization;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
 
@@ -29,14 +30,14 @@ internal sealed partial class PatientProfileView : Page
         Loaded += Page_Loaded;
     }
 
-    public void Initialize(int patientId)
+    public async Task InitializeAsync(int patientId)
     {
-        _viewModel.LoadFullPatientProfile(patientId);
+        await _viewModel.LoadFullPatientProfileAsync(patientId);
     }
 
-    private void Page_Loaded(object sender, RoutedEventArgs e)
+    private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
-        _viewModel.CheckHighRiskStatus();
+        await _viewModel.CheckHighRiskStatusAsync();
     }
 
     private async void ViewPrescription_ClickAsync(object sender, RoutedEventArgs e)
@@ -44,19 +45,19 @@ internal sealed partial class PatientProfileView : Page
         await _viewModel.ViewPrescriptionAsync();
     }
 
-    private void ExportPDF_ClickAsync(object sender, RoutedEventArgs e)
+    private async void ExportPDF_ClickAsync(object sender, RoutedEventArgs e)
     {
-        _viewModel.ExportSelectedRecord();
+        await _viewModel.ExportSelectedRecordAsync();
     }
 
-    private void ImportER_ClickAsync(object sender, RoutedEventArgs e)
+    private async void ImportER_ClickAsync(object sender, RoutedEventArgs e)
     {
-        _viewModel.ImportRecords(isER: true);
+        await _viewModel.ImportRecordsAsync(isER: true);
     }
 
-    private void ImportStaff_ClickAsync(object sender, RoutedEventArgs e)
+    private async void ImportStaff_ClickAsync(object sender, RoutedEventArgs e)
     {
-        _viewModel.ImportRecords(isER: false);
+        await _viewModel.ImportRecordsAsync(isER: false);
     }
 
     private void RecordList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
@@ -86,9 +87,8 @@ internal sealed partial class PatientProfileView : Page
         var prescriptionWindow = new Window { Title = "Prescription Details" };
         PrescriptionView prescriptionPage = ServiceRegistry.Services.GetRequiredService<PrescriptionView>();
 
-        prescriptionPage.ViewModel.SearchIdText = prescriptionId.ToString();
-
-        prescriptionPage.ViewModel.ApplyFilterCommand.Execute(null);
+        prescriptionPage.ViewModel.SearchIdText = prescriptionId.ToString(CultureInfo.InvariantCulture);
+        await prescriptionPage.ViewModel.ShowPrescriptionAsync(prescriptionId);
 
         prescriptionWindow.Content = prescriptionPage;
         prescriptionWindow.Activate();

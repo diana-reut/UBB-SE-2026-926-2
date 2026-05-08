@@ -1,4 +1,4 @@
-using HospitalManagement.Entity;
+using Common.Data.Entity;
 using HospitalManagement.Infrastructure;
 using HospitalManagement.ViewModel;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,7 +34,7 @@ internal sealed partial class PatientView : Window
     {
         _goBackCallback = goBackCallback;
         _viewModel.GoBackAction = GoBack;
-        _viewModel.LoadFullPatientProfile(patientId);
+        _ = _viewModel.LoadFullPatientProfileAsync(patientId);
     }
 
     private void SetupViewModelActions()

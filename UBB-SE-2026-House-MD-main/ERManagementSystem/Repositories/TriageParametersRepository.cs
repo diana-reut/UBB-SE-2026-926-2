@@ -1,8 +1,10 @@
 using System.Linq;
+using System.Threading.Tasks;
 using ERManagementSystem.Helpers;
 using ERManagementSystem.Models;
-using HospitalManagement.Data;
+using Common.Data.Data;
 using Microsoft.EntityFrameworkCore;
+using Common.Data.Models;
 
 namespace ERManagementSystem.Repositories
 {
@@ -16,23 +18,32 @@ namespace ERManagementSystem.Repositories
         }
 
         public void Add(Triage_Parameters parameters)
+            => AddAsync(parameters).GetAwaiter().GetResult();
+
+        public async Task AddAsync(Triage_Parameters parameters)
         {
-            context.Add(parameters);
-            context.SaveChanges();
+            await context.AddAsync(parameters);
+            await context.SaveChangesAsync();
             Logger.Info($"[TriageParametersRepository] Parameters saved for triage {parameters.Triage_ID}");
         }
 
         public Triage_Parameters? GetByTriageId(int triageId)
+            => GetByTriageIdAsync(triageId).GetAwaiter().GetResult();
+
+        public Task<Triage_Parameters?> GetByTriageIdAsync(int triageId)
         {
             return context.TriageParameters
                 .AsNoTracking()
-                .FirstOrDefault(tp => tp.Triage_ID == triageId);
+                .FirstOrDefaultAsync(tp => tp.Triage_ID == triageId);
         }
 
         public void Delete(Triage_Parameters parameters)
+            => DeleteAsync(parameters).GetAwaiter().GetResult();
+
+        public async Task DeleteAsync(Triage_Parameters parameters)
         {
             context.Remove(parameters);
-            context.SaveChanges();
+            await context.SaveChangesAsync();
         }
     }
 }

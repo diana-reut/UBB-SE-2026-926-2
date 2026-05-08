@@ -1,4 +1,4 @@
-﻿namespace HospitalManagement.Entity.DTOs;
+﻿namespace Common.Data.Entity.DTOs;
 
 public class DoctorDTO
 {

@@ -35,7 +35,7 @@
                 <x:String>Kidney</x:String>
                 <x:String>Heart</x:String>
                 <x:String>Liver</x:String>
-                <x:String>Lungs</x:String>
+                <x:String>Lung</x:String>
                 <x:String>Pancreas</x:String>
             </ComboBox>
             <TextBlock

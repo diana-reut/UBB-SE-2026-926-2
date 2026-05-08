@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
-using HospitalManagement.Entity;
+using Common.Data.Entity;
 using HospitalManagement.Service;
+using System.Threading.Tasks;
 
 namespace HospitalManagement.ViewModel;
 
@@ -43,9 +44,14 @@ internal partial class OrganDonorDialogViewModel : ObservableObject
         _transplantService = transplantService ?? throw new ArgumentNullException(nameof(transplantService));
     }
 
-    partial void OnSelectedOrganChanged(string? value) => LoadTopMatches();
+    partial void OnSelectedOrganChanged(string? value) => _ = LoadTopMatchesAsync();
 
     private void LoadTopMatches()
+    {
+        LoadTopMatchesAsync().GetAwaiter().GetResult();
+    }
+
+    private async Task LoadTopMatchesAsync()
     {
         if (DeceasedPatient is null || string.IsNullOrEmpty(SelectedOrgan))
         {
@@ -59,7 +65,7 @@ internal partial class OrganDonorDialogViewModel : ObservableObject
         try
         {
             List<TransplantMatch> matches =
-                _transplantService.GetTopMatchesAsDisplayModels(DeceasedPatient.Id, SelectedOrgan);
+                await _transplantService.GetTopMatchesAsDisplayModelsAsync(DeceasedPatient.Id, SelectedOrgan);
 
             TopMatches.Clear();
             foreach (TransplantMatch match in matches)
@@ -82,32 +88,27 @@ internal partial class OrganDonorDialogViewModel : ObservableObject
         }
     }
 
-    public bool TryConfirmAssignment(out string? error)
+    public async Task<(bool Success, string? Error)> TryConfirmAssignmentAsync()
     {
-        error = null;
-
         if (SelectedMatch is null)
         {
-            error = "Please select a recipient from the list before confirming.";
-            return false;
+            return (false, "Please select a recipient from the list before confirming.");
         }
 
         if (string.IsNullOrEmpty(SelectedOrgan))
         {
-            error = "Please select an organ before confirming.";
-            return false;
+            return (false, "Please select an organ before confirming.");
         }
 
         try
         {
-            _transplantService.AssignDonor(SelectedMatch.TransplantId, DeceasedPatient!.Id, SelectedMatch.CompatibilityScore);
+            await _transplantService.AssignDonorAsync(SelectedMatch.TransplantId, DeceasedPatient!.Id, SelectedMatch.CompatibilityScore);
             OnAssignmentConfirmed?.Invoke(SelectedMatch.TransplantId, DeceasedPatient.Id, SelectedMatch.CompatibilityScore);
-            return true;
+            return (true, null);
         }
         catch (Exception ex)
         {
-            error = $"Error: {ex.Message}";
-            return false;
+            return (false, $"Error: {ex.Message}");
         }
     }
 }

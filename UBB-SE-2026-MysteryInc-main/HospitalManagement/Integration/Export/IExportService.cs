@@ -1,6 +1,8 @@
-﻿namespace HospitalManagement.Integration.Export;
+﻿using System.Threading.Tasks;
+
+namespace HospitalManagement.Integration.Export;
 
 internal interface IExportService
 {
-    public string ExportRecordToPDF(int recordId);
+    public Task<string> ExportRecordToPDFAsync(int recordId);
 }

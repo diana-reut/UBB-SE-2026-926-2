@@ -6,17 +6,11 @@
     xmlns:vm="using:HospitalManagement.ViewModel"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:entity="using:HospitalManagement.Entity"
-    xmlns:converters="using:HospitalManagement.Converters"
+    xmlns:entity="using:Common.Data.Entity"
     mc:Ignorable="d"
     Title="Medical Staff Dashboard">
 
     <Grid Padding="24" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <Grid.Resources>
-            <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
-            <converters:BoolToVisibilityConverter x:Key="BoolToVis"/>
-        </Grid.Resources>
-
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -58,8 +52,8 @@
                        Margin="0,0,0,16" />
 
             <ListView Grid.Row="1" Grid.Column="0"
-                      ItemsSource="{Binding SearchResults}"
-                      SelectedItem="{Binding SelectedPatient, Mode=TwoWay}"
+                      ItemsSource="{x:Bind ViewModel.SearchResults, Mode=OneWay}"
+                      SelectedItem="{x:Bind ViewModel.SelectedPatient, Mode=TwoWay}"
                       DoubleTapped="PatientList_DoubleTapped" 
                       SelectionMode="Single">
 
@@ -97,17 +91,17 @@
             </ListView>
 
             <StackPanel Grid.Row="1" Grid.Column="1" Margin="20,0,0,0" Width="240" Spacing="15" VerticalAlignment="Top"
-                        Visibility="{Binding SelectedPatient, Converter={StaticResource NullToVisibilityConverter}}">
+                        Visibility="{x:Bind ViewModel.SelectedPatientVisibility, Mode=OneWay}">
 
                 <TextBlock Text="Patient Actions" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,10"/>
 
                 <Button Content="Compatible Blood Donors" 
-                        Command="{Binding FindBloodDonorsCommand}" 
+                        Command="{x:Bind ViewModel.FindBloodDonorsCommand}" 
                         HorizontalAlignment="Stretch" 
                         Style="{StaticResource AccentButtonStyle}"/>
 
                 <Button Content="Request Organ Transplant" 
-                        Command="{Binding RequestTransplantCommand}" 
+                        Command="{x:Bind ViewModel.RequestTransplantCommand}" 
                         HorizontalAlignment="Stretch" 
                         Style="{StaticResource AccentButtonStyle}"/>
 
@@ -131,8 +125,7 @@
         <Grid Grid.RowSpan="3"
           Background="#F0000000"
           IsHitTestVisible="True"
-          Visibility="{Binding IsExorcismAlertVisible,
-                       Converter={StaticResource BoolToVis}}">
+          Visibility="{x:Bind ViewModel.ExorcismAlertVisibility, Mode=OneWay}">
             <Border MaxWidth="600" CornerRadius="16"
             Background="#1A0000" BorderBrush="#CC0000" BorderThickness="3"
             Padding="48,40" VerticalAlignment="Center" HorizontalAlignment="Center">

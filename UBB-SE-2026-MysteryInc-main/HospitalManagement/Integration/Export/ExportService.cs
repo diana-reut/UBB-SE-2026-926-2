@@ -1,6 +1,8 @@
 using System.Collections.Generic;
-using HospitalManagement.Entity;
-using HospitalManagement.Repository;
+using Common.Data.Entity;
+using Common.Data.Repository;
+using Common.Data.Entity;
+using System.Threading.Tasks;
 
 namespace HospitalManagement.Integration.Export;
 
@@ -23,23 +25,22 @@ internal class ExportService : IExportService
         _historyRepo = historyRepo;
     }
 
-    public string ExportRecordToPDF(int recordId)
+    public async Task<string> ExportRecordToPDFAsync(int recordId)
     {
-        MedicalRecord record = _recordRepo.GetById(recordId)
+        MedicalRecord record = await _recordRepo.GetByIdAsync(recordId)
             ?? throw new ExportException($"MedicalRecord with ID={recordId} not found.");
 
-        MedicalHistory history = _historyRepo.GetById(record.HistoryId)
+        MedicalHistory history = await _historyRepo.GetByIdAsync(record.HistoryId)
             ?? throw new ExportException($"MedicalHistory for record ID={recordId} not found.");
 
-        Patient patient = _patientRepo.GetById(history.PatientId)
+        Patient patient = await _patientRepo.GetByIdAsync(history.PatientId)
             ?? throw new ExportException($"Patient for history ID={history.Id} not found.");
 
         var items = new List<PrescriptionItem>();
-        Prescription? prescription = _prescriptionRepo.GetByRecordId(recordId);
-
+        Prescription? prescription = await _prescriptionRepo.GetByRecordIdAsync(recordId);
         if (prescription is not null)
         {
-            items = _prescriptionRepo.GetItems(prescription.Id);
+            items = await _prescriptionRepo.GetItemsAsync(prescription.Id);
         }
 
         return PDFGenerator.GenerateRecordPDF(record, patient, prescription, items);

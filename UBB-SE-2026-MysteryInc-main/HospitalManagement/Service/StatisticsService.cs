@@ -1,8 +1,8 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using HospitalManagement.Entity;
-using HospitalManagement.Repository;
+using System.Threading.Tasks;
+using Common.Data.Repository;
+using Common.Data.Entity;
 
 namespace HospitalManagement.Service;
 
@@ -21,67 +21,125 @@ internal class StatisticsService : IStatisticsService
 
     public Dictionary<string, int> GetPatientsByBloodType()
     {
-        IEnumerable<Patient> patients = _patientRepo.GetAll(true);
+        return BuildPatientsByBloodType(_patientRepo.GetAllAsync(include_archived: true).GetAwaiter().GetResult());
+    }
 
-        var bloodCount = patients.Where(p => p.MedicalHistory?.BloodType.HasValue == true)
-            .GroupBy(p => p.MedicalHistory!.BloodType!.Value.ToString())
-            .ToDictionary(g => g.Key, g => g.Count());
-
-        return bloodCount;
+    public async Task<Dictionary<string, int>> GetPatientsByBloodTypeAsync()
+    {
+        return BuildPatientsByBloodType(await _patientRepo.GetAllAsync(include_archived: true));
     }
 
     public Dictionary<string, int> GetPatientsByRh()
     {
-        IEnumerable<Patient> patients = _patientRepo.GetAll(true);
+        return BuildPatientsByRh(_patientRepo.GetAllAsync(include_archived: true).GetAwaiter().GetResult());
+    }
 
-        var rhCount = patients.Where(p => p.MedicalHistory?.Rh.HasValue == true)
-            .GroupBy(p => p.MedicalHistory!.Rh!.Value.ToString())
-            .ToDictionary(g => g.Key, g => g.Count());
-
-        return rhCount;
+    public async Task<Dictionary<string, int>> GetPatientsByRhAsync()
+    {
+        return BuildPatientsByRh(await _patientRepo.GetAllAsync(include_archived: true));
     }
 
     public Dictionary<string, int> GetPatientGenderDistribution()
     {
-        IEnumerable<Patient> patients = _patientRepo.GetAll(true);
+        return BuildPatientGenderDistribution(_patientRepo.GetAllAsync(include_archived: true).GetAwaiter().GetResult());
+    }
 
-        var genderCount = patients.GroupBy(p => p.Sex.ToString())
-            .ToDictionary(g => g.Key, g => g.Count());
-
-        return genderCount;
+    public async Task<Dictionary<string, int>> GetPatientGenderDistributionAsync()
+    {
+        return BuildPatientGenderDistribution(await _patientRepo.GetAllAsync(include_archived: true));
     }
 
     public Dictionary<string, int> GetConsultationDistribution()
     {
-        IEnumerable<MedicalRecord> records = _recordRepo.GetAll();
+        return BuildConsultationDistribution(_recordRepo.GetAllAsync().GetAwaiter().GetResult());
+    }
 
-        var consultationTypeCount = records.GroupBy(r => r.SourceType.ToString())
-            .ToDictionary(g => g.Key, g => g.Count());
-
-        return consultationTypeCount;
+    public async Task<Dictionary<string, int>> GetConsultationDistributionAsync()
+    {
+        return BuildConsultationDistribution(await _recordRepo.GetAllAsync());
     }
 
     public Dictionary<string, int> GetTopDiagnoses()
     {
-        IEnumerable<MedicalRecord> records = _recordRepo.GetAll();
+        return BuildTopDiagnoses(_recordRepo.GetAllAsync().GetAwaiter().GetResult());
+    }
 
-        var diagnosesCount = records.Where(r => !string.IsNullOrWhiteSpace(r.Diagnosis))
-            .GroupBy(static r => r.Diagnosis!.Trim().ToUpperInvariant())
-            .ToDictionary(g => g.Key, g => g.Count());
-
-        return diagnosesCount;
+    public async Task<Dictionary<string, int>> GetTopDiagnosesAsync()
+    {
+        return BuildTopDiagnoses(await _recordRepo.GetAllAsync());
     }
 
     public Dictionary<string, int> GetAgeDistribution()
     {
-        IEnumerable<Patient> patients = _patientRepo.GetAll(true);
+        return BuildAgeDistribution(_patientRepo.GetAllAsync(include_archived: true).GetAwaiter().GetResult());
+    }
 
+    public async Task<Dictionary<string, int>> GetAgeDistributionAsync()
+    {
+        return BuildAgeDistribution(await _patientRepo.GetAllAsync(include_archived: true));
+    }
+
+    public Dictionary<string, int> GetMostPrescribedMeds()
+    {
+        return BuildMostPrescribedMeds(_prescriptionRepo.GetAllAsync().GetAwaiter().GetResult());
+    }
+
+    public async Task<Dictionary<string, int>> GetMostPrescribedMedsAsync()
+    {
+        return BuildMostPrescribedMeds(await _prescriptionRepo.GetAllAsync());
+    }
+
+    public Dictionary<string, int> GetActiveVsArchivedRatio()
+    {
+        return BuildActiveVsArchivedRatio(_patientRepo.GetAllAsync(include_archived: true).GetAwaiter().GetResult());
+    }
+
+    public async Task<Dictionary<string, int>> GetActiveVsArchivedRatioAsync()
+    {
+        return BuildActiveVsArchivedRatio(await _patientRepo.GetAllAsync(include_archived: true));
+    }
+
+    private static Dictionary<string, int> BuildPatientsByBloodType(IEnumerable<Patient> patients)
+    {
+        return patients.Where(p => p.MedicalHistory?.BloodType.HasValue == true)
+            .GroupBy(p => p.MedicalHistory!.BloodType!.Value.ToString())
+            .ToDictionary(g => g.Key, g => g.Count());
+    }
+
+    private static Dictionary<string, int> BuildPatientsByRh(IEnumerable<Patient> patients)
+    {
+        return patients.Where(p => p.MedicalHistory?.Rh.HasValue == true)
+            .GroupBy(p => p.MedicalHistory!.Rh!.Value.ToString())
+            .ToDictionary(g => g.Key, g => g.Count());
+    }
+
+    private static Dictionary<string, int> BuildPatientGenderDistribution(IEnumerable<Patient> patients)
+    {
+        return patients.GroupBy(p => p.Sex.ToString())
+            .ToDictionary(g => g.Key, g => g.Count());
+    }
+
+    private static Dictionary<string, int> BuildConsultationDistribution(IEnumerable<MedicalRecord> records)
+    {
+        return records.GroupBy(r => r.SourceType.ToString())
+            .ToDictionary(g => g.Key, g => g.Count());
+    }
+
+    private static Dictionary<string, int> BuildTopDiagnoses(IEnumerable<MedicalRecord> records)
+    {
+        return records.Where(r => !string.IsNullOrWhiteSpace(r.Diagnosis))
+            .GroupBy(static r => r.Diagnosis!.Trim().ToUpperInvariant())
+            .ToDictionary(g => g.Key, g => g.Count());
+    }
+
+    private static Dictionary<string, int> BuildAgeDistribution(IEnumerable<Patient> patients)
+    {
         var ageGroups = new Dictionary<string, int>
-            {
-                { "Pediatric (0-17)", 0 },
-                { "Adult (18-64)", 0 },
-                { "Geriatric (65+)", 0 },
-            };
+        {
+            { "Pediatric (0-17)", 0 },
+            { "Adult (18-64)", 0 },
+            { "Geriatric (65+)", 0 },
+        };
 
         foreach (Patient patient in patients)
         {
@@ -104,26 +162,20 @@ internal class StatisticsService : IStatisticsService
         return ageGroups;
     }
 
-    public Dictionary<string, int> GetMostPrescribedMeds()
+    private static Dictionary<string, int> BuildMostPrescribedMeds(IEnumerable<Prescription> prescriptions)
     {
-        IEnumerable<Prescription> prescriptions = _prescriptionRepo.GetAll();
-
         IEnumerable<PrescriptionItem> allItems = prescriptions.Where(p => p.MedicationList is not null)
             .SelectMany(p => p.MedicationList);
 
-        var topMeds = allItems.Where(item => !string.IsNullOrWhiteSpace(item.MedName) && !string.IsNullOrEmpty(item.MedName))
+        return allItems.Where(item => !string.IsNullOrWhiteSpace(item.MedName))
             .GroupBy(item => item.MedName.Trim().ToUpperInvariant())
             .OrderByDescending(g => g.Count())
             .Take(20)
             .ToDictionary(g => g.Key, g => g.Count());
-
-        return topMeds;
     }
 
-    public Dictionary<string, int> GetActiveVsArchivedRatio()
+    private static Dictionary<string, int> BuildActiveVsArchivedRatio(IEnumerable<Patient> patients)
     {
-        IEnumerable<Patient> patients = _patientRepo.GetAll(true);
-
         return new Dictionary<string, int>
         {
             { "Active", patients.Count(p => !p.IsArchived) },

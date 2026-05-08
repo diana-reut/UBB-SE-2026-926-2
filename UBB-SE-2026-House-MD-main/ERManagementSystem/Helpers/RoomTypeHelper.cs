@@ -1,3 +1,4 @@
+using Common.Data.Models;
 using ERManagementSystem.Models;
 
 namespace ERManagementSystem.Helpers

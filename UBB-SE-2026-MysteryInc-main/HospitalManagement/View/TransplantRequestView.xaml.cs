@@ -13,24 +13,23 @@ internal sealed partial class TransplantRequestView : Page
     public TransplantRequestViewModel ViewModel { get; }
 
     private readonly Window _parentWindow;
+    private readonly int _patientId;
 
     public TransplantRequestView(int patientId, Window parentWindow)
     {
-        InitializeComponent();
-
         var factory = ServiceRegistry.Services.GetRequiredService<Func<int, TransplantRequestViewModel>>();
-
         ViewModel = factory(patientId);
+        InitializeComponent();
         _parentWindow = parentWindow;
+        _patientId = patientId;
 
         DataContext = ViewModel;
 
         ViewModel.CloseWindowAction = () => _parentWindow.Close();
-
         ViewModel.ShowDialogAction = ShowDialogAsync;
-
-        ViewModel.Initialize(patientId);
     }
+
+    public Task InitializeAsync() => ViewModel.InitializeAsync(_patientId);
 
     private async Task ShowDialogAsync(string title, string content)
     {
@@ -39,7 +38,7 @@ internal sealed partial class TransplantRequestView : Page
             Title = title,
             Content = content,
             CloseButtonText = "OK",
-            XamlRoot = Content.XamlRoot
+            XamlRoot = Content.XamlRoot,
         };
 
         await dialog.ShowAsync();

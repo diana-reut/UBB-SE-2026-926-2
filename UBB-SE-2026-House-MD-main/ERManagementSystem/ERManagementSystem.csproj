@@ -19,12 +19,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Models\Patients.cs" />
-    <Compile Remove="Models\ER_Visit.cs" />
-    <Compile Remove="Models\ER_Room.cs" />
-    <Compile Remove="Models\Triage.cs" />
-    <Compile Remove="Models\Triage_Parameters.cs" />
-    <Compile Remove="Models\Examination.cs" />
-    <Compile Remove="Models\TransferLog.cs" />
     <None Remove="Styles\Controls.xaml" />
     <None Remove="Views\ExaminationView.xaml" />
     <None Remove="Views\PatientRegistrationView.xaml" />
@@ -33,11 +27,6 @@
     <None Remove="Views\RoomManagementView.xaml" />
     <None Remove="Views\TransferLogView.xaml" />
     <None Remove="Views\TriageView.xaml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Database\script1_create_database.sql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Common.Data\Common.Data.csproj" />
@@ -103,6 +92,9 @@
     <Page Update="Styles\Controls.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Database\" />
   </ItemGroup>
 
   <PropertyGroup>

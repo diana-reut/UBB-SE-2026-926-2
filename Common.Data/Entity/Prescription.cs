@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace HospitalManagement.Entity;
+namespace Common.Data.Entity;
 
 public class Prescription
 {
@@ -25,7 +25,11 @@ public class Prescription
     public DateTime Date { get; set; }
 
     [NotMapped]
-    public string PatientName { get; set; } = "Unknown";
+    public string PatientName =>
+        MedicalRecord?.History?.Patient == null
+        ? ""
+        : $"{MedicalRecord.History.Patient.FirstName} " +
+          $"{MedicalRecord.History.Patient.LastName}";
 
     [NotMapped]
     public string DoctorName { get; set; } = "Unknown";

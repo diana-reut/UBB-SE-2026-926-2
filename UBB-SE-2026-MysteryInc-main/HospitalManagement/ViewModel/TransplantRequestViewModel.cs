@@ -67,15 +67,20 @@ internal partial class TransplantRequestViewModel : ObservableObject
 
     public void Initialize(int patientId)
     {
+        InitializeAsync(patientId).GetAwaiter().GetResult();
+    }
+
+    public async Task InitializeAsync(int patientId)
+    {
         _patientId = patientId;
 
-        var patient = _patientService.GetById(patientId);
+        var patient = await _patientService.GetByIdAsync(patientId);
 
         if (patient is not null)
             PatientName = $"{patient.FirstName} {patient.LastName}";
 
-        IsUrgent = _transplantService.IsUrgent(patientId);
-        WarningMessage = _transplantService.GetChronicWarning(patientId);
+        IsUrgent = await _transplantService.IsUrgentAsync(patientId);
+        WarningMessage = await _transplantService.GetChronicWarningAsync(patientId);
     }
 
     [RelayCommand]
@@ -92,7 +97,7 @@ internal partial class TransplantRequestViewModel : ObservableObject
 
         try
         {
-            _transplantService.CreateWaitlistRequest(_patientId, SelectedOrgan);
+            await _transplantService.CreateWaitlistRequestAsync(_patientId, SelectedOrgan);
 
             RequestSucceeded = true;
 

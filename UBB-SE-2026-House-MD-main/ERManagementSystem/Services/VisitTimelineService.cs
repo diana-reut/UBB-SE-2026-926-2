@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Common.Data.Models;
 using ERManagementSystem.Models;
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Media;

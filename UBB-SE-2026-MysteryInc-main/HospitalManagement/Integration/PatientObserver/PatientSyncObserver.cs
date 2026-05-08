@@ -1,5 +1,5 @@
-﻿using HospitalManagement.Entity.DTOs;
-using HospitalManagement.Entity;
+﻿using Common.Data.Entity.DTOs;
+using Common.Data.Entity;
 using HospitalManagement.Service;
 using System;
 
@@ -28,7 +28,7 @@ internal class PatientSyncObserver : IPatientObserver
         {
             // map DTO to patient and update
             Patient updated = MapDTOToPatient(newPatientData);
-            _patientService.UpdatePatient(updated);
+            // _patientService.UpdatePatient(updated);
         }
         else
         {

@@ -1,9 +1,9 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using Common.Data.Entity;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using HospitalManagement.Entity;
-using HospitalManagement.Entity.Enums;
+using Common.Data.Entity.Enums;
 using HospitalManagement.Infrastructure;
-using HospitalManagement.Integration;
+using Common.Data.Integration;
 using HospitalManagement.Service;
 using HospitalManagement.View;
 using HospitalManagement.View.DialogServiceAdmin;
@@ -100,7 +100,7 @@ internal partial class AdminViewModel : ObservableObject
 
     public ObservableCollection<Patient> ArchivedPatients { get; set; }
 
-    public Patient NewPatient { get; set; }
+    public Patient? NewPatient { get; set; }
 
     private Patient? _selectedPatient;
 
@@ -117,18 +117,7 @@ internal partial class AdminViewModel : ObservableObject
 
             if (_selectedPatient is not null)
             {
-                EditingPatient = new Patient
-                {
-                    Id = _selectedPatient.Id,
-                    FirstName = _selectedPatient.FirstName,
-                    LastName = _selectedPatient.LastName,
-                    Cnp = _selectedPatient.Cnp,
-                    Dob = _selectedPatient.Dob,
-                    Sex = _selectedPatient.Sex,
-                    PhoneNo = _selectedPatient.PhoneNo,
-                    EmergencyContact = _selectedPatient.EmergencyContact,
-                    Dod = _selectedPatient.Dod,
-                };
+                EditingPatient = _selectedPatient;
             }
         }
     }
@@ -157,7 +146,7 @@ internal partial class AdminViewModel : ObservableObject
         {
             _searchQuery = value;
             OnPropertyChanged();
-            SearchPatient();
+            _ = SearchPatientAsync();
         }
     }
 
@@ -174,12 +163,10 @@ internal partial class AdminViewModel : ObservableObject
 
         Patients = [];
         ArchivedPatients = [];
-        NewPatient = new Patient { Dob = DateTime.Today, };
-
         _ghostService.ExorcismTriggered += (s, e) => IsExorcismAlertVisible = true;
         IsExorcismAlertVisible = _ghostService.IsExorcismTriggered();
 
-        LoadAllPatients();
+        _ = LoadAllPatientsAsync();
         CurrentView = "AdminDashboard";
     }
 
@@ -190,11 +177,12 @@ internal partial class AdminViewModel : ObservableObject
     [RelayCommand]
     public void GhostSighting() => _ghostService.SawAGhost();
 
+
     [RelayCommand]
-    public void LoadAllPatients()
+    public async Task LoadAllPatientsAsync()
     {
         var emptyFilter = new PatientFilter();
-        List<Patient> allPatients = _patientService.SearchPatients(emptyFilter);
+        List<Patient> allPatients = await _patientService.SearchPatientsAsync(emptyFilter);
 
         Patients.Clear();
         foreach (Patient patient in allPatients.Where(p => !p.IsArchived))
@@ -205,12 +193,13 @@ internal partial class AdminViewModel : ObservableObject
         }
     }
 
+
     [RelayCommand]
-    public void LoadArchivedPatients()
+    public async Task LoadArchivedPatientsAsync()
     {
         IsArchivedMode = true;
         var emptyFilter = new PatientFilter();
-        List<Patient> allPatients = _patientService.SearchPatients(emptyFilter);
+        List<Patient> allPatients = await _patientService.SearchPatientsAsync(emptyFilter);
 
         ArchivedPatients.Clear();
         foreach (Patient patient in allPatients.Where(p => p.IsArchived))
@@ -258,7 +247,7 @@ internal partial class AdminViewModel : ObservableObject
     {
         try
         {
-            _transplantService.AssignDonor(transplantId, donorId, score);
+            await _transplantService.AssignDonorAsync(transplantId, donorId, score);
             await _dialogService.ShowAlertAsync($"Successfully assigned organ from donor {donorName}.");
         }
         catch (Exception ex)
@@ -280,7 +269,7 @@ internal partial class AdminViewModel : ObservableObject
         try
         {
             history.PatientId = patientId;
-            _patientService.CreateMedicalHistory(patientId, history);
+            await _patientService.CreateMedicalHistoryAsync(patientId, history);
             await _dialogService.ShowAlertAsync("Medical history saved successfully!");
         }
         catch (Exception ex)
@@ -339,7 +328,7 @@ internal partial class AdminViewModel : ObservableObject
 
         if (!isConfirmed) return;
 
-        _patientService.ArchivePatient(SelectedPatient.Id);
+        await _patientService.ArchivePatientAsync(SelectedPatient);
         Patients.Remove(SelectedPatient);
         ArchivedPatients.Add(SelectedPatient);
     }
@@ -355,7 +344,7 @@ internal partial class AdminViewModel : ObservableObject
             return;
         }
 
-        _patientService.DearchivePatient(SelectedPatient.Id);
+        await _patientService.DearchivePatientAsync(SelectedPatient.Id);
         Patients.Add(SelectedPatient);
         ArchivedPatients.Remove(SelectedPatient);
     }
@@ -367,12 +356,12 @@ internal partial class AdminViewModel : ObservableObject
 
         try
         {
-            _patientService.UpdatePatient(EditingPatient);
+            await _patientService.UpdatePatientAsync(EditingPatient);
 
             EditingPatient.PhoneNo = FormatPhoneNumber(EditingPatient.PhoneNo);
             EditingPatient.EmergencyContact = FormatPhoneNumber(EditingPatient.EmergencyContact);
 
-            LoadAllPatients();
+            await LoadAllPatientsAsync();
             EditingPatient = null!;
             SelectedPatient = null!;
 
@@ -384,8 +373,9 @@ internal partial class AdminViewModel : ObservableObject
         }
     }
 
+
     [RelayCommand]
-    public void SearchPatient()
+    public async Task SearchPatientAsync()
     {
         var filter = new PatientFilter();
 
@@ -401,7 +391,7 @@ internal partial class AdminViewModel : ObservableObject
             }
         }
 
-        List<Patient> results = _patientService.SearchPatients(filter);
+        List<Patient> results = await _patientService.SearchPatientsAsync(filter);
 
         Patients.Clear();
         foreach (Patient p in results.Where(p => !p.IsArchived))
@@ -443,7 +433,7 @@ internal partial class AdminViewModel : ObservableObject
                     filter.NamePart = SearchQuery;
             }
 
-            List<Patient> results = _patientService.SearchPatients(filter);
+            List<Patient> results = await _patientService.SearchPatientsAsync(filter);
 
             Patients.Clear();
             foreach (Patient p in results.Where(x => !x.IsArchived))
@@ -462,13 +452,13 @@ internal partial class AdminViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ClearFilters()
+    private async Task ClearFilters()
     {
         MinAge = null;
         MaxAge = null;
         SelectedSexFilter = null!;
         SearchQuery = "";
-        LoadAllPatients();
+        await LoadAllPatientsAsync();
         NoResultsFound = false;
     }
 
@@ -510,9 +500,9 @@ internal partial class AdminViewModel : ObservableObject
 
         try
         {
-            _patientService.UpdatePatient(SelectedPatient);
-            LoadAllPatients();
-            LoadArchivedPatients();
+            await _patientService.UpdatePatientAsync(SelectedPatient);
+            await LoadAllPatientsAsync();
+            await LoadArchivedPatientsAsync();
             OnPropertyChanged(nameof(IsNotDeceased));
             await _dialogService.ShowAlertAsync("This patient has now become a ghost. Beware!!!");
         }
@@ -560,10 +550,10 @@ internal partial class AdminViewModel : ObservableObject
                 .Replace("+40", "0", StringComparison.Ordinal);
 
             SelectedPatient.IsDonor = true;
-            _patientService.UpdatePatient(SelectedPatient);
+            await _patientService.UpdatePatientAsync(SelectedPatient);
             await OpenOrganDonorDialogAsync();
-            LoadAllPatients();
-            LoadArchivedPatients();
+            await LoadAllPatientsAsync();
+            await LoadArchivedPatientsAsync();
         }
         catch (Exception ex)
         {
