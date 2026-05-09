@@ -142,7 +142,7 @@ public class PrescriptionRepository : IPrescriptionRepository
                     MedName = medication.MedName,
                 })
             .GroupBy(x => new { x.PatientId, x.MedName })
-            .Where(g => g.Select(x => x.DoctorId).Distinct().Count() >= 3)
+            .Where(g => g.Select(x => x.DoctorId).Distinct().Count() >= 3) // Patients with the same medication prescribed by 3 or more different doctors
             .Select(g => g.Key.PatientId)
             .Distinct()
             .ToListAsync();
