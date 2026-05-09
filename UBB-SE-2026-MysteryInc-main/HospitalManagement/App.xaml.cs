@@ -1,26 +1,27 @@
-using System;
-using System.IO;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using ERManagementSystem.Infrastructure;
+using Common.API.Services;
 using Common.Data.Data;
+using Common.Data.Repository;
+using Common.Data.Repository;
+using ERManagementSystem.Helpers;
+using ERManagementSystem.Infrastructure;
 using HospitalManagement.Infrastructure;
 using HospitalManagement.Integration.Export;
 using HospitalManagement.Integration.External;
-using Common.Data.Repository;
+using HospitalManagement.Proxy.AllergyProxy;
+using HospitalManagement.Proxy.StatisticsProxy;
 using HospitalManagement.Service;
 using HospitalManagement.View;
 using HospitalManagement.View.DialogServiceAdmin;
 using HospitalManagement.ViewModel;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.UI.Xaml;
-using ERManagementSystem.Helpers;
 using Microsoft.Extensions.Logging;
-using Common.Data.Repository;
-using HospitalManagement.Proxy.AllergyProxy;
-using Common.API.Services;
+using Microsoft.UI.Xaml;
+using System;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 [assembly: InternalsVisibleTo("HospitalManagementTest")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
@@ -79,8 +80,21 @@ public partial class App : Application
         _ = services.AddTransient<IBillingService, BillingService>();
         _ = services.AddTransient<IAddictDetectionService, AddictDetectionService>();
         _ = services.AddTransient<IPrescriptionService, PrescriptionService>();
-        _ = services.AddTransient<IStatisticsService, StatisticsService>();
         _ = services.AddSingleton<IGhostService, GhostService>();
+
+        _ = services.AddHttpClient<IStatisticsProxy, StatisticsProxy>((client) =>
+        {
+            var uriString = AppConfiguration["ApiSettings:BaseUri"];
+
+            if (string.IsNullOrEmpty(uriString))
+            {
+                throw new InvalidOperationException("BaseUri is missing from appsettings.local.json");
+            }
+
+            client.BaseAddress = new Uri(uriString);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
 
         _ = services.AddHttpClient<IAllergyProxy, AllergyProxy>((client) =>
         {

@@ -9,12 +9,13 @@ using LiveChartsCore.SkiaSharpView;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Common.API.Services;
+using HospitalManagement.Proxy.StatisticsProxy;
 
 namespace HospitalManagement.ViewModel;
 
 internal class StatisticsViewModel : INotifyPropertyChanged
 {
-    private readonly IStatisticsService _statisticsService;
+    private readonly IStatisticsProxy _StatisticsProxy;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -74,9 +75,9 @@ internal class StatisticsViewModel : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 
-    public StatisticsViewModel(IStatisticsService statisticsService)
+    public StatisticsViewModel(IStatisticsProxy StatisticsProxy)
     {
-        _statisticsService = statisticsService;
+        _StatisticsProxy = StatisticsProxy;
     }
 
     public void LoadDataForSelection(string selection)
@@ -146,7 +147,7 @@ internal class StatisticsViewModel : INotifyPropertyChanged
 
     /// <summary>
     /// VM1: LoadPatientDistribution
-    /// Calls StatisticsService.GetActiveVsArchivedRatio() and populates a pie chart.
+    /// Calls StatisticsProxy.GetActiveVsArchivedRatio() and populates a pie chart.
     /// showing the ratio of active patients to those who are no longer under current care.
     /// </summary>
     public void LoadPatientDistribution()
@@ -158,7 +159,7 @@ internal class StatisticsViewModel : INotifyPropertyChanged
     {
         try
         {
-            Dictionary<string, int> data = await _statisticsService.GetActiveVsArchivedRatioAsync();
+            Dictionary<string, int> data = await _StatisticsProxy.GetActiveVsArchivedRatioAsync();
 
             if (data is null || data.Count == 0)
             {
@@ -209,7 +210,7 @@ internal class StatisticsViewModel : INotifyPropertyChanged
     {
         try
         {
-            Dictionary<string, int> data = await _statisticsService.GetConsultationDistributionAsync();
+            Dictionary<string, int> data = await _StatisticsProxy.GetConsultationDistributionAsync();
 
             if (data is null || data.Count == 0)
             {
@@ -264,7 +265,7 @@ internal class StatisticsViewModel : INotifyPropertyChanged
 
     /// <summary>
     /// VM3: LoadTopDiagnoses
-    /// Implements LoadTopDiagnoses() to fetch from StatisticsService.GetTopDiagnoses().
+    /// Implements LoadTopDiagnoses() to fetch from StatisticsProxy.GetTopDiagnoses().
     /// the most common clinical diagnoses for bar chart rendering.
     /// </summary>
     private void LoadTopDiagnoses()
@@ -276,7 +277,7 @@ internal class StatisticsViewModel : INotifyPropertyChanged
     {
         try
         {
-            Dictionary<string, int> data = await _statisticsService.GetTopDiagnosesAsync();
+            Dictionary<string, int> data = await _StatisticsProxy.GetTopDiagnosesAsync();
 
             if (data is null || data.Count == 0)
             {
@@ -332,7 +333,7 @@ internal class StatisticsViewModel : INotifyPropertyChanged
     /// <summary>
     /// VM4: LoadTopMedications
     /// Implements LoadTopMedications() to retrieve frequency data for prescribed medications.
-    /// for bar chart rendering. Calls statisticsService.GetMostPrescribedMeds().
+    /// for bar chart rendering. Calls StatisticsProxy.GetMostPrescribedMeds().
     /// </summary>
     private void LoadTopMedications()
     {
@@ -343,7 +344,7 @@ internal class StatisticsViewModel : INotifyPropertyChanged
     {
         try
         {
-            Dictionary<string, int> data = await _statisticsService.GetMostPrescribedMedsAsync();
+            Dictionary<string, int> data = await _StatisticsProxy.GetMostPrescribedMedsAsync();
 
             if (data is null || data.Count == 0)
             {
@@ -398,7 +399,7 @@ internal class StatisticsViewModel : INotifyPropertyChanged
     /// <summary>
     /// VM5: LoadDemographics
     /// Implements LoadDemographics() to fetch age "buckets" (0-17, 18-64, 65+) and sex distribution data.
-    /// by calling GetAgeDistribution() and GetPatientGenderDistribution() from StatisticsService.
+    /// by calling GetAgeDistribution() and GetPatientGenderDistribution() from StatisticsProxy.
     /// Maps the SexEnum counts into a two-segment pie chart and the age buckets to a bar chart.
     /// </summary>
     private void LoadDemographics()
@@ -410,7 +411,7 @@ internal class StatisticsViewModel : INotifyPropertyChanged
     {
         try
         {
-            Dictionary<string, int> genderData = await _statisticsService.GetPatientGenderDistributionAsync();
+            Dictionary<string, int> genderData = await _StatisticsProxy.GetPatientGenderDistributionAsync();
 
             if (genderData is null || genderData.Count == 0)
             {
@@ -435,7 +436,7 @@ internal class StatisticsViewModel : INotifyPropertyChanged
             }
 
             // 2. Fetch Age Data (Bar Chart) - Map age buckets to bar chart
-            Dictionary<string, int>? ageData = await _statisticsService.GetAgeDistributionAsync();
+            Dictionary<string, int>? ageData = await _StatisticsProxy.GetAgeDistributionAsync();
 
             if (ageData is null || ageData.Count == 0)
             {

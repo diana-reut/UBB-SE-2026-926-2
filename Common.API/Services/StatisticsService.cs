@@ -84,7 +84,8 @@ public class StatisticsService : IStatisticsService
 
     private static Dictionary<string, int> BuildConsultationDistribution(IEnumerable<MedicalRecord> records)
     {
-        return records.GroupBy(r => r.SourceType.ToString())
+        return records
+            .GroupBy(r => r.SourceType.ToString())
             .ToDictionary(g => g.Key, g => g.Count());
     }
 
