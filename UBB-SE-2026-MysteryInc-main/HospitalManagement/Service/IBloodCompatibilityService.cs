@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagement.Service;
 
-internal interface IBloodCompatibilityService
+internal interface IBloodCompatibilityService : Common.Data.Service.IBloodCompatibilityService
 {
     public int CalculateScore(Patient donor, Patient recipient);
     public List<Patient> GetTopCompatibleDonors(int recipientId);

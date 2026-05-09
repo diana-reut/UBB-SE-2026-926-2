@@ -17,6 +17,9 @@ builder.Services.AddDbContext<EFHospitalDbContext>(options =>
 builder.Services.AddScoped<IAllergyRepository, AllergyRepository>();
 builder.Services.AddScoped<IAllergyService, AllergyService>();
 
+builder.Services.AddScoped<ITransplantRepository, TransplantRepository>();
+builder.Services.AddScoped<ITransplantService, TransplantService>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
