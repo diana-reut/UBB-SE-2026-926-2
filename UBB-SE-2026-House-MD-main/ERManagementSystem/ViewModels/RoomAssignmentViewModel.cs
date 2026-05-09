@@ -1,26 +1,44 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using Common.Data.Entity;
 using Common.Data.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ERManagementSystem.Helpers;
-using ERManagementSystem.Services;
+using ERManagementSystem.Proxy.ERRoomProxy;
+using ERManagementSystem.Proxy.ERVisitProxy;
+using ERManagementSystem.Proxy.TriageParametersProxy;
+using ERManagementSystem.Proxy.TriageProxy;
+using ERManagementSystem.Repositories;
 using Microsoft.UI.Xaml.Controls;
 
 namespace ERManagementSystem.ViewModels
 {
     public partial class RoomAssignmentViewModel : BaseViewModel
     {
-        private readonly IRoomAssignmentService roomAssignmentService;
+        private readonly IERRoomProxy erRoomProxy;
+        private readonly IERVisitProxy erVisitProxy;
+        private readonly ITriageProxy triageProxy;
+        private readonly ITriageParametersProxy triageParametersProxy;
+        private readonly IPatientRepository patientRepository;
 
         public Microsoft.UI.Xaml.XamlRoot? XamlRoot { get; set; }
 
         public RoomAssignmentViewModel(
-            IRoomAssignmentService roomAssignmentService)
+            IERRoomProxy erRoomProxy,
+            IERVisitProxy erVisitProxy,
+            ITriageProxy triageProxy,
+            ITriageParametersProxy triageParametersProxy,
+            IPatientRepository patientRepository)
         {
-            this.roomAssignmentService = roomAssignmentService;
+            this.erRoomProxy = erRoomProxy;
+            this.erVisitProxy = erVisitProxy;
+            this.triageProxy = triageProxy;
+            this.triageParametersProxy = triageParametersProxy;
+            this.patientRepository = patientRepository;
         }
 
         [ObservableProperty] private ObservableCollection<ER_Visit> waitingVisits = new ObservableCollection<ER_Visit>();
@@ -45,8 +63,8 @@ namespace ERManagementSystem.ViewModels
 
             try
             {
-                SelectedPatient = await roomAssignmentService.GetPatientByIdAsync(value.Patient_ID);
-                SelectedTriage = await roomAssignmentService.GetTriageByVisitIdAsync(value.Visit_ID);
+                SelectedPatient = await patientRepository.GetByIdAsync(value.Patient_ID);
+                SelectedTriage = await triageProxy.GetByVisitIdAsync(value.Visit_ID);
             }
             catch
             {
@@ -63,14 +81,14 @@ namespace ERManagementSystem.ViewModels
                 IsBusy = true;
                 StatusMessage = string.Empty;
 
-                var waitingWithTriage = await roomAssignmentService.GetWaitingVisitsWithTriageAsync();
+                var waitingWithTriage = await GetWaitingVisitsWithTriageAsync();
                 WaitingVisits = new ObservableCollection<ER_Visit>();
                 foreach (var (visit, _) in waitingWithTriage)
                 {
                     WaitingVisits.Add(visit);
                 }
 
-                AvailableRooms = new ObservableCollection<ER_Room>(await roomAssignmentService.GetAvailableRoomsAsync());
+                AvailableRooms = new ObservableCollection<ER_Room>(await erRoomProxy.GetAvailableRoomsAsync());
             }
             catch (Exception ex)
             {
@@ -94,7 +112,7 @@ namespace ERManagementSystem.ViewModels
             try
             {
                 IsBusy = true;
-                bool assigned = await roomAssignmentService.AutoAssignRoomAsync();
+                bool assigned = await AutoAssignRoomAsync();
                 if (assigned)
                 {
                     await ShowDialog("Room Assigned", "The highest-priority visit has been automatically assigned to a matching room.");
@@ -136,8 +154,8 @@ namespace ERManagementSystem.ViewModels
             try
             {
                 IsBusy = true;
-                await roomAssignmentService.AssignRoomToVisitAsync(SelectedVisit.Visit_ID, SelectedRoom.Room_ID);
-                await ShowDialog("Room Assigned", $"Visit {SelectedVisit.Visit_ID} → Room {SelectedRoom.Room_ID} ({SelectedRoom.Room_Type}).");
+                await AssignRoomToVisitAsync(SelectedVisit.Visit_ID, SelectedRoom.Room_ID);
+                await ShowDialog("Room Assigned", $"Visit {SelectedVisit.Visit_ID} -> Room {SelectedRoom.Room_ID} ({SelectedRoom.Room_Type}).");
                 SelectedVisit = null;
                 SelectedRoom = null;
                 await LoadData();
@@ -150,6 +168,80 @@ namespace ERManagementSystem.ViewModels
             {
                 IsBusy = false;
             }
+        }
+
+        private async Task<IReadOnlyList<(ER_Visit visit, Triage triage)>> GetWaitingVisitsWithTriageAsync()
+        {
+            var waitingVisitsWithStatus = await erVisitProxy.GetByStatusAsync(ER_Visit.VisitStatus.WAITING_FOR_ROOM);
+            var triages = await triageProxy.GetAllAsync();
+
+            return waitingVisitsWithStatus
+                .Join(
+                    triages,
+                    visit => visit.Visit_ID,
+                    triage => triage.Visit_ID,
+                    (visit, triage) => (visit, triage))
+                .OrderBy(queueEntry => queueEntry.triage.Triage_Level)
+                .ThenBy(queueEntry => queueEntry.visit.Arrival_date_time)
+                .ToList();
+        }
+
+        private async Task<bool> AutoAssignRoomAsync()
+        {
+            IReadOnlyList<(ER_Visit visit, Triage triage)> waitingWithTriage = await GetWaitingVisitsWithTriageAsync();
+            if (waitingWithTriage.Count == 0)
+            {
+                return false;
+            }
+
+            var (topVisit, topTriage) = waitingWithTriage.First();
+            Triage_Parameters? parameters = await triageParametersProxy.GetByTriageIdAsync(topTriage.Triage_ID);
+
+            string requiredType = RoomTypeHelper.DetermineRoomType(
+                topTriage.Specialization,
+                parameters?.Bleeding ?? 1,
+                parameters?.Injury_Type ?? 1,
+                parameters?.Consciousness ?? 1,
+                parameters?.Breathing ?? 1);
+
+            ER_Room? room = (await erRoomProxy.GetAvailableRoomsAsync())
+                .FirstOrDefault(availableRoom => availableRoom.Room_Type == requiredType);
+
+            if (room == null)
+            {
+                Logger.Warning($"AutoAssignRoom: No '{requiredType}' room available for Visit {topVisit.Visit_ID}.");
+                return false;
+            }
+
+            await AssignRoomToVisitAsync(topVisit.Visit_ID, room.Room_ID);
+            return true;
+        }
+
+        private async Task AssignRoomToVisitAsync(int visitId, int roomId)
+        {
+            ER_Room room = await erRoomProxy.GetByIdAsync(roomId)
+                ?? throw new InvalidOperationException($"Room {roomId} was not found.");
+
+            if (!ER_Room.StatusEquals(room.Availability_Status, ER_Room.RoomStatus.Available))
+            {
+                throw new InvalidOperationException(
+                    $"Room {roomId} is not available (current: '{room.Availability_Status}').");
+            }
+
+            ER_Visit visit = await erVisitProxy.GetByIdAsync(visitId)
+                ?? throw new InvalidOperationException($"Visit {visitId} was not found.");
+
+            if (visit.Status != ER_Visit.VisitStatus.WAITING_FOR_ROOM)
+            {
+                throw new InvalidOperationException(
+                    $"Visit {visitId} is not in WAITING_FOR_ROOM (current: '{visit.Status}').");
+            }
+
+            room.UpdateAvailabilityStatus(ER_Room.RoomStatus.Occupied);
+            await erRoomProxy.UpdateAsync(roomId, room);
+            await erRoomProxy.SetCurrentVisitAsync(roomId, visitId);
+            await erVisitProxy.UpdateStatusAsync(visitId, ER_Visit.VisitStatus.IN_ROOM);
+            Logger.Info($"Visit {visitId} assigned to Room {roomId}.");
         }
 
         private async Task ShowDialog(string title, string message)
