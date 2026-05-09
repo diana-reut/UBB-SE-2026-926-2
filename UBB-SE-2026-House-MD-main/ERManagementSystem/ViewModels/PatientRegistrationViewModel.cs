@@ -6,18 +6,21 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ERManagementSystem.Infrastructure;
 using ERManagementSystem.Models;
-using ERManagementSystem.Services;
+using ERManagementSystem.Proxy.ERVisitProxy;
+using ERManagementSystem.Repositories;
 using Microsoft.UI.Xaml.Controls;
 
 namespace ERManagementSystem.ViewModels
 {
     public partial class PatientRegistrationViewModel : BaseViewModel
     {
-        private readonly IRegistrationService registrationService;
+        private readonly IPatientRepository patientRepository;
+        private readonly IERVisitProxy erVisitProxy;
 
-        public PatientRegistrationViewModel(IRegistrationService registrationService)
+        public PatientRegistrationViewModel(IPatientRepository patientRepository, IERVisitProxy erVisitProxy)
         {
-            this.registrationService = registrationService;
+            this.patientRepository = patientRepository;
+            this.erVisitProxy = erVisitProxy;
         }
 
         [ObservableProperty]
@@ -261,7 +264,33 @@ namespace ERManagementSystem.ViewModels
                     Emergency_Contact = EmergencyContact
                 };
 
-                ER_Visit visit = await registrationService.RegisterPatientAndVisitAsync(patient, ChiefComplaint);
+                if (!patient.Validate(out var patientErrors))
+                {
+                    throw new InvalidOperationException(
+                        "Patient data is invalid:\n" + string.Join("\n", patientErrors));
+                }
+
+                Patient? existingPatient = await patientRepository.GetByIdAsync(patient.Patient_ID);
+                if (existingPatient == null)
+                {
+                    await patientRepository.AddAsync(patient);
+                }
+
+                var visitToCreate = new ER_Visit
+                {
+                    Patient_ID = patient.Patient_ID,
+                    Chief_Complaint = ChiefComplaint,
+                    Arrival_date_time = DateTime.Now,
+                    Status = ER_Visit.VisitStatus.REGISTERED
+                };
+
+                if (!visitToCreate.Validate(out var visitErrors))
+                {
+                    throw new InvalidOperationException(
+                        "ER Visit data is invalid:\n" + string.Join("\n", visitErrors));
+                }
+
+                ER_Visit visit = await erVisitProxy.CreateAsync(visitToCreate);
 
                 var successDialog = new ContentDialog
                 {

@@ -6,18 +6,18 @@ using Common.Data.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ERManagementSystem.Infrastructure;
-using ERManagementSystem.Services;
+using ERManagementSystem.Proxy.TriageProxy;
 using Microsoft.UI.Xaml.Controls;
 
 namespace ERManagementSystem.ViewModels
 {
     public partial class TriageViewModel : BaseViewModel
     {
-        private readonly ITriageService triageService;
+        private readonly ITriageProxy triageProxy;
 
-        public TriageViewModel(ITriageService triageService)
+        public TriageViewModel(ITriageProxy triageProxy)
         {
-            this.triageService = triageService;
+            this.triageProxy = triageProxy;
         }
 
         // ── Observable collections ──────────────────────────────────────────
@@ -74,7 +74,7 @@ namespace ERManagementSystem.ViewModels
 
             if (IsTriaged)
             {
-                var triage = await triageService.GetByVisitIdAsync(value.Visit_ID);
+                var triage = await triageProxy.GetByVisitIdAsync(value.Visit_ID);
 
                 if (triage != null)
                 {
@@ -125,7 +125,7 @@ namespace ERManagementSystem.ViewModels
                     Pain_Level = PainLevel
                 };
 
-                lastTriageResult = await triageService.CreateTriageAsync(SelectedVisit.Visit_ID, parameters);
+                lastTriageResult = await triageProxy.CreateTriageAsync(SelectedVisit.Visit_ID, parameters);
 
                 CalculatedSeverity = lastTriageResult.Triage_Level;
                 CalculatedSpecialization = lastTriageResult.Specialization;
@@ -161,7 +161,7 @@ namespace ERManagementSystem.ViewModels
 
             try
             {
-                await triageService.MoveVisitToQueueAsync(SelectedVisit.Visit_ID);
+                await triageProxy.MoveVisitToQueueAsync(SelectedVisit.Visit_ID);
 
                 await ShowDialog("Moved to Queue",
                     $"Visit {SelectedVisit.Visit_ID} is now WAITING_FOR_ROOM.");
@@ -185,7 +185,7 @@ namespace ERManagementSystem.ViewModels
                 return;
             }
 
-            await triageService.CloseVisitAsync(SelectedVisit.Visit_ID);
+            await triageProxy.CloseVisitAsync(SelectedVisit.Visit_ID);
 
             await ShowDialog("Visit closed",
                 $"The visit {SelectedVisit.Visit_ID} has been closed!");
@@ -215,7 +215,7 @@ namespace ERManagementSystem.ViewModels
         {
             RegisteredVisits.Clear();
 
-            var visits = await triageService.GetVisitsForTriageAsync();
+            var visits = await triageProxy.GetVisitsForTriageAsync();
 
             foreach (var visit in visits)
             {
