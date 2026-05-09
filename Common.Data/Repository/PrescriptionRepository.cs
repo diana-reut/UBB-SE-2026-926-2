@@ -128,19 +128,28 @@ public class PrescriptionRepository : IPrescriptionRepository
     public async Task<List<Patient>> GetAddictCandidatePatientsAsync()
     {
         DateTime thirtyDaysAgo = DateTime.Now.AddDays(-30);
+        DateTime now = DateTime.Now;
 
-        return await BaseQuery()
-            .Where(p => p.Date >= thirtyDaysAgo)
+        List<int> candidatePatientIds = await _context.Prescriptions
+            .Where(p => p.Date >= thirtyDaysAgo && p.Date <= now)
             .Where(p => !p.MedicalRecord.History.Patient.IsArchived)
-            .Where(p => p.MedicationList.Any())
-            .GroupBy(p => new
-            {
-                Patient = p.MedicalRecord.History.Patient,
-                MedName = p.MedicationList.First().MedName,
-            })
-            .Where(g => g.Select(p => p.MedicalRecord.StaffId).Distinct().Count() >= 3)
-            .Select(g => g.Key.Patient)
+            .SelectMany(
+                p => p.MedicationList,
+                (prescription, medication) => new
+                {
+                    PatientId = prescription.MedicalRecord.History.PatientId,
+                    DoctorId = prescription.MedicalRecord.StaffId,
+                    MedName = medication.MedName,
+                })
+            .GroupBy(x => new { x.PatientId, x.MedName })
+            .Where(g => g.Select(x => x.DoctorId).Distinct().Count() >= 3)
+            .Select(g => g.Key.PatientId)
             .Distinct()
+            .ToListAsync();
+
+        return await _context.Patients
+            .Where(p => candidatePatientIds.Contains(p.Id))
+            .AsNoTracking()
             .ToListAsync();
     }
 
