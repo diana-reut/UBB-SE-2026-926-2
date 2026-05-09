@@ -14,6 +14,8 @@ internal interface ITransplantProxy
 
     Task<List<TransplantMatch>> GetTopMatchesForDonorAsync(int donorId, string organType);
 
+    Task<List<TransplantMatch>> GetTopMatchesAsDisplayModelsAsync(int donorId, string organType);
+
     Task<bool> IsUrgentAsync(int patientId);
 
     Task<string?> GetChronicWarningAsync(int patientId);

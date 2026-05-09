@@ -33,6 +33,11 @@ internal class TransplantProxy : ProxyBase, ITransplantProxy
         return await GetAsync<List<TransplantMatch>>($"{BaseUri}/matches/donor/{donorId}?organType={Uri.EscapeDataString(organType)}") ?? [];
     }
 
+    public async Task<List<TransplantMatch>> GetTopMatchesAsDisplayModelsAsync(int donorId, string organType)
+    {
+        return await GetAsync<List<TransplantMatch>>($"{BaseUri}/matches/donor/{donorId}?organType={Uri.EscapeDataString(organType)}") ?? [];
+    }
+
     public async Task<bool> IsUrgentAsync(int patientId)
     {
         return await GetAsync<bool>($"{BaseUri}/urgent/{patientId}");
