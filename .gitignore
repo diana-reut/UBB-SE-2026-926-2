@@ -431,3 +431,5 @@ FodyWeavers.xsd
 *.msp
 
 *.vs
+/Common.Data/HospitalDbContextFactory.cs
+/Common.API/appsettings.json
