@@ -92,6 +92,7 @@ internal class PatientViewModel : INotifyPropertyChanged
         {
             _selectedMedicalRecord = value;
             OnPropertyChanged();
+            RefreshCommandStates();
             if (_selectedMedicalRecord is not null)
             {
                 _ = LoadBillingForRecordAsync(_selectedMedicalRecord);
@@ -161,6 +162,7 @@ internal class PatientViewModel : INotifyPropertyChanged
         {
             _discountApplied = value;
             OnPropertyChanged();
+            RefreshCommandStates();
         }
     }
 
@@ -177,6 +179,8 @@ internal class PatientViewModel : INotifyPropertyChanged
     public Func<decimal, Task>? OpenRouletteAction { get; set; }
 
     public Func<Prescription, Task>? OpenPrescriptionDialogAction { get; set; }
+
+    public Action<string, string>? ShowAlertAction { get; set; }
 
     public PatientViewModel(IPatientService patientService, IExportService exportService, IBillingProxy billingProxy)
     {
@@ -320,7 +324,7 @@ internal class PatientViewModel : INotifyPropertyChanged
             Prescription? prescription = await _patientService.GetPrescriptionByRecordIdAsync(SelectedMedicalRecord.Id);
             if (prescription is null)
             {
-                System.Diagnostics.Debug.WriteLine($"No prescription found for record {SelectedMedicalRecord.Id}");
+                ShowAlertAction?.Invoke("No Prescription", "This consultation does not have an associated prescription.");
                 return;
             }
 
@@ -331,6 +335,7 @@ internal class PatientViewModel : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
+            ShowAlertAction?.Invoke("Prescription Error", ex.Message);
             System.Diagnostics.Debug.WriteLine($"Error loading prescription: {ex.Message}");
         }
     }
@@ -371,5 +376,23 @@ internal class PatientViewModel : INotifyPropertyChanged
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    private void RefreshCommandStates()
+    {
+        if (ExportRecordCommand is AsyncRelayCommand exportCommand)
+        {
+            exportCommand.NotifyCanExecuteChanged();
+        }
+
+        if (ViewPrescriptionCommand is AsyncRelayCommand viewPrescriptionCommand)
+        {
+            viewPrescriptionCommand.NotifyCanExecuteChanged();
+        }
+
+        if (ApplyDiscountCommand is AsyncRelayCommand applyDiscountCommand)
+        {
+            applyDiscountCommand.NotifyCanExecuteChanged();
+        }
     }
 }

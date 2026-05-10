@@ -1,12 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Common.Data.Entity;
 using Common.Data.Repository;
 using Common.Data.Integration;
+using Common.Data;
 
-namespace HospitalManagement.Service;
+namespace Common.API.Service;
 
 internal class PrescriptionService : IPrescriptionService
 {

@@ -19,6 +19,7 @@ using Microsoft.UI.Xaml;
 using ERManagementSystem.Helpers;
 using Microsoft.Extensions.Logging;
 using HospitalManagement.Proxy.AllergyProxy;
+using HospitalManagement.Proxy.PrescriptionProxy;
 using ERManagementSystem.Proxy.ERRoomProxy;
 using ERManagementSystem.Proxy.ERVisitProxy;
 using ERManagementSystem.Proxy.ExaminationProxy;
@@ -83,9 +84,22 @@ public partial class App : Application
         _ = services.AddTransient<ITransplantService, TransplantService>();
         _ = services.AddTransient<IExportService, ExportService>();
         _ = services.AddTransient<IImportService, ImportService>();
-        _ = services.AddTransient<IPrescriptionService, PrescriptionService>();
         _ = services.AddTransient<IStatisticsService, StatisticsService>();
         _ = services.AddSingleton<IGhostService, GhostService>();
+
+        _ = services.AddHttpClient<IPrescriptionProxy, PrescriptionProxy>((client) =>
+        {
+            var uriString = AppConfiguration["ApiSettings:BaseUri"];
+
+            if (string.IsNullOrEmpty(uriString))
+            {
+                throw new InvalidOperationException("BaseUri is missing from appsettings.local.json");
+            }
+
+            client.BaseAddress = new Uri(uriString);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
 
         _ = services.AddHttpClient<IAllergyProxy, AllergyProxy>((client) =>
         {
