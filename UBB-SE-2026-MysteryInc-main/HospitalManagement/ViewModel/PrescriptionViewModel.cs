@@ -13,6 +13,7 @@ using System.Globalization;
 using System.Threading.Tasks;
 using Common.Data.Entity;
 using Common.Data.Integration;
+using HospitalManagement.Proxy.AddictDetectionProxy;
 using HospitalManagement.Proxy.PrescriptionProxy;
 
 namespace HospitalManagement.ViewModel;
@@ -20,7 +21,7 @@ namespace HospitalManagement.ViewModel;
 internal partial class PrescriptionViewModel : ObservableObject
 {
     private readonly IPrescriptionProxy _prescriptionProxy;
-    private readonly IAddictDetectionService _addictDetectionService;
+    private readonly IAddictDetectionProxy _addictDetectionProxy;
     private int _loadVersion;
 
     public ObservableCollection<Prescription> Prescriptions { get; } = new();
@@ -45,10 +46,10 @@ internal partial class PrescriptionViewModel : ObservableObject
 
     public PrescriptionViewModel(
         IPrescriptionProxy prescriptionProxy,
-        IAddictDetectionService addictDetectionService)
+        IAddictDetectionProxy addictDetectionProxy)
     {
         _prescriptionProxy = prescriptionProxy;
-        _addictDetectionService = addictDetectionService;
+        _addictDetectionProxy = addictDetectionProxy;
 
         _ = LoadPrescriptionsAsync();
     }
@@ -131,7 +132,7 @@ internal partial class PrescriptionViewModel : ObservableObject
     {
         AddictCandidates.Clear();
 
-        foreach (var patient in await _addictDetectionService.GetAddictCandidatesAsync())
+        foreach (var patient in await _addictDetectionProxy.GetAddictCandidatesAsync())
             AddictCandidates.Add(patient);
     }
 

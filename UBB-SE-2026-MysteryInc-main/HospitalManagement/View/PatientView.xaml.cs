@@ -45,6 +45,13 @@ internal sealed partial class PatientView : Window
         _viewModel.ShowAlertAction = ShowAlert;
     }
 
+
+    private async void HandleRouletteResult(int discount, decimal finalPrice)
+    {
+        await _viewModel.HandleRouletteResultAsync(discount, finalPrice);
+    }
+
+
     private async Task OpenRouletteAsync(decimal basePrice)
     {
         var rouletteDialog = new DiscountRouletteDialog
@@ -52,9 +59,9 @@ internal sealed partial class PatientView : Window
             XamlRoot = GetDialogXamlRoot(),
         };
         rouletteDialog.ViewModel.Initialize(basePrice);
-        rouletteDialog.ViewModel.SpinCompleted += _viewModel.HandleRouletteResult;
+        rouletteDialog.ViewModel.SpinCompleted += HandleRouletteResult;
         _ = await rouletteDialog.ShowAsync();
-        rouletteDialog.ViewModel.SpinCompleted -= _viewModel.HandleRouletteResult;
+        rouletteDialog.ViewModel.SpinCompleted -= HandleRouletteResult;
     }
 
     private async Task OpenPrescriptionDialogAsync(Prescription prescription)
