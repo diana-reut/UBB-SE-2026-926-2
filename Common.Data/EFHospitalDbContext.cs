@@ -201,7 +201,9 @@ public class EFHospitalDbContext : DbContext
         {
             entity.ToTable("Triage_Parameters");
             entity.HasKey(tp => tp.Triage_ID);
-            entity.Property(tp => tp.Triage_ID).HasColumnName("Triage_ID");
+            entity.Property(tp => tp.Triage_ID)
+                .HasColumnName("Triage_ID")
+                .ValueGeneratedNever();
             entity.Property(tp => tp.Consciousness).HasColumnName("Consciousness");
             entity.Property(tp => tp.Breathing).HasColumnName("Breathing");
             entity.Property(tp => tp.Bleeding).HasColumnName("Bleeding");

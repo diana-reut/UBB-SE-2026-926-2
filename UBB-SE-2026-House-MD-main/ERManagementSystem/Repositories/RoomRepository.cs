@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using ERManagementSystem.Helpers;
 using ERManagementSystem.Models;
 using Common.Data.Data;
@@ -17,70 +18,100 @@ namespace ERManagementSystem.Repositories
             this.context = context;
         }
 
-        public List<ER_Room> GetAllRooms() => context.ERRooms.AsNoTracking().ToList();
+        public List<ER_Room> GetAllRooms() => GetAllRoomsAsync().GetAwaiter().GetResult();
 
-        public ER_Room? GetById(int roomId) =>
-            context.ERRooms.AsNoTracking().FirstOrDefault(r => r.Room_ID == roomId);
+        public Task<List<ER_Room>> GetAllRoomsAsync() => context.ERRooms.AsNoTracking().ToListAsync();
 
-        public List<ER_Room> GetAvailableRooms() => GetRoomsByStatus(ER_Room.RoomStatus.Available);
-        public List<ER_Room> GetOccupiedRooms() => GetRoomsByStatus(ER_Room.RoomStatus.Occupied);
-        public List<ER_Room> GetCleaningRooms() => GetRoomsByStatus(ER_Room.RoomStatus.Cleaning);
+        public ER_Room? GetById(int roomId) => GetByIdAsync(roomId).GetAwaiter().GetResult();
 
-        public List<ER_Room> GetRoomsByStatus(string status) =>
+        public Task<ER_Room?> GetByIdAsync(int roomId) =>
+            context.ERRooms.AsNoTracking().FirstOrDefaultAsync(r => r.Room_ID == roomId);
+
+        public List<ER_Room> GetAvailableRooms() => GetAvailableRoomsAsync().GetAwaiter().GetResult();
+        public Task<List<ER_Room>> GetAvailableRoomsAsync() => GetRoomsByStatusAsync(ER_Room.RoomStatus.Available);
+        public List<ER_Room> GetOccupiedRooms() => GetOccupiedRoomsAsync().GetAwaiter().GetResult();
+        public Task<List<ER_Room>> GetOccupiedRoomsAsync() => GetRoomsByStatusAsync(ER_Room.RoomStatus.Occupied);
+        public List<ER_Room> GetCleaningRooms() => GetCleaningRoomsAsync().GetAwaiter().GetResult();
+        public Task<List<ER_Room>> GetCleaningRoomsAsync() => GetRoomsByStatusAsync(ER_Room.RoomStatus.Cleaning);
+
+        public List<ER_Room> GetRoomsByStatus(string status) => GetRoomsByStatusAsync(status).GetAwaiter().GetResult();
+
+        public Task<List<ER_Room>> GetRoomsByStatusAsync(string status) =>
             context.ERRooms
                 .AsNoTracking()
                 .Where(r => r.Availability_Status == status)
-                .ToList();
+                .ToListAsync();
 
-        public void UpdateAvailabilityStatus(int roomId, string newStatus)
+        public void UpdateAvailabilityStatus(int roomId, string newStatus) =>
+            UpdateAvailabilityStatusAsync(roomId, newStatus).GetAwaiter().GetResult();
+
+        public async Task UpdateAvailabilityStatusAsync(int roomId, string newStatus)
         {
-            ER_Room room = context.ERRooms.First(r => r.Room_ID == roomId);
+            ER_Room room = await context.ERRooms.FirstAsync(r => r.Room_ID == roomId);
             room.Availability_Status = newStatus;
-            context.SaveChanges();
+            await context.SaveChangesAsync();
         }
 
-        public void SetCurrentVisit(int roomId, int visitId)
+        public void SetCurrentVisit(int roomId, int visitId) =>
+            SetCurrentVisitAsync(roomId, visitId).GetAwaiter().GetResult();
+
+        public async Task SetCurrentVisitAsync(int roomId, int visitId)
         {
-            ER_Room room = context.ERRooms.First(r => r.Room_ID == roomId);
+            ER_Room room = await context.ERRooms.FirstAsync(r => r.Room_ID == roomId);
             room.Current_Visit_ID = visitId;
-            context.SaveChanges();
+            await context.SaveChangesAsync();
         }
 
-        public void ClearCurrentVisit(int roomId)
+        public void ClearCurrentVisit(int roomId) =>
+            ClearCurrentVisitAsync(roomId).GetAwaiter().GetResult();
+
+        public async Task ClearCurrentVisitAsync(int roomId)
         {
-            ER_Room room = context.ERRooms.First(r => r.Room_ID == roomId);
+            ER_Room room = await context.ERRooms.FirstAsync(r => r.Room_ID == roomId);
             room.Current_Visit_ID = null;
-            context.SaveChanges();
+            await context.SaveChangesAsync();
         }
 
-        public int? GetRoomIdByVisitId(int visitId) =>
+        public int? GetRoomIdByVisitId(int visitId) => GetRoomIdByVisitIdAsync(visitId).GetAwaiter().GetResult();
+
+        public Task<int?> GetRoomIdByVisitIdAsync(int visitId) =>
             context.Examinations
                 .Where(e => e.Visit_ID == visitId)
                 .OrderByDescending(e => e.Exam_Time)
                 .Select(e => (int?)e.Room_ID)
-                .FirstOrDefault();
+                .FirstOrDefaultAsync();
 
-        public int? GetRoomIdByCurrentVisit(int visitId) =>
+        public int? GetRoomIdByCurrentVisit(int visitId) => GetRoomIdByCurrentVisitAsync(visitId).GetAwaiter().GetResult();
+
+        public Task<int?> GetRoomIdByCurrentVisitAsync(int visitId) =>
             context.ERRooms
                 .Where(r => r.Current_Visit_ID == visitId)
                 .Select(r => (int?)r.Room_ID)
-                .FirstOrDefault();
+                .FirstOrDefaultAsync();
 
-        public int? GetAssignedRoomIdForVisit(int visitId) =>
-            GetRoomIdByCurrentVisit(visitId) ?? GetRoomIdByVisitId(visitId);
+        public int? GetAssignedRoomIdForVisit(int visitId) => GetAssignedRoomIdForVisitAsync(visitId).GetAwaiter().GetResult();
+
+        public async Task<int?> GetAssignedRoomIdForVisitAsync(int visitId)
+        {
+            int? currentRoomId = await GetRoomIdByCurrentVisitAsync(visitId);
+            return currentRoomId ?? await GetRoomIdByVisitIdAsync(visitId);
+        }
 
         public ER_Visit? GetVisitByRoomId(int roomId)
+            => GetVisitByRoomIdAsync(roomId).GetAwaiter().GetResult();
+
+        public async Task<ER_Visit?> GetVisitByRoomIdAsync(int roomId)
         {
-            int? currentVisitId = context.ERRooms
+            int? currentVisitId = await context.ERRooms
                 .Where(r => r.Room_ID == roomId)
                 .Select(r => r.Current_Visit_ID)
-                .FirstOrDefault();
+                .FirstOrDefaultAsync();
 
             if (currentVisitId.HasValue)
             {
-                ER_Visit? visit = context.ERVisits
+                ER_Visit? visit = await context.ERVisits
                     .AsNoTracking()
-                    .FirstOrDefault(v => v.Visit_ID == currentVisitId.Value &&
+                    .FirstOrDefaultAsync(v => v.Visit_ID == currentVisitId.Value &&
                         v.Status != ER_Visit.VisitStatus.TRANSFERRED &&
                         v.Status != ER_Visit.VisitStatus.CLOSED);
 
@@ -90,14 +121,14 @@ namespace ERManagementSystem.Repositories
                 }
             }
 
-            int? fallbackVisitId = context.Examinations
+            int? fallbackVisitId = await context.Examinations
                 .Where(e => e.Room_ID == roomId)
                 .OrderByDescending(e => e.Exam_Time)
                 .Select(e => (int?)e.Visit_ID)
-                .FirstOrDefault();
+                .FirstOrDefaultAsync();
 
             return fallbackVisitId.HasValue
-                ? context.ERVisits.AsNoTracking().FirstOrDefault(v => v.Visit_ID == fallbackVisitId.Value)
+                ? await context.ERVisits.AsNoTracking().FirstOrDefaultAsync(v => v.Visit_ID == fallbackVisitId.Value)
                 : null;
         }
     }

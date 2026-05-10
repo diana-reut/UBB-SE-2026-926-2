@@ -7,6 +7,11 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Controls;
 using ERManagementSystem.Services;
 using ERManagementSystem.Repositories;
+using ERManagementSystem.Proxy.ERRoomProxy;
+using ERManagementSystem.Proxy.ERVisitProxy;
+using ERManagementSystem.Proxy.ExaminationProxy;
+using ERManagementSystem.Proxy.TriageParametersProxy;
+using ERManagementSystem.Proxy.TriageProxy;
 using Common.Data.Entity;
 using Common.Data.Entity.Enums;
 using Common.Data.Entity.DTOs;
@@ -28,8 +33,12 @@ namespace ERManagementSystem.ViewModels
     /// </summary>
     public partial class ExaminationViewModel : ObservableObject
     {
-        private readonly IExaminationService examinationService;
+        private readonly IExaminationProxy examinationProxy;
         private readonly MockStaffService mockStaffService;
+        private readonly IERVisitProxy erVisitProxyApi;
+        private readonly IERRoomProxy erRoomProxy;
+        private readonly ITriageProxy triageProxyApi;
+        private readonly ITriageParametersProxy triageParametersProxy;
         private readonly IERVisitRepository erVisitRepository;
         private readonly IExaminationRepository examRepository;
         private readonly ITriageRepository triageRepository;
@@ -89,16 +98,24 @@ namespace ERManagementSystem.ViewModels
 
         // Constructor
         public ExaminationViewModel(
-            IExaminationService examinationService,
+            IExaminationProxy examinationProxy,
             MockStaffService mockStaffService,
+            IERVisitProxy erVisitProxyApi,
+            IERRoomProxy erRoomProxy,
+            ITriageProxy triageProxyApi,
+            ITriageParametersProxy triageParametersProxy,
             IERVisitRepository erVisitRepository,
             IExaminationRepository examRepository,
             ITriageRepository triageRepository,
             ITriageParametersRepository triageParamsRepo,
             IRoomRepository? roomRepository = null) // optional — Task 5.13
         {
-            this.examinationService = examinationService;
+            this.examinationProxy = examinationProxy;
             this.mockStaffService = mockStaffService;
+            this.erVisitProxyApi = erVisitProxyApi;
+            this.erRoomProxy = erRoomProxy;
+            this.triageProxyApi = triageProxyApi;
+            this.triageParametersProxy = triageParametersProxy;
             this.erVisitRepository = erVisitRepository;
             this.examRepository = examRepository;
             this.triageRepository = triageRepository;
@@ -308,7 +325,17 @@ namespace ERManagementSystem.ViewModels
             try
             {
                 int visitId = SelectedVisit.Visit_ID;
-                int assignedDoctorId = examinationService.RequestDoctor(visitId);
+                var triage = await triageProxyApi.GetByVisitIdAsync(visitId)
+                    ?? throw new Exception($"Triage record not found for visit {visitId}");
+
+                var triageParameters = await triageParametersProxy.GetByTriageIdAsync(triage.Triage_ID)
+                    ?? throw new Exception($"Triage parameters not found for triage {triage.Triage_ID}");
+
+                int assignedDoctorId = mockStaffService.RequestDoctor(
+                    triage.Specialization,
+                    triageParameters);
+
+                await erVisitProxyApi.UpdateStatusAsync(visitId, ER_Visit.VisitStatus.WAITING_FOR_DOCTOR);
 
                 var doctor = mockStaffService.GetDoctorByID(assignedDoctorId);
 
@@ -359,7 +386,7 @@ namespace ERManagementSystem.ViewModels
                 int assignedRoomId;
                 if (roomRepository != null)
                 {
-                    assignedRoomId = roomRepository.GetAssignedRoomIdForVisit(SelectedVisit.Visit_ID)
+                    assignedRoomId = await roomRepository.GetAssignedRoomIdForVisitAsync(SelectedVisit.Visit_ID)
                                      ?? examRepository.GetFirstRoomId();
                 }
                 else
@@ -376,7 +403,8 @@ namespace ERManagementSystem.ViewModels
                     Notes = Notes
                 };
 
-                examinationService.SaveExamination(examination);
+                await examinationProxy.CreateAsync(examination);
+                await erVisitProxyApi.UpdateStatusAsync(examination.Visit_ID, ER_Visit.VisitStatus.IN_EXAMINATION);
 
                 await ShowDialog("Examination Saved",
                     $"Examination for Visit {SelectedVisit.Visit_ID} has been saved.\n" +

@@ -154,8 +154,7 @@ namespace Common.Data.Migrations
                 name: "Triage_Parameters",
                 columns: table => new
                 {
-                    Triage_ID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Triage_ID = table.Column<int>(type: "int", nullable: false),
                     Consciousness = table.Column<int>(type: "int", nullable: false),
                     Breathing = table.Column<int>(type: "int", nullable: false),
                     Bleeding = table.Column<int>(type: "int", nullable: false),

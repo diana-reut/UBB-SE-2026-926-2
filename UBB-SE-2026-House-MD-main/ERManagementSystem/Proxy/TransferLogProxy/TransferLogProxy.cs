@@ -1,0 +1,50 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Common.Data.Models;
+using ERManagementSystem.Proxy;
+
+namespace ERManagementSystem.Proxy.TransferLogProxy;
+
+public class TransferLogProxy : ProxyBase, ITransferLogProxy
+{
+    private const string BaseUri = "api/transfer-logs";
+
+    public TransferLogProxy(HttpClient httpClient)
+        : base(httpClient) { }
+
+    public async Task<List<Transfer_Log>> GetAllAsync()
+    {
+        return await GetAsync<List<Transfer_Log>>(BaseUri) ?? [];
+    }
+
+    public Task<Transfer_Log?> GetByIdAsync(int id)
+    {
+        return GetAsync<Transfer_Log>($"{BaseUri}/{id}");
+    }
+
+    public async Task<Transfer_Log> CreateAsync(Transfer_Log transferLog)
+    {
+        return await PostAsync<Transfer_Log, Transfer_Log>(BaseUri, transferLog) ?? transferLog;
+    }
+
+    public Task UpdateAsync(int id, Transfer_Log transferLog)
+    {
+        return PutAsync($"{BaseUri}/{id}", transferLog);
+    }
+
+    public Task DeleteAsync(int id)
+    {
+        return DeleteAsync($"{BaseUri}/{id}");
+    }
+
+    public async Task<List<Transfer_Log>> GetByVisitIdAsync(int visitId)
+    {
+        List<Transfer_Log> transferLogs = await GetAllAsync();
+        return transferLogs
+            .Where(transferLog => transferLog.Visit_ID == visitId)
+            .OrderByDescending(transferLog => transferLog.Transfer_Time)
+            .ToList();
+    }
+}

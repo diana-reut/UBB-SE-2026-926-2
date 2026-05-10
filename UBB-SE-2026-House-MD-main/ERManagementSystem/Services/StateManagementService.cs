@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Common.Data.Models;
 using ERManagementSystem.Helpers;
 using ERManagementSystem.Models;
@@ -53,8 +54,11 @@ namespace ERManagementSystem.Services
             => CanTransitionTo(currentStatus, newStatus);
 
         public void ChangeVisitStatus(int visitId, string newStatus)
+            => ChangeVisitStatusAsync(visitId, newStatus).GetAwaiter().GetResult();
+
+        public async Task ChangeVisitStatusAsync(int visitId, string newStatus)
         {
-            ER_Visit? visit = erVisitRepository.GetByVisitId(visitId);
+            ER_Visit? visit = await erVisitRepository.GetByVisitIdAsync(visitId);
 
             if (visit == null)
             {
@@ -67,7 +71,7 @@ namespace ERManagementSystem.Services
             try
             {
                 ChangeStatus(visit, newStatus);
-                erVisitRepository.UpdateStatus(visitId, newStatus);
+                await erVisitRepository.UpdateStatusAsync(visitId, newStatus);
                 Logger.Info($"Visit {visitId} status changed: '{oldStatus}' → '{newStatus}'.");
             }
             catch (InvalidOperationException ex)
@@ -84,22 +88,22 @@ namespace ERManagementSystem.Services
                 try
                 {
                     // Primary: look up via Examination table (patient had a doctor)
-                    int? roomId = roomRepository.GetRoomIdByVisitId(visitId);
+                    int? roomId = await roomRepository.GetRoomIdByVisitIdAsync(visitId);
 
                     // Fallback: look up via Current_Visit_ID (patient never reached examination)
                     if (!roomId.HasValue)
                     {
-                        roomId = roomRepository.GetRoomIdByCurrentVisit(visitId);
+                        roomId = await roomRepository.GetRoomIdByCurrentVisitAsync(visitId);
                     }
 
                     if (roomId.HasValue)
                     {
-                        ER_Room? room = roomRepository.GetById(roomId.Value);
+                        ER_Room? room = await roomRepository.GetByIdAsync(roomId.Value);
                         if (room != null && room.Availability_Status == ER_Room.RoomStatus.Occupied)
                         {
                             room.UpdateAvailabilityStatus(ER_Room.RoomStatus.Cleaning);
-                            roomRepository.UpdateAvailabilityStatus(roomId.Value, ER_Room.RoomStatus.Cleaning);
-                            roomRepository.ClearCurrentVisit(roomId.Value);
+                            await roomRepository.UpdateAvailabilityStatusAsync(roomId.Value, ER_Room.RoomStatus.Cleaning);
+                            await roomRepository.ClearCurrentVisitAsync(roomId.Value);
                             Logger.Info($"Task 5.13: Room {roomId.Value} auto-set to cleaning after Visit {visitId} → '{newStatus}'.");
                         }
                     }
@@ -122,8 +126,11 @@ namespace ERManagementSystem.Services
             => Array.Exists(AllowedClosingStates, s => s == visit.Status);
 
         public void CloseVisit(int visitId)
+            => CloseVisitAsync(visitId).GetAwaiter().GetResult();
+
+        public async Task CloseVisitAsync(int visitId)
         {
-            ER_Visit? visit = erVisitRepository.GetByVisitId(visitId);
+            ER_Visit? visit = await erVisitRepository.GetByVisitIdAsync(visitId);
 
             if (visit == null)
             {
@@ -140,11 +147,14 @@ namespace ERManagementSystem.Services
                     $"Allowed states: {string.Join(", ", AllowedClosingStates)}.");
             }
 
-            ChangeVisitStatus(visitId, ER_Visit.VisitStatus.CLOSED);
+            await ChangeVisitStatusAsync(visitId, ER_Visit.VisitStatus.CLOSED);
             Logger.Info($"Visit {visitId} successfully closed.");
         }
 
         public List<ER_Visit> GetByStatus(string status)
-            => erVisitRepository.GetByStatus(status);
+            => GetByStatusAsync(status).GetAwaiter().GetResult();
+
+        public Task<List<ER_Visit>> GetByStatusAsync(string status)
+            => erVisitRepository.GetByStatusAsync(status);
     }
 }

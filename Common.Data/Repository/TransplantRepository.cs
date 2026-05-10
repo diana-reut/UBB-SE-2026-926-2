@@ -22,6 +22,9 @@ public class TransplantRepository : ITransplantRepository
         await _context.SaveChangesAsync();
     }
 
+    public Task<List<Transplant>> GetAllAsync() =>
+        _context.Transplants.AsNoTracking().ToListAsync();
+
     public List<Transplant> GetWaitingByOrgan(string organType) => GetWaitingByOrganAsync(organType).GetAwaiter().GetResult();
 
     public Task<List<Transplant>> GetWaitingByOrganAsync(string organType)
@@ -71,7 +74,39 @@ public class TransplantRepository : ITransplantRepository
     public Transplant? GetById(int id) => GetByIdAsync(id).GetAwaiter().GetResult();
 
     public Task<Transplant?> GetByIdAsync(int id) =>
-        _context.Transplants.FirstOrDefaultAsync(t => t.TransplantId == id);
+        _context.Transplants.AsNoTracking().FirstOrDefaultAsync(t => t.TransplantId == id);
+
+    public async Task<bool> UpdateAsync(int id, Transplant transplant)
+    {
+        Transplant? existingTransplant = await _context.Transplants.FirstOrDefaultAsync(t => t.TransplantId == id);
+        if (existingTransplant is null)
+        {
+            return false;
+        }
+
+        existingTransplant.ReceiverId = transplant.ReceiverId;
+        existingTransplant.DonorId = transplant.DonorId;
+        existingTransplant.OrganType = transplant.OrganType;
+        existingTransplant.RequestDate = transplant.RequestDate;
+        existingTransplant.TransplantDate = transplant.TransplantDate;
+        existingTransplant.Status = transplant.Status;
+        existingTransplant.CompatibilityScore = transplant.CompatibilityScore;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteAsync(int id)
+    {
+        Transplant? transplant = await _context.Transplants.FirstOrDefaultAsync(t => t.TransplantId == id);
+        if (transplant is null)
+        {
+            return false;
+        }
+
+        _context.Transplants.Remove(transplant);
+        await _context.SaveChangesAsync();
+        return true;
+    }
 
     private static List<string> ExpandOrganAliases(string organType)
     {

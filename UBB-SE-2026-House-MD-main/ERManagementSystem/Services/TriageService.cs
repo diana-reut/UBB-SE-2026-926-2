@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Common.Data.Models;
+using Common.Data.Data;
 using ERManagementSystem.Helpers;
 using ERManagementSystem.Models;
 using ERManagementSystem.Repositories;
@@ -14,17 +16,20 @@ namespace ERManagementSystem.Services
         private readonly ITriageParametersRepository triageParametersRepository;
         private readonly NurseService nurseService;
         private readonly IStateManagementService stateService;
+        private readonly EFHospitalDbContext context;
 
         public TriageService(
             ITriageRepository triageRepository,
             ITriageParametersRepository triageParametersRepository,
             NurseService nurseService,
-            IStateManagementService stateService)
+            IStateManagementService stateService,
+            EFHospitalDbContext context)
         {
             this.triageRepository = triageRepository;
             this.triageParametersRepository = triageParametersRepository;
             this.nurseService = nurseService;
             this.stateService = stateService;
+            this.context = context;
         }
 
         /// <summary>
@@ -53,6 +58,9 @@ namespace ERManagementSystem.Services
         /// 5. Persists the triage record
         /// </summary>
         public Triage CreateTriage(int visitId, Triage_Parameters parameters)
+            => CreateTriageAsync(visitId, parameters).GetAwaiter().GetResult();
+
+        public async Task<Triage> CreateTriageAsync(int visitId, Triage_Parameters parameters)
         {
             parameters.ValidateParameters();
 
@@ -60,6 +68,22 @@ namespace ERManagementSystem.Services
 
             try
             {
+                Triage? existingTriage = await triageRepository.GetByVisitIdAsync(visitId);
+                if (existingTriage != null)
+                {
+                    Triage_Parameters? existingParameters =
+                        await triageParametersRepository.GetByTriageIdAsync(existingTriage.Triage_ID);
+
+                    if (existingParameters != null)
+                    {
+                        Logger.Warning($"[TriageService] Visit {visitId} already has triage {existingTriage.Triage_ID}.");
+                        throw new InvalidOperationException("Triage has already been performed for this visit.");
+                    }
+
+                    Logger.Warning($"[TriageService] Removing orphaned triage {existingTriage.Triage_ID} for visit {visitId} before retry.");
+                    await triageRepository.DeleteAsync(existingTriage);
+                }
+
                 int? nurseId = RequestAvailableNurse();
                 if (nurseId == null)
                 {
@@ -72,6 +96,8 @@ namespace ERManagementSystem.Services
 
                 Logger.Info($"[TriageService] Calculated level {triageLevel}, specialization {specialization} for visit {visitId}");
 
+                await using var transaction = await context.Database.BeginTransactionAsync();
+
                 Triage triage = new Triage
                 {
                     Visit_ID = visitId,
@@ -81,14 +107,15 @@ namespace ERManagementSystem.Services
                     Triage_Time = DateTime.Now
                 };
 
-                int triageId = triageRepository.Add(triage);
+                int triageId = await triageRepository.AddAsync(triage);
 
                 parameters.Triage_ID = triageId;
-                triageParametersRepository.Add(parameters);
+                await triageParametersRepository.AddAsync(parameters);
 
                 triage.Triage_ID = triageId;
 
-                stateService.ChangeVisitStatus(visitId, ER_Visit.VisitStatus.TRIAGED);
+                await stateService.ChangeVisitStatusAsync(visitId, ER_Visit.VisitStatus.TRIAGED);
+                await transaction.CommitAsync();
 
                 Logger.Info($"[TriageService] Completed triage {triageId} for visit {visitId}");
 
@@ -102,27 +129,33 @@ namespace ERManagementSystem.Services
         }
 
         public Triage? GetByVisitId(int visitId)
-        {
-            return triageRepository.GetByVisitId(visitId);
-        }
+            => GetByVisitIdAsync(visitId).GetAwaiter().GetResult();
+
+        public Task<Triage?> GetByVisitIdAsync(int visitId)
+            => triageRepository.GetByVisitIdAsync(visitId);
 
         public IReadOnlyList<ER_Visit> GetVisitsForTriage()
+            => GetVisitsForTriageAsync().GetAwaiter().GetResult();
+
+        public async Task<IReadOnlyList<ER_Visit>> GetVisitsForTriageAsync()
         {
-            return stateService.GetByStatus(ER_Visit.VisitStatus.REGISTERED)
-                .Concat(stateService.GetByStatus(ER_Visit.VisitStatus.TRIAGED))
+            return (await stateService.GetByStatusAsync(ER_Visit.VisitStatus.REGISTERED))
+                .Concat(await stateService.GetByStatusAsync(ER_Visit.VisitStatus.TRIAGED))
                 .OrderBy(visit => visit.Arrival_date_time)
                 .ToList();
         }
 
         public void MoveVisitToQueue(int visitId)
-        {
-            stateService.ChangeVisitStatus(visitId, ER_Visit.VisitStatus.WAITING_FOR_ROOM);
-        }
+            => MoveVisitToQueueAsync(visitId).GetAwaiter().GetResult();
+
+        public Task MoveVisitToQueueAsync(int visitId)
+            => stateService.ChangeVisitStatusAsync(visitId, ER_Visit.VisitStatus.WAITING_FOR_ROOM);
 
         public void CloseVisit(int visitId)
-        {
-            stateService.CloseVisit(visitId);
-        }
+            => CloseVisitAsync(visitId).GetAwaiter().GetResult();
+
+        public Task CloseVisitAsync(int visitId)
+            => stateService.CloseVisitAsync(visitId);
 
         /// <summary>
         /// Calculates the triage level entirely in C#.
