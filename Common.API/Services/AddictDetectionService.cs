@@ -19,6 +19,13 @@ internal class AddictDetectionService : IAddictDetectionService
     private const string ReportHeader = "==================================================\n           LAW ENFORCEMENT ALERT REPORT           \n==================================================";
     private const string ReportFooter = "--------------------------------------------------\nSUSPICIOUS ACTIVITY: SUSPECTED DRUG SHOPPING BEHAVIOR\nCRITERIA MET: MULTIPLE DOCTORS (>=3) WITHIN 30 DAYS\n--- SUPPORTING EVIDENCE (MEDICAL RECORDS) ---";
     private const string ReportPharmacistFooter = "==================================================\nACTION REQUIRED: AWAITING PHARMACIST CONFIRMATION.";
+    private const int SuspiciousPrescriptionPeriodDays = 30;
+    private const int InitialEvidenceNumber = 1;
+
+    private const string NoConditionsReportedText = "None reported.";
+    private const string UnknownMedicationText = "Unknown";
+    private const string NoMatchingRecordsText = "No matching records pulled for this timeframe.";
+    private const string ReportMedicationSeparator = ", ";
 
     public AddictDetectionService(IPrescriptionRepository prescriptionRepository, IMedicalHistoryRepository medicalHistoryRepository)
     {
@@ -55,7 +62,7 @@ internal class AddictDetectionService : IAddictDetectionService
         var filter = new PrescriptionFilter
         {
             PatientId = patient.Id,
-            DateFrom = DateTime.Today.AddDays(-30),
+            DateFrom = DateTime.Today.AddDays(-SuspiciousPrescriptionPeriodDays),
         };
 
         List<Prescription> recentPrescriptions = await _prescriptionRepository.GetFilteredAsync(filter);
@@ -72,7 +79,7 @@ internal class AddictDetectionService : IAddictDetectionService
         MedicalHistory? history = await _medicalHistoryRepository.GetByPatientIdAsync(patientId);
         if (history is null)
         {
-            return "None reported.";
+            return NoConditionsReportedText;
         }
 
         if (history.ChronicConditions is null || history.ChronicConditions.Count == 0)
@@ -81,20 +88,20 @@ internal class AddictDetectionService : IAddictDetectionService
         }
 
         return history.ChronicConditions is null || history.ChronicConditions.Count == 0
-            ? "None reported."
-            : string.Join(", ", history.ChronicConditions);
+            ? NoConditionsReportedText
+            : string.Join(ReportMedicationSeparator, history.ChronicConditions);
     }
 
     private static void NormalizeMedicalHistory(Patient patient)
     {
         patient.MedicalHistory ??= new MedicalHistory
         {
-            ChronicConditions = ["None reported."],
+            ChronicConditions = [NoConditionsReportedText],
         };
 
         if (patient.MedicalHistory.ChronicConditions is null || patient.MedicalHistory.ChronicConditions.Count == 0)
         {
-            patient.MedicalHistory.ChronicConditions = ["None reported."];
+            patient.MedicalHistory.ChronicConditions = [NoConditionsReportedText];
         }
     }
 
@@ -110,16 +117,16 @@ internal class AddictDetectionService : IAddictDetectionService
 
         if (recentPrescriptions.Count == 0)
         {
-            _ = reportBuilder.AppendLine("No matching records pulled for this timeframe.");
+            _ = reportBuilder.AppendLine(NoMatchingRecordsText);
         }
         else
         {
-            int evidenceCount = 1;
+            int evidenceCount = InitialEvidenceNumber;
             foreach (Prescription rx in recentPrescriptions)
             {
                 string meds = rx.MedicationList?.Count > 0
-                    ? string.Join(", ", rx.MedicationList.Select(m => m.MedName))
-                    : "Unknown";
+                    ? string.Join(ReportMedicationSeparator, rx.MedicationList.Select(m => m.MedName))
+                    : UnknownMedicationText;
 
                 _ = reportBuilder.AppendLine(CultureInfo.InvariantCulture, $"[{evidenceCount}] Medical Record ID: {rx.RecordId}")
                     .AppendLine(CultureInfo.InvariantCulture, $"    Prescription ID: {rx.Id} | Date: {rx.Date:yyyy-MM-dd}")
