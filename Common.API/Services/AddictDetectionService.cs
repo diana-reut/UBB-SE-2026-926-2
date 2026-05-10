@@ -36,19 +36,17 @@ internal class AddictDetectionService : IAddictDetectionService
     public async Task<List<Patient>> GetAddictCandidatesAsync()
     {
         List<Patient> flaggedPatients = await _prescriptionRepository.GetAddictCandidatePatientsAsync();
-
         foreach (Patient patient in flaggedPatients)
         {
             patient.MedicalHistory = await _medicalHistoryRepository.GetByPatientIdAsync(patient.Id);
-
             if (patient.MedicalHistory is not null)
             {
                 patient.MedicalHistory.ChronicConditions = await _medicalHistoryRepository.GetChronicConditionsAsync(patient.MedicalHistory.Id);
+                patient.MedicalHistory.Patient = null;
+                patient.MedicalHistory.PatientAllergies = null;
             }
-
             NormalizeMedicalHistory(patient);
         }
-
         return flaggedPatients;
     }
 

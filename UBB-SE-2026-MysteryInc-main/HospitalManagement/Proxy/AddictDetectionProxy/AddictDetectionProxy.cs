@@ -1,5 +1,5 @@
 ﻿using Common.Data.Entity;
-using HospitalManagement.Proxy;
+using Common.Data.Entity.DTOs;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -15,12 +15,23 @@ internal class AddictDetectionProxy : ProxyBase, IAddictDetectionProxy
 
     public async Task<List<Patient>> GetAddictCandidatesAsync()
     {
-        return await GetAsync<List<Patient>>(BaseUri) ?? [];
+        return await GetAsync<List<Patient>>($"{BaseUri}/candidates") ?? [];
     }
 
     public async Task<string> BuildPoliceReportAsync(Patient patient)
     {
-        return await PostAsync<Patient, string>($"{BaseUri}/police-report", patient) ?? string.Empty;
+        var dto = new BuildPoliceReportRequestDto
+        {
+            Patient = new Patient
+            {
+                Id = patient.Id,
+                FirstName = patient.FirstName,
+                LastName = patient.LastName,
+                Cnp = patient.Cnp,
+                PhoneNo = patient.PhoneNo,
+            }
+        };
+        return await PostAsync<BuildPoliceReportRequestDto, string>($"{BaseUri}/police-report", dto) ?? string.Empty;
     }
 
     public async Task<string> GetChronicConditionsAsync(int patientId)
