@@ -13,12 +13,13 @@ using System.Globalization;
 using System.Threading.Tasks;
 using Common.Data.Entity;
 using Common.Data.Integration;
+using HospitalManagement.Proxy.PrescriptionProxy;
 
 namespace HospitalManagement.ViewModel;
 
 internal partial class PrescriptionViewModel : ObservableObject
 {
-    private readonly IPrescriptionService _prescriptionService;
+    private readonly IPrescriptionProxy _prescriptionProxy;
     private readonly IAddictDetectionService _addictDetectionService;
     private int _loadVersion;
 
@@ -43,10 +44,10 @@ internal partial class PrescriptionViewModel : ObservableObject
     [ObservableProperty] private DateTimeOffset? dateTo;
 
     public PrescriptionViewModel(
-        IPrescriptionService prescriptionService,
+        IPrescriptionProxy prescriptionProxy,
         IAddictDetectionService addictDetectionService)
     {
-        _prescriptionService = prescriptionService;
+        _prescriptionProxy = prescriptionProxy;
         _addictDetectionService = addictDetectionService;
 
         _ = LoadPrescriptionsAsync();
@@ -157,11 +158,11 @@ internal partial class PrescriptionViewModel : ObservableObject
 
         List<Prescription> targetList =
             hasFilter
-            ? (await _prescriptionService.ApplyFilterAsync(ActiveFilter))
+            ? (await _prescriptionProxy.ApplyFilterAsync(ActiveFilter))
                 .Skip((CurrentPage - 1) * PageSize)
                 .Take(PageSize)
                 .ToList()
-            : await _prescriptionService.GetLatestPrescriptionsAsync(PageSize, CurrentPage);
+            : await _prescriptionProxy.GetLatestPrescriptionsAsync(PageSize, CurrentPage);
 
         if (loadVersion != _loadVersion)
         {
