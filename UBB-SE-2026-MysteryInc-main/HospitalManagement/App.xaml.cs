@@ -18,7 +18,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Xaml;
 using ERManagementSystem.Helpers;
 using Microsoft.Extensions.Logging;
-using Common.Data.Repository;
 using HospitalManagement.Proxy.AllergyProxy;
 using ERManagementSystem.Proxy.ERRoomProxy;
 using ERManagementSystem.Proxy.ERVisitProxy;
