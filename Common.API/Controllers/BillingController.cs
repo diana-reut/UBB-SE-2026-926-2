@@ -2,6 +2,7 @@
 using System;
 using Common.Data.Entity.DTOs;
 using Common.API.Services;
+using System.Net;
 
 namespace Common.API.Controllers;
 
@@ -30,7 +31,7 @@ public class BillingController : ControllerBase
         {
             return Problem(
                 detail: ex.Message,
-                statusCode: 500,
+                statusCode: (int)HttpStatusCode.InternalServerError,
                 title: "Could not compute base price."
             );
         }
@@ -48,7 +49,7 @@ public class BillingController : ControllerBase
         {
             return Problem(
                 detail: ex.Message,
-                statusCode: 500,
+                statusCode: (int)HttpStatusCode.InternalServerError,
                 title: "Could not apply discount."
             );
         }
