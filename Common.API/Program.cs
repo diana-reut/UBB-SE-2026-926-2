@@ -31,6 +31,15 @@ builder.Services.AddScoped<ITransferLogService, TransferLogService>();
 builder.Services.AddScoped<ITransplantRepository, TransplantRepository>();
 builder.Services.AddScoped<ITransplantsService, TransplantsService>();
 
+
+builder.Services.AddScoped<IMedicalHistoryRepository, MedicalHistoryRepository>();
+builder.Services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
+builder.Services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
+builder.Services.AddScoped<ITransplantRepository, TransplantRepository>();
+
+builder.Services.AddScoped<IBillingService, BillingService>();
+builder.Services.AddScoped<IAddictDetectionService, AddictDetectionService>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

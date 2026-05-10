@@ -18,7 +18,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Xaml;
 using ERManagementSystem.Helpers;
 using Microsoft.Extensions.Logging;
-using Common.Data.Repository;
 using HospitalManagement.Proxy.AllergyProxy;
 using ERManagementSystem.Proxy.ERRoomProxy;
 using ERManagementSystem.Proxy.ERVisitProxy;
@@ -27,6 +26,8 @@ using ERManagementSystem.Proxy.TransferLogProxy;
 using ERManagementSystem.Proxy.TransplantsProxy;
 using ERManagementSystem.Proxy.TriageParametersProxy;
 using ERManagementSystem.Proxy.TriageProxy;
+using HospitalManagement.Proxy.BillingProxy;
+using HospitalManagement.Proxy.AddictDetectionProxy;
 
 [assembly: InternalsVisibleTo("HospitalManagementTest")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
@@ -82,8 +83,6 @@ public partial class App : Application
         _ = services.AddTransient<ITransplantService, TransplantService>();
         _ = services.AddTransient<IExportService, ExportService>();
         _ = services.AddTransient<IImportService, ImportService>();
-        _ = services.AddTransient<IBillingService, BillingService>();
-        _ = services.AddTransient<IAddictDetectionService, AddictDetectionService>();
         _ = services.AddTransient<IPrescriptionService, PrescriptionService>();
         _ = services.AddTransient<IStatisticsService, StatisticsService>();
         _ = services.AddSingleton<IGhostService, GhostService>();
@@ -187,6 +186,36 @@ public partial class App : Application
         });
 
         _ = services.AddHttpClient<ITransplantsProxy, TransplantsProxy>((client) =>
+        {
+            var uriString = AppConfiguration["ApiSettings:BaseUri"];
+
+            if (string.IsNullOrEmpty(uriString))
+            {
+                throw new InvalidOperationException("BaseUri is missing from appsettings.local.json");
+            }
+
+            client.BaseAddress = new Uri(uriString);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
+
+        _ = services.AddHttpClient<IBillingProxy, BillingProxy>((client) =>
+        {
+            var uriString = AppConfiguration["ApiSettings:BaseUri"];
+
+            if (string.IsNullOrEmpty(uriString))
+            {
+                throw new InvalidOperationException("BaseUri is missing from appsettings.local.json");
+            }
+
+            client.BaseAddress = new Uri(uriString);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
+
+        _ = services.AddHttpClient<IAddictDetectionProxy, AddictDetectionProxy>((client) =>
         {
             var uriString = AppConfiguration["ApiSettings:BaseUri"];
 

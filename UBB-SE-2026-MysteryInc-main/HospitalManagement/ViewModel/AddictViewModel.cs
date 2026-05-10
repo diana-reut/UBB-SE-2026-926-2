@@ -1,25 +1,27 @@
-﻿using System;
+﻿using Common.Data.Entity;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using HospitalManagement.Proxy.AddictDetectionProxy;
+using HospitalManagement.Service;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using Common.Data.Entity;
-using HospitalManagement.Service;
+
 
 namespace HospitalManagement.ViewModel;
 
 internal partial class AddictViewModel : ObservableObject
 {
-    private readonly IAddictDetectionService _addictDetectionService;
+    private readonly IAddictDetectionProxy _addictDetectionProxy;
 
     [ObservableProperty]
     private ObservableCollection<Patient> _addictCandidates = [];
 
-    public AddictViewModel(IAddictDetectionService addictDetectionService)
+    public AddictViewModel(IAddictDetectionProxy addictDetectionService)
     {
-        _addictDetectionService = addictDetectionService ?? throw new ArgumentNullException(nameof(addictDetectionService));
+        _addictDetectionProxy = addictDetectionService ?? throw new ArgumentNullException(nameof(addictDetectionService));
         _ = LoadAddictsAsync();
     }
 
@@ -30,7 +32,7 @@ internal partial class AddictViewModel : ObservableObject
 
     public async Task LoadAddictsAsync()
     {
-        List<Patient> candidates = await _addictDetectionService.GetAddictCandidatesAsync();
+        List<Patient> candidates = await _addictDetectionProxy.GetAddictCandidatesAsync();
         AddictCandidates = new ObservableCollection<Patient>(candidates);
     }
 
@@ -47,7 +49,7 @@ internal partial class AddictViewModel : ObservableObject
             return "Error: Patient not found in the current flagged list.";
         }
 
-        return await _addictDetectionService.BuildPoliceReportAsync(targetPatient);
+        return await _addictDetectionProxy.BuildPoliceReportAsync(targetPatient);
     }
 
     public void RemoveFlaggedPatient(int patientId)
