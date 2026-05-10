@@ -50,20 +50,21 @@ internal class AddictDetectionService : IAddictDetectionService
         return flaggedPatients;
     }
 
-    public async Task<string> BuildPoliceReportAsync(Patient patient)
+    public async Task<string> BuildPoliceReportAsync(int patientId)
     {
-        if (patient is null || patient.Id <= 0)
-        {
+        if (patientId <= 0)
             throw new ArgumentException("Invalid patient data for building a police report.");
-        }
 
         var filter = new PrescriptionFilter
         {
-            PatientId = patient.Id,
+            PatientId = patientId,
             DateFrom = DateTime.Today.AddDays(-SuspiciousPrescriptionPeriodDays),
         };
 
         List<Prescription> recentPrescriptions = await _prescriptionRepository.GetFilteredAsync(filter);
+        Patient patient = recentPrescriptions.FirstOrDefault()?.MedicalRecord?.History?.Patient
+            ?? throw new ArgumentException("Patient not found.");
+
         return BuildPoliceReportText(patient, recentPrescriptions);
     }
 

@@ -20,17 +20,7 @@ internal class AddictDetectionProxy : ProxyBase, IAddictDetectionProxy
 
     public async Task<string> BuildPoliceReportAsync(Patient patient)
     {
-        var dto = new BuildPoliceReportRequestDto
-        {
-            Patient = new Patient
-            {
-                Id = patient.Id,
-                FirstName = patient.FirstName,
-                LastName = patient.LastName,
-                Cnp = patient.Cnp,
-                PhoneNo = patient.PhoneNo,
-            }
-        };
+        var dto = new BuildPoliceReportRequestDto { PatientId = patient.Id };
         return await PostAsync<BuildPoliceReportRequestDto, string>($"{BaseUri}/police-report", dto) ?? string.Empty;
     }
 

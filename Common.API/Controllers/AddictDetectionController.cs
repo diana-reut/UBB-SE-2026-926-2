@@ -44,7 +44,7 @@ public class AddictDetectionController : ControllerBase
     {
         try
         {
-            string report = await _addictDetectionService.BuildPoliceReportAsync(dto.Patient);
+            string report = await _addictDetectionService.BuildPoliceReportAsync(dto.PatientId);
             return Ok(report);
         }
         catch (ArgumentException ex)

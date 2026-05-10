@@ -8,7 +8,7 @@ public interface IAddictDetectionService
 {
     Task<List<Patient>> GetAddictCandidatesAsync();
 
-    Task<string> BuildPoliceReportAsync(Patient patient);
+    Task<string> BuildPoliceReportAsync(int patientId);
 
     Task<string> GetChronicConditionsAsync(int patientId);
 

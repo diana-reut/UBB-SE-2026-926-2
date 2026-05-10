@@ -21,23 +21,16 @@ public abstract class ProxyBase
     protected async Task<T?> GetAsync<T>(string uri)
     {
         using HttpResponseMessage response = await HttpClient.GetAsync(uri);
-        if (!response.IsSuccessStatusCode)
-        {
-            string error = await response.Content.ReadAsStringAsync();
-            throw new Exception($"GET {uri} failed ({response.StatusCode}): {error}");
-        }
+        HttpResponseMessage _ = response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<T>(Options);
     }
 
     protected async Task<TResponse?> PostAsync<TRequest, TResponse>(string uri, TRequest data)
     {
+
         var requestUri = new Uri(uri, UriKind.RelativeOrAbsolute);
         using HttpResponseMessage response = await HttpClient.PostAsJsonAsync(requestUri, data, Options);
-        if (!response.IsSuccessStatusCode)
-        {
-            string error = await response.Content.ReadAsStringAsync();
-            throw new Exception($"POST {uri} failed ({response.StatusCode}): {error}");
-        }
+        HttpResponseMessage _ = response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<TResponse>(Options);
     }
 

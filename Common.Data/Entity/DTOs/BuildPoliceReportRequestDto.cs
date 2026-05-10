@@ -4,5 +4,5 @@ namespace Common.Data.Entity.DTOs;
 
 public sealed class BuildPoliceReportRequestDto
 {
-    public required Patient Patient { get; set; }
+    public required int PatientId { get; set; }
 }
