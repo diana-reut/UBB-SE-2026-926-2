@@ -5,8 +5,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Common.Data.Entity.DTOs;
 using Common.API.Services;
+using System.Net;
 
-namespace Common.API.Services;
+namespace Common.API.Controllers;
 
 [ApiController]
 [Route("api/addicts")]
@@ -31,7 +32,7 @@ public class AddictDetectionController : ControllerBase
         {
             return Problem(
                 detail: ex.Message,
-                statusCode: 500,
+                statusCode: (int)HttpStatusCode.InternalServerError,
                 title: "Could not get addict candidates."
             );
         }
@@ -50,7 +51,7 @@ public class AddictDetectionController : ControllerBase
         {
             return Problem(
                 detail: ex.Message,
-                statusCode: 400,
+                statusCode: (int)HttpStatusCode.BadRequest,
                 title: "Invalid patient data."
             );
         }
@@ -58,7 +59,7 @@ public class AddictDetectionController : ControllerBase
         {
             return Problem(
                 detail: ex.Message,
-                statusCode: 500,
+                statusCode: (int)HttpStatusCode.InternalServerError,
                 title: "Could not build police report."
             );
         }
@@ -77,7 +78,7 @@ public class AddictDetectionController : ControllerBase
         {
             return Problem(
                 detail: ex.Message,
-                statusCode: 400,
+                statusCode: (int)HttpStatusCode.BadRequest,
                 title: "Invalid patient id."
             );
         }
@@ -85,7 +86,7 @@ public class AddictDetectionController : ControllerBase
         {
             return Problem(
                 detail: ex.Message,
-                statusCode: 500,
+                statusCode: (int)HttpStatusCode.InternalServerError,
                 title: "Could not get chronic conditions."
             );
         }
