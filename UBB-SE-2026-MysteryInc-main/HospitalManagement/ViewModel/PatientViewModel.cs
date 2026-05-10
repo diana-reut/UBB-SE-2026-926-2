@@ -191,11 +191,6 @@ internal class PatientViewModel : INotifyPropertyChanged
         ViewPrescriptionCommand = new AsyncRelayCommand(ViewSelectedPrescriptionAsync, CanViewPrescription);
     }
 
-    public void LoadFullPatientProfile(int id)
-    {
-        LoadFullPatientProfileAsync(id).GetAwaiter().GetResult();
-    }
-
     public async Task LoadFullPatientProfileAsync(int id)
     {
         try
@@ -242,11 +237,6 @@ internal class PatientViewModel : INotifyPropertyChanged
         }
     }
 
-    private void LoadBillingForRecord(MedicalRecord record)
-    {
-        LoadBillingForRecordAsync(record).GetAwaiter().GetResult();
-    }
-
     private async Task LoadBillingForRecordAsync(MedicalRecord record)
     {
         if (_billingProxy is null || SelectedPatient is null)
@@ -266,10 +256,6 @@ internal class PatientViewModel : INotifyPropertyChanged
         }
     }
 
-    private void LoadMedicalRecords()
-    {
-        LoadMedicalRecordsAsync().GetAwaiter().GetResult();
-    }
 
     private async Task LoadMedicalRecordsAsync()
     {
