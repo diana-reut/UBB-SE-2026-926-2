@@ -216,7 +216,7 @@ internal class PatientViewModel : INotifyPropertyChanged
         }
     }
 
-    public void HandleRouletteResult(int discount, decimal finalPrice)
+    public async Task HandleRouletteResultAsync(int discount, decimal finalPrice)
     {
         if (SelectedMedicalRecord is null || _billingProxy is null)
         {
@@ -225,10 +225,7 @@ internal class PatientViewModel : INotifyPropertyChanged
 
         try
         {
-            decimal calculatedFinalPrice = _billingProxy
-                .ApplyDiscountAsync(BasePrice, discount)
-                   .GetAwaiter()
-                   .GetResult();
+            decimal calculatedFinalPrice = await _billingProxy.ApplyDiscountAsync(BasePrice, discount);
 
             SelectedMedicalRecord.DiscountApplied = discount;
             SelectedMedicalRecord.FinalPrice = calculatedFinalPrice;

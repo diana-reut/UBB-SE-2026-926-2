@@ -19,7 +19,7 @@ internal partial class AddictViewModel : ObservableObject
     [ObservableProperty]
     private ObservableCollection<Patient> _addictCandidates = [];
 
-    public AddictViewModel(AddictDetectionProxy addictDetectionService)
+    public AddictViewModel(IAddictDetectionProxy addictDetectionService)
     {
         _addictDetectionProxy = addictDetectionService ?? throw new ArgumentNullException(nameof(addictDetectionService));
         _ = LoadAddictsAsync();
