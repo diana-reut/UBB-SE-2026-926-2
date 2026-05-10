@@ -21,7 +21,7 @@ namespace Common.API.Controllers
         }
 
         [HttpGet("latest")]
-        public async Task<ActionResult<List<Prescription>>> GetLatestPrescriptions([FromBody] GetLatestPrescriptionsDTO dto)
+        public async Task<ActionResult<List<Prescription>>> GetLatestPrescriptions([FromQuery] GetLatestPrescriptionsDTO dto)
         {
             try
             {
@@ -38,12 +38,12 @@ namespace Common.API.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpPost]
         public async Task<ActionResult<List<Prescription>>> GetPrescriptions([FromBody] PrescriptionFilter? filter)
         {
             try
             {
-                var result = await _prescriptionService.ApplyFilterAsync(filter);
+                var result = await _prescriptionService.ApplyFilterAsync(filter ?? new PrescriptionFilter());
                 return Ok(result);
             }
             catch (MyNotImplementedException e)

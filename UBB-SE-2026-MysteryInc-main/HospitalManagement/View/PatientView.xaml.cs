@@ -4,6 +4,7 @@ using HospitalManagement.ViewModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Threading.Tasks;
 
@@ -41,13 +42,14 @@ internal sealed partial class PatientView : Window
     {
         _viewModel.OpenRouletteAction = OpenRouletteAsync;
         _viewModel.OpenPrescriptionDialogAction = OpenPrescriptionDialogAsync;
+        _viewModel.ShowAlertAction = ShowAlert;
     }
 
     private async Task OpenRouletteAsync(decimal basePrice)
     {
         var rouletteDialog = new DiscountRouletteDialog
         {
-            XamlRoot = Content.XamlRoot,
+            XamlRoot = GetDialogXamlRoot(),
         };
         rouletteDialog.ViewModel.Initialize(basePrice);
         rouletteDialog.ViewModel.SpinCompleted += _viewModel.HandleRouletteResult;
@@ -59,7 +61,10 @@ internal sealed partial class PatientView : Window
     {
         var prescriptionDialogViewModel = new PrescriptionDialogViewModel();
         prescriptionDialogViewModel.Initialize(prescription);
-        var prescriptionDialog = new PrescriptionDialog(prescriptionDialogViewModel);
+        var prescriptionDialog = new PrescriptionDialog(prescriptionDialogViewModel)
+        {
+            XamlRoot = GetDialogXamlRoot(),
+        };
         _ = await prescriptionDialog.ShowAsync();
     }
 
@@ -79,5 +84,28 @@ internal sealed partial class PatientView : Window
     {
         _goBackCallback?.Invoke();
         Close();
+    }
+
+    private async void ShowAlert(string title, string content)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = title,
+            Content = content,
+            CloseButtonText = "OK",
+            XamlRoot = GetDialogXamlRoot(),
+        };
+
+        _ = await dialog.ShowAsync();
+    }
+
+    private XamlRoot GetDialogXamlRoot()
+    {
+        if (Content is FrameworkElement rootElement && rootElement.XamlRoot is not null)
+        {
+            return rootElement.XamlRoot;
+        }
+
+        throw new InvalidOperationException("The current window is not attached to a XAML root.");
     }
 }

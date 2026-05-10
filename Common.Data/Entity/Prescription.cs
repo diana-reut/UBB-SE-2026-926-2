@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Common.Data.Entity;
 
@@ -14,6 +15,7 @@ public class Prescription
     public int RecordId { get; set; }
 
     [Required]
+    [JsonIgnore]
     public MedicalRecord MedicalRecord { get; set; } = null!;
 
     public List<PrescriptionItem> MedicationList { get; set; } = [];
