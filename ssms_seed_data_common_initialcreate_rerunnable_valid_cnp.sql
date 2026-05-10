@@ -41,7 +41,6 @@ BEGIN TRY
     DBCC CHECKIDENT ('[MedicalHistory]', RESEED, 0) WITH NO_INFOMSGS;
     DBCC CHECKIDENT ('[Transfer_Log]', RESEED, 0) WITH NO_INFOMSGS;
     DBCC CHECKIDENT ('[Examination]', RESEED, 0) WITH NO_INFOMSGS;
-    DBCC CHECKIDENT ('[Triage_Parameters]', RESEED, 0) WITH NO_INFOMSGS;
     DBCC CHECKIDENT ('[Triage]', RESEED, 0) WITH NO_INFOMSGS;
     DBCC CHECKIDENT ('[ER_Room]', RESEED, 0) WITH NO_INFOMSGS;
     DBCC CHECKIDENT ('[ER_Visit]', RESEED, 0) WITH NO_INFOMSGS;
@@ -354,7 +353,6 @@ INSERT INTO [Triage] ([Triage_ID], [Visit_ID], [Triage_Level], [Specialization],
 (90, 90, 1, N'Cardiology', 106, '2026-01-24T02:00:00');
 SET IDENTITY_INSERT [Triage] OFF;
 
-SET IDENTITY_INSERT [Triage_Parameters] ON;
 INSERT INTO [Triage_Parameters] ([Triage_ID], [Consciousness], [Breathing], [Bleeding], [Injury_Type], [Pain_Level]) VALUES
 (1, 1, 0, 1, 4, 5),
 (2, 1, 0, 2, 0, 4),
@@ -446,7 +444,6 @@ INSERT INTO [Triage_Parameters] ([Triage_ID], [Consciousness], [Breathing], [Ble
 (88, 3, 2, 3, 2, 1),
 (89, 2, 0, 2, 2, 6),
 (90, 0, 1, 0, 2, 4);
-SET IDENTITY_INSERT [Triage_Parameters] OFF;
 
 SET IDENTITY_INSERT [Examination] ON;
 INSERT INTO [Examination] ([Exam_ID], [Visit_ID], [Doctor_ID], [Exam_Time], [Room_ID], [Notes]) VALUES
@@ -609,6 +606,90 @@ INSERT INTO [Transfer_Log] ([Transfer_ID], [Visit_ID], [Transfer_Time], [Target_
 (39, 78, '2026-01-21T15:33:00', N'TransplantRegistry', NULL, N'Confirmed'),
 (40, 80, '2026-01-22T01:55:00', N'RadiologySystem', N'C:\\HospitalTransfers\\visit_80.json', N'Pending');
 SET IDENTITY_INSERT [Transfer_Log] OFF;
+
+/*
+Normalize only the ER seed data to the merged workflow vocabulary used by the
+current application. This keeps the HospitalManagement-side seed untouched.
+*/
+;WITH PatientPool AS
+(
+    SELECT
+        [CNP],
+        ROW_NUMBER() OVER (ORDER BY [PatientID]) AS [RN]
+    FROM [Patient]
+),
+VisitPatientMap AS
+(
+    SELECT
+        visit.[Visit_ID],
+        pool.[CNP]
+    FROM [ER_Visit] visit
+    JOIN PatientPool pool
+        ON pool.[RN] = ((visit.[Visit_ID] - 1) % (SELECT COUNT(*) FROM PatientPool)) + 1
+)
+UPDATE visit
+SET visit.[Patient_ID] = map.[CNP]
+FROM [ER_Visit] visit
+JOIN VisitPatientMap map
+    ON map.[Visit_ID] = visit.[Visit_ID];
+
+UPDATE [ER_Visit]
+SET [Status] = CASE [Status]
+    WHEN N'In Triage' THEN N'TRIAGED'
+    WHEN N'In Examination' THEN N'IN_EXAMINATION'
+    WHEN N'Waiting' THEN N'WAITING_FOR_ROOM'
+    WHEN N'Admitted' THEN N'IN_ROOM'
+    WHEN N'Discharged' THEN N'CLOSED'
+    WHEN N'Transferred' THEN N'TRANSFERRED'
+    ELSE [Status]
+END;
+
+UPDATE [Triage_Parameters]
+SET [Consciousness] = CASE
+        WHEN [Consciousness] < 1 THEN 1
+        WHEN [Consciousness] > 3 THEN 3
+        ELSE [Consciousness]
+    END,
+    [Breathing] = CASE
+        WHEN [Breathing] < 1 THEN 1
+        WHEN [Breathing] > 3 THEN 3
+        ELSE [Breathing]
+    END,
+    [Bleeding] = CASE
+        WHEN [Bleeding] < 1 THEN 1
+        WHEN [Bleeding] > 3 THEN 3
+        ELSE [Bleeding]
+    END,
+    [Injury_Type] = CASE
+        WHEN [Injury_Type] < 1 THEN 1
+        WHEN [Injury_Type] > 3 THEN 3
+        ELSE [Injury_Type]
+    END,
+    [Pain_Level] = CASE
+        WHEN [Pain_Level] < 1 THEN 1
+        WHEN [Pain_Level] > 3 THEN 3
+        ELSE [Pain_Level]
+    END;
+
+UPDATE room
+SET room.[Availability_Status] = N'Available',
+    room.[Current_Visit_ID] = NULL
+FROM [ER_Room] room
+LEFT JOIN [ER_Visit] visit
+    ON visit.[Visit_ID] = room.[Current_Visit_ID]
+WHERE room.[Availability_Status] = N'Occupied'
+  AND (
+      room.[Current_Visit_ID] IS NULL
+      OR visit.[Visit_ID] IS NULL
+      OR visit.[Status] NOT IN (N'IN_ROOM', N'WAITING_FOR_DOCTOR', N'IN_EXAMINATION')
+  );
+
+UPDATE room
+SET room.[Availability_Status] = N'Occupied'
+FROM [ER_Room] room
+JOIN [ER_Visit] visit
+    ON visit.[Visit_ID] = room.[Current_Visit_ID]
+WHERE visit.[Status] IN (N'IN_ROOM', N'WAITING_FOR_DOCTOR', N'IN_EXAMINATION');
 
 SET IDENTITY_INSERT [MedicalHistory] ON;
 INSERT INTO [MedicalHistory] ([HistoryID], [PatientID], [BloodType], [RH], [ChronicConditions]) VALUES
@@ -1153,6 +1234,36 @@ SET SourceType = CASE
     WHEN SourceType = 'ER' THEN 'ER Visit'
     ELSE 'Appointment'
 END;
+
+-- adding an addict
+
+SET IDENTITY_INSERT [MedicalRecord] ON;
+INSERT INTO [MedicalRecord]
+([RecordID], [HistoryID], [SourceType], [SourceID], [StaffID], [Symptoms], [Diagnosis],
+ [ConsultationDate], [BasePrice], [FinalPrice], [DiscountApplied], [PoliceNotified], [TransplantID])
+VALUES
+(121, 1, N'Consultation', 121, 301, N'Back pain', N'Pain management', '2026-05-08T00:00:00', 200.00, 200.00, 0, 0, NULL),
+(122, 1, N'Consultation', 122, 302, N'Back pain', N'Pain management', '2026-05-08T00:00:00', 200.00, 200.00, 0, 0, NULL),
+(123, 1, N'Consultation', 123, 303, N'Back pain', N'Pain management', '2026-05-08T00:00:00', 200.00, 200.00, 0, 0, NULL);
+SET IDENTITY_INSERT [MedicalRecord] OFF;
+
+SET IDENTITY_INSERT [Prescription] ON;
+INSERT INTO [Prescription]
+([PrescriptionID], [RecordID], [DoctorNotes], [Date])
+VALUES
+(81, 121, N'Use only as prescribed', '2026-05-08T00:00:00'),
+(82, 122, N'Use only as prescribed', '2026-05-08T00:00:00'),
+(83, 123, N'Use only as prescribed', '2026-05-08T00:00:00');
+SET IDENTITY_INSERT [Prescription] OFF;
+
+SET IDENTITY_INSERT [PrescriptionItems] ON;
+INSERT INTO [PrescriptionItems]
+([PrescrItemID], [PrescriptionID], [MedName], [Quantity])
+VALUES
+(158, 81, N'Tramadol', N'1 tablet daily'),
+(159, 82, N'Tramadol', N'1 tablet daily'),
+(160, 83, N'Tramadol', N'1 tablet daily');
+SET IDENTITY_INSERT [PrescriptionItems] OFF;
 
 
     COMMIT TRANSACTION;

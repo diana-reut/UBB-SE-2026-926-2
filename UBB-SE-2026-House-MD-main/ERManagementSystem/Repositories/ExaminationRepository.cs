@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using ERManagementSystem.Helpers;
 using ERManagementSystem.Models;
 using Common.Data.Data;
@@ -18,13 +19,19 @@ namespace ERManagementSystem.Repositories
         }
 
         public void Add(Examination exam)
+            => AddAsync(exam).GetAwaiter().GetResult();
+
+        public async Task AddAsync(Examination exam)
         {
-            context.Add(exam);
-            context.SaveChanges();
+            await context.AddAsync(exam);
+            await context.SaveChangesAsync();
             Logger.Info($"Successfully added new examination record for Visit {exam.Visit_ID}.");
         }
 
         public List<Examination> GetByPatientId(string patientId)
+            => GetByPatientIdAsync(patientId).GetAwaiter().GetResult();
+
+        public Task<List<Examination>> GetByPatientIdAsync(string patientId)
         {
             return context.Examinations
                 .Join(
@@ -36,19 +43,25 @@ namespace ERManagementSystem.Repositories
                 .OrderByDescending(x => x.exam.Exam_Time)
                 .Select(x => x.exam)
                 .AsNoTracking()
-                .ToList();
+                .ToListAsync();
         }
 
         public void UpdateNotes(int examId, string notes)
+            => UpdateNotesAsync(examId, notes).GetAwaiter().GetResult();
+
+        public async Task UpdateNotesAsync(int examId, string notes)
         {
-            Examination exam = context.Examinations.First(e => e.Exam_ID == examId);
+            Examination exam = await context.Examinations.FirstAsync(e => e.Exam_ID == examId);
             exam.Notes = notes;
-            context.SaveChanges();
+            await context.SaveChangesAsync();
         }
 
         public ExaminationSummaryDTO? GetExaminationSummary(int examId)
+            => GetExaminationSummaryAsync(examId).GetAwaiter().GetResult();
+
+        public Task<ExaminationSummaryDTO?> GetExaminationSummaryAsync(int examId)
         {
-            var summary = (
+            return (
                 from exam in context.Examinations
                 join visit in context.ERVisits on exam.Visit_ID equals visit.Visit_ID
                 join patient in context.Patients on visit.Patient_ID equals patient.Cnp
@@ -71,17 +84,17 @@ namespace ERManagementSystem.Repositories
                     DoctorId = exam.Doctor_ID,
                     ExamTime = exam.Exam_Time,
                     Notes = exam.Notes,
-                }).FirstOrDefault();
-
-            return summary;
+                }).FirstOrDefaultAsync();
         }
 
-        public int GetFirstRoomId()
+        public int GetFirstRoomId() => GetFirstRoomIdAsync().GetAwaiter().GetResult();
+
+        public async Task<int> GetFirstRoomIdAsync()
         {
-            return context.ERRooms
+            return await context.ERRooms
                 .OrderBy(r => r.Room_ID)
                 .Select(r => r.Room_ID)
-                .FirstOrDefault();
+                .FirstOrDefaultAsync();
         }
     }
 }

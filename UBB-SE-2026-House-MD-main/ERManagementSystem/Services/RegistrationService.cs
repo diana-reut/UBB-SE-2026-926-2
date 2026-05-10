@@ -24,6 +24,9 @@ namespace ERManagementSystem.Services
         }
 
         public ER_Visit RegisterPatientAndVisit(Patient patient, string chiefComplaint)
+            => RegisterPatientAndVisitAsync(patient, chiefComplaint).GetAwaiter().GetResult();
+
+        public async Task<ER_Visit> RegisterPatientAndVisitAsync(Patient patient, string chiefComplaint)
         {
             // 1. Validate patient data
             if (!patient.Validate(out var errors))
@@ -33,10 +36,10 @@ namespace ERManagementSystem.Services
             }
 
             // 2. Check if patient already exists — if not, insert
-            var existing = patientRepository.GetById(patient.Patient_ID);
+            var existing = await patientRepository.GetByIdAsync(patient.Patient_ID);
             if (existing == null)
             {
-                patientRepository.Add(patient);
+                await patientRepository.AddAsync(patient);
             }
 
             // 3. Build the ER_Visit
@@ -56,7 +59,7 @@ namespace ERManagementSystem.Services
             }
 
             // 5. Persist the visit
-            erVisitRepository.Add(visit);
+            await erVisitRepository.AddAsync(visit);
 
             return visit;
         }

@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using ERManagementSystem.Helpers;
 using Common.Data.Data;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +18,9 @@ namespace ERManagementSystem.Repositories
         }
 
         public void Add(Patient patient)
+            => AddAsync(patient).GetAwaiter().GetResult();
+
+        public async Task AddAsync(Patient patient)
         {
             PatientEntity entity = new ()
             {
@@ -32,23 +36,29 @@ namespace ERManagementSystem.Repositories
                 IsDonor = false,
             };
 
-            context.Patients.Add(entity);
-            context.SaveChanges();
+            await context.Patients.AddAsync(entity);
+            await context.SaveChangesAsync();
             Logger.Info($"Patient {patient.Patient_ID} added through EF Core.");
         }
 
         public Patient? GetById(string id)
+            => GetByIdAsync(id).GetAwaiter().GetResult();
+
+        public async Task<Patient?> GetByIdAsync(string id)
         {
-            PatientEntity? entity = context.Patients
+            PatientEntity? entity = await context.Patients
                 .AsNoTracking()
-                .FirstOrDefault(p => p.Cnp == id);
+                .FirstOrDefaultAsync(p => p.Cnp == id);
 
             return entity is null ? null : MapToModel(entity);
         }
 
         public void Update(Patient patient)
+            => UpdateAsync(patient).GetAwaiter().GetResult();
+
+        public async Task UpdateAsync(Patient patient)
         {
-            PatientEntity entity = context.Patients.First(p => p.Cnp == patient.Patient_ID);
+            PatientEntity entity = await context.Patients.FirstAsync(p => p.Cnp == patient.Patient_ID);
             entity.FirstName = patient.First_Name;
             entity.LastName = patient.Last_Name;
             entity.Dob = patient.Date_of_Birth;
@@ -56,17 +66,20 @@ namespace ERManagementSystem.Repositories
             entity.PhoneNo = patient.Phone;
             entity.EmergencyContact = patient.Emergency_Contact;
             entity.Transferred = patient.Transferred;
-            context.SaveChanges();
+            await context.SaveChangesAsync();
             Logger.Info($"Patient {patient.Patient_ID} updated through EF Core.");
         }
 
         public void Delete(Patient patient)
+            => DeleteAsync(patient).GetAwaiter().GetResult();
+
+        public async Task DeleteAsync(Patient patient)
         {
-            PatientEntity? entity = context.Patients.FirstOrDefault(p => p.Cnp == patient.Patient_ID);
+            PatientEntity? entity = await context.Patients.FirstOrDefaultAsync(p => p.Cnp == patient.Patient_ID);
             if (entity is not null)
             {
                 context.Patients.Remove(entity);
-                context.SaveChanges();
+                await context.SaveChangesAsync();
             }
         }
 

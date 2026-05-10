@@ -1,0 +1,134 @@
+using System.Net;
+using Common.API.Services;
+using Common.Data.Models;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Common.API.Controllers
+{
+    [ApiController]
+    [Route("api/transfer-logs")]
+    public class TransferLogController : ControllerBase
+    {
+        private readonly ITransferLogService _transferLogService;
+        private readonly ILogger<TransferLogController> _logger;
+
+        public TransferLogController(ITransferLogService transferLogService, ILogger<TransferLogController> logger)
+        {
+            _transferLogService = transferLogService;
+            _logger = logger;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<List<Transfer_Log>>> GetAll()
+        {
+            try
+            {
+                var result = await _transferLogService.GetAllAsync();
+                return Ok(result);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to fetch transfer logs.");
+
+                return Problem(
+                    detail: "Failed to fetch transfer logs.",
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not fetch transfer logs.");
+            }
+        }
+
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<Transfer_Log>> GetById(int id)
+        {
+            try
+            {
+                Transfer_Log? result = await _transferLogService.GetByIdAsync(id);
+                if (result is null)
+                {
+                    _logger.LogWarning("Transfer log {TransferId} was not found.", id);
+                    return NotFound();
+                }
+
+                return Ok(result);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to fetch transfer log {TransferId}.", id);
+
+                return Problem(
+                    detail: "Failed to fetch transfer log.",
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not fetch transfer log.");
+            }
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<Transfer_Log>> Create([FromBody] Transfer_Log transferLog)
+        {
+            try
+            {
+                Transfer_Log result = await _transferLogService.CreateAsync(transferLog);
+                return CreatedAtAction(nameof(GetById), new { id = result.Transfer_ID }, result);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to create transfer log.");
+
+                return Problem(
+                    detail: "Failed to create transfer log.",
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not create transfer log.");
+            }
+        }
+
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromBody] Transfer_Log transferLog)
+        {
+            try
+            {
+                bool updated = await _transferLogService.UpdateAsync(id, transferLog);
+                if (!updated)
+                {
+                    _logger.LogWarning("Transfer log {TransferId} was not found for update.", id);
+                    return NotFound();
+                }
+
+                return NoContent();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to update transfer log {TransferId}.", id);
+
+                return Problem(
+                    detail: "Failed to update transfer log.",
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not update transfer log.");
+            }
+        }
+
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                bool deleted = await _transferLogService.DeleteAsync(id);
+                if (!deleted)
+                {
+                    _logger.LogWarning("Transfer log {TransferId} was not found for delete.", id);
+                    return NotFound();
+                }
+
+                return NoContent();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to delete transfer log {TransferId}.", id);
+
+                return Problem(
+                    detail: "Failed to delete transfer log.",
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not delete transfer log.");
+            }
+        }
+    }
+}
