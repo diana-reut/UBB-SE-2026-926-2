@@ -38,6 +38,7 @@ builder.Services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
 builder.Services.AddScoped<ITransplantRepository, TransplantRepository>();
 
 builder.Services.AddScoped<IBillingService, BillingService>();
+builder.Services.AddScoped<IAddictDetectionService, AddictDetectionService>();
 
 var app = builder.Build();
 
