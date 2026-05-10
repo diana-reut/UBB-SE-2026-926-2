@@ -84,9 +84,6 @@ public partial class App : Application
         _ = services.AddTransient<ITransplantService, TransplantService>();
         _ = services.AddTransient<IExportService, ExportService>();
         _ = services.AddTransient<IImportService, ImportService>();
-        _ = services.AddTransient<IPrescriptionService, PrescriptionService>();
-        _ = services.AddTransient<IBillingService, BillingService>();
-        _ = services.AddTransient<IAddictDetectionService, AddictDetectionService>();
         _ = services.AddTransient<IStatisticsService, StatisticsService>();
         _ = services.AddSingleton<IGhostService, GhostService>();
 
