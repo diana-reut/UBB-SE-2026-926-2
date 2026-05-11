@@ -25,6 +25,10 @@ public class UpdatePatientDto
     public string EmergencyContact { get; set; } = string.Empty;
     public bool IsDonor { get; set; }
     public bool Transferred { get; set; }
+
+    public DateTime Dod { get; set; }
+    public bool isArchived { get; set; }
+
 }
 
 public class ArchiveAsDeceasedDto

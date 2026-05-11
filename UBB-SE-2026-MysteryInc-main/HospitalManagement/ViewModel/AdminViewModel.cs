@@ -3,7 +3,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Common.Data.Entity.Enums;
 using HospitalManagement.Infrastructure;
-using Common.Data.Integration;
 using HospitalManagement.Service;
 using HospitalManagement.View;
 using HospitalManagement.View.DialogServiceAdmin;
@@ -15,6 +14,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using HospitalManagement.Proxy.PatientProxy;
+using Common.Data.Entity.DTOs;
 
 namespace HospitalManagement.ViewModel;
 
@@ -182,7 +182,7 @@ internal partial class AdminViewModel : ObservableObject
     [RelayCommand]
     public async Task LoadAllPatientsAsync()
     {
-        var emptyFilter = new PatientFilter();
+        var emptyFilter = new SearchPatientsDto();
         List<Patient> allPatients = await _patientService.SearchPatientsAsync(emptyFilter);
 
         Patients.Clear();
@@ -199,7 +199,7 @@ internal partial class AdminViewModel : ObservableObject
     public async Task LoadArchivedPatientsAsync()
     {
         IsArchivedMode = true;
-        var emptyFilter = new PatientFilter();
+        var emptyFilter = new SearchPatientsDto();
         List<Patient> allPatients = await _patientService.SearchPatientsAsync(emptyFilter);
 
         ArchivedPatients.Clear();
@@ -269,8 +269,17 @@ internal partial class AdminViewModel : ObservableObject
 
         try
         {
-            history.PatientId = patientId;
-            await _patientService.CreateMedicalHistoryAsync(patientId, history);
+            var dto = new CreateMedicalHistoryDto
+            {
+                BloodType = history.BloodType,
+                Rh = history.Rh,
+                ChronicConditions = history.ChronicConditions,
+                AllergyIds = history.PatientAllergies
+                    .ConvertAll(pa => pa.AllergyId)
+,
+            };
+
+            await _patientService.CreateMedicalHistoryAsync(patientId, dto);
             await _dialogService.ShowAlertAsync("Medical history saved successfully!");
         }
         catch (Exception ex)
@@ -281,12 +290,16 @@ internal partial class AdminViewModel : ObservableObject
 
     private static string FormatPhoneNumber(string phone)
     {
-        if (string.IsNullOrWhiteSpace(phone)) return phone;
+        if (string.IsNullOrWhiteSpace(phone))
+            return phone;
 
         phone = phone.Replace(" ", "", StringComparison.Ordinal)
             .Replace("-", "", StringComparison.Ordinal);
 
-        if (!phone.StartsWith('0') || phone.Length != 10) return phone;
+        if (!phone.StartsWith('0') || phone.Length != 10)
+        {
+            return phone;
+        }
 
         return $"+40 {phone.Substring(1, 3)} {phone.Substring(4, 3)} {phone.Substring(7, 3)}";
     }
@@ -295,7 +308,8 @@ internal partial class AdminViewModel : ObservableObject
     private async Task AddPatientAsync()
     {
         Patient? patient = await _dialogService.ShowAddPatientDialogAsync();
-        if (patient is null) return;
+        if (patient is null)
+            return;
 
         try
         {
@@ -316,7 +330,8 @@ internal partial class AdminViewModel : ObservableObject
     [RelayCommand]
     private async Task ArchivePatientAsync()
     {
-        if (SelectedPatient is null) return;
+        if (SelectedPatient is null)
+            return;
 
         bool isConfirmed = await (_dialogService.ShowConfirmAsync(
             $"Are you sure you want to archive {SelectedPatient.FirstName} {SelectedPatient.LastName}?",
@@ -325,7 +340,7 @@ internal partial class AdminViewModel : ObservableObject
 
         if (!isConfirmed) return;
 
-        await _patientService.ArchivePatientAsync(SelectedPatient);
+        await _patientService.ArchivePatientAsync(SelectedPatient.Id);
         Patients.Remove(SelectedPatient);
         ArchivedPatients.Add(SelectedPatient);
     }
@@ -353,7 +368,20 @@ internal partial class AdminViewModel : ObservableObject
 
         try
         {
-            await _patientService.UpdatePatientAsync(EditingPatient);
+            var dto = new UpdatePatientDto
+            {
+                FirstName = EditingPatient.FirstName,
+                LastName = EditingPatient.LastName,
+                Cnp = EditingPatient.Cnp,
+                Dob = EditingPatient.Dob,
+                Sex = EditingPatient.Sex,
+                PhoneNo = EditingPatient.PhoneNo,
+                EmergencyContact = EditingPatient.EmergencyContact,
+                IsDonor = EditingPatient.IsDonor,
+                IsArchived = EditingPatient.IsArchived,
+            };
+
+            await _patientService.UpdatePatientAsync(EditingPatient.Id, dto);
 
             EditingPatient.PhoneNo = FormatPhoneNumber(EditingPatient.PhoneNo);
             EditingPatient.EmergencyContact = FormatPhoneNumber(EditingPatient.EmergencyContact);
@@ -374,13 +402,13 @@ internal partial class AdminViewModel : ObservableObject
     [RelayCommand]
     public async Task SearchPatientAsync()
     {
-        var filter = new PatientFilter();
+        var filter = new SearchPatientsDto();
 
         if (!string.IsNullOrWhiteSpace(SearchQuery))
         {
             if (SearchQuery.All(char.IsDigit) && SearchQuery.Length == 13)
             {
-                filter.CNP = SearchQuery;
+                filter.Cnp = SearchQuery;
             }
             else
             {
@@ -415,7 +443,7 @@ internal partial class AdminViewModel : ObservableObject
                     finalSexEnum = result;
             }
 
-            var filter = new PatientFilter
+            var filter = new SearchPatientsDto
             {
                 MinAge = (int?)MinAge,
                 MaxAge = (int?)MaxAge,
@@ -425,7 +453,7 @@ internal partial class AdminViewModel : ObservableObject
             if (!string.IsNullOrWhiteSpace(SearchQuery))
             {
                 if (SearchQuery.All(char.IsDigit) && SearchQuery.Length == 13)
-                    filter.CNP = SearchQuery;
+                    filter.Cnp = SearchQuery;
                 else
                     filter.NamePart = SearchQuery;
             }
@@ -482,22 +510,27 @@ internal partial class AdminViewModel : ObservableObject
             return;
         }
 
-        SelectedPatient.PhoneNo = SelectedPatient.PhoneNo
-            .Replace(" ", "", StringComparison.Ordinal)
-            .Replace("-", "", StringComparison.Ordinal)
-            .Replace("+40", "0", StringComparison.Ordinal);
-
-        SelectedPatient.EmergencyContact = SelectedPatient.EmergencyContact
-            .Replace(" ", "", StringComparison.Ordinal)
-            .Replace("-", "", StringComparison.Ordinal)
-            .Replace("+40", "0", StringComparison.Ordinal);
-
-        SelectedPatient.Dod = chosenDate;
-        SelectedPatient.IsArchived = true;
+        UpdatePatientDto updatedPatientVersion = new()
+        {
+            FirstName = SelectedPatient.FirstName,
+            LastName = SelectedPatient.LastName,
+            Cnp = SelectedPatient.Cnp,
+            Dob = SelectedPatient.Dob,
+            PhoneNo = SelectedPatient.PhoneNo
+                .Replace(" ", "", StringComparison.Ordinal)
+                .Replace("-", "", StringComparison.Ordinal)
+                .Replace("+40", "0", StringComparison.Ordinal),
+            EmergencyContact = SelectedPatient.EmergencyContact
+                .Replace(" ", "", StringComparison.Ordinal)
+                .Replace("-", "", StringComparison.Ordinal)
+                .Replace("+40", "0", StringComparison.Ordinal),
+            Dod = chosenDate ?? default,
+            IsArchived = true,
+        };
 
         try
         {
-            await _patientService.UpdatePatientAsync(SelectedPatient);
+            await _patientService.UpdatePatientAsync(SelectedPatient.Id, updatedPatientVersion);
             await LoadAllPatientsAsync();
             await LoadArchivedPatientsAsync();
             OnPropertyChanged(nameof(IsNotDeceased));
@@ -538,16 +571,25 @@ internal partial class AdminViewModel : ObservableObject
 
         try
         {
-            SelectedPatient.PhoneNo = SelectedPatient.PhoneNo
-                .Replace(" ", "", StringComparison.Ordinal)
-                .Replace("+40", "0", StringComparison.Ordinal);
+            var dto = new UpdatePatientDto
+            {
+                FirstName = SelectedPatient.FirstName,
+                LastName = SelectedPatient.LastName,
+                Cnp = SelectedPatient.Cnp,
+                Dob = SelectedPatient.Dob,
+                Sex = SelectedPatient.Sex,
+                PhoneNo = SelectedPatient.PhoneNo
+                    .Replace(" ", "", StringComparison.Ordinal)
+                    .Replace("+40", "0", StringComparison.Ordinal),
+                EmergencyContact = SelectedPatient.EmergencyContact
+                    .Replace(" ", "", StringComparison.Ordinal)
+                    .Replace("+40", "0", StringComparison.Ordinal),
+                IsDonor = true,
+                IsArchived = SelectedPatient.IsArchived,
+            };
 
-            SelectedPatient.EmergencyContact = SelectedPatient.EmergencyContact
-                .Replace(" ", "", StringComparison.Ordinal)
-                .Replace("+40", "0", StringComparison.Ordinal);
-
+            await _patientService.UpdatePatientAsync(SelectedPatient.Id, dto);
             SelectedPatient.IsDonor = true;
-            await _patientService.UpdatePatientAsync(SelectedPatient);
             await OpenOrganDonorDialogAsync();
             await LoadAllPatientsAsync();
             await LoadArchivedPatientsAsync();
