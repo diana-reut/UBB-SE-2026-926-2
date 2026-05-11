@@ -1,7 +1,8 @@
 ﻿using Common.Data.Entity;
 using Common.Data.Entity.DTOs;
-using System;
 using HospitalManagement.Proxy.PatientProxy;
+using System;
+using System.Linq;
 
 namespace HospitalManagement.Integration.PatientObserver;
 
@@ -21,20 +22,21 @@ internal class PatientSyncObserver : IPatientObserver
             throw new ArgumentNullException(nameof(newPatientData), "Received null patient data from external provider.");
         }
 
-        // IN6: check if patient exists by CNP
-        bool exists = _patientService.Exists(newPatientData.CNP);
+        bool exists = _patientService.ExistsAsync(newPatientData.CNP).GetAwaiter().GetResult();
 
         if (exists)
         {
-            // map DTO to patient and update
-            Patient updated = MapDTOToPatient(newPatientData);
-            // _patientService.UpdatePatient(updated);
+            Patient existing = _patientService.SearchPatientsAsync(new SearchPatientsDto { Cnp = newPatientData.CNP })
+                .GetAwaiter().GetResult()
+                .First();
+
+            UpdatePatientDto updateDto = MapDTOToUpdateDto(newPatientData);
+            _patientService.UpdatePatientAsync(existing.Id, updateDto).GetAwaiter().GetResult();
         }
         else
         {
-            // map DTO to new patient and create
-            Patient newPatient = MapDTOToPatient(newPatientData);
-            _ = _patientService.CreatePatient(newPatient);
+            CreatePatientDto newPatient = MapDTOToCreateDto(newPatientData);
+            _ = _patientService.CreatePatientAsync(newPatient).GetAwaiter().GetResult();
         }
     }
 
@@ -46,8 +48,28 @@ internal class PatientSyncObserver : IPatientObserver
             LastName = dto.LastName,
             Cnp = dto.CNP,
             Sex = dto.Sex,
-            // Injury -> goes to MedicalRecord.Symptoms, not Patient
-            // EmergencyTimestamp -> goes to MedicalRecord.ConsultationDate
+        };
+    }
+
+    private static CreatePatientDto MapDTOToCreateDto(ExternalPatientDTO dto)
+    {
+        return new CreatePatientDto
+        {
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            Cnp = dto.CNP,
+            Sex = dto.Sex,
+        };
+    }
+
+    private static UpdatePatientDto MapDTOToUpdateDto(ExternalPatientDTO dto)
+    {
+        return new UpdatePatientDto
+        {
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            Cnp = dto.CNP,
+            Sex = dto.Sex,
         };
     }
 }
