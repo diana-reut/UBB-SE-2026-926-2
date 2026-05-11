@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using HospitalManagement.Proxy.PatientProxy;
 using HospitalManagement.Service;
 using Microsoft.UI.Xaml;
 using System;
@@ -10,7 +11,7 @@ namespace HospitalManagement.ViewModel;
 internal partial class TransplantRequestViewModel : ObservableObject
 {
     private readonly ITransplantService _transplantService;
-    private readonly IPatientService _patientService;
+    private readonly IPatientProxy _patientService;
 
     private int _patientId;
 
@@ -21,7 +22,7 @@ internal partial class TransplantRequestViewModel : ObservableObject
 
     public TransplantRequestViewModel(
         ITransplantService transplantService,
-        IPatientService patientService)
+        IPatientProxy patientService)
     {
         _transplantService = transplantService;
         _patientService = patientService;

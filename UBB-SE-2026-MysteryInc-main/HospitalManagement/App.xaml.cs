@@ -19,12 +19,15 @@ using Microsoft.UI.Xaml;
 using ERManagementSystem.Helpers;
 using Microsoft.Extensions.Logging;
 using Common.Data.Repository;
+
 using HospitalManagement.Proxy.AllergyProxy;
+using HospitalManagement.Proxy.TransplantProxy;
+using HospitalManagement.Proxy.PatientProxy
+    ;
 using ERManagementSystem.Proxy.ERRoomProxy;
 using ERManagementSystem.Proxy.ERVisitProxy;
 using ERManagementSystem.Proxy.ExaminationProxy;
 using ERManagementSystem.Proxy.TransferLogProxy;
-using ERManagementSystem.Proxy.TransplantsProxy;
 using ERManagementSystem.Proxy.TriageParametersProxy;
 using ERManagementSystem.Proxy.TriageProxy;
 
@@ -36,6 +39,7 @@ namespace HospitalManagement;
 public partial class App : Application
 {
     public IServiceProvider Services { get; }
+
     private static readonly IConfiguration AppConfiguration = BuildConfiguration();
     private const string LocalConfigurationRelativePath = "config\\appsettings.local.json";
     private static readonly string StartupLogPath = Path.Combine(AppContext.BaseDirectory, "startup-errors.log");
@@ -78,7 +82,6 @@ public partial class App : Application
         _ = services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
 
         _ = services.AddTransient<IBloodCompatibilityService, BloodCompatibilityService>();
-        _ = services.AddTransient<IPatientService, PatientService>();
         _ = services.AddTransient<ITransplantService, TransplantService>();
         _ = services.AddTransient<IExportService, ExportService>();
         _ = services.AddTransient<IImportService, ImportService>();
@@ -90,7 +93,20 @@ public partial class App : Application
 
         _ = services.AddHttpClient<IAllergyProxy, AllergyProxy>((client) =>
         {
-            var uriString = AppConfiguration["ApiSettings:BaseUri"];
+            string? uriString = AppConfiguration["ApiSettings:BaseUri"];
+
+            if (string.IsNullOrEmpty(uriString))
+            {
+                throw new InvalidOperationException("BaseUri is missing from appsettings.local.json");
+            }
+
+            client.BaseAddress = new Uri(uriString);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+        _ = services.AddHttpClient<IPatientProxy, PatientProxy>((client) =>
+        {
+            string? uriString = AppConfiguration["ApiSettings:BaseUri"];
 
             if (string.IsNullOrEmpty(uriString))
             {
@@ -104,7 +120,7 @@ public partial class App : Application
 
         _ = services.AddHttpClient<IERVisitProxy, ERVisitProxy>((client) =>
         {
-            var uriString = AppConfiguration["ApiSettings:BaseUri"];
+            string? uriString = AppConfiguration["ApiSettings:BaseUri"];
 
             if (string.IsNullOrEmpty(uriString))
             {
@@ -186,7 +202,7 @@ public partial class App : Application
             client.Timeout = TimeSpan.FromSeconds(30);
         });
 
-        _ = services.AddHttpClient<ITransplantsProxy, TransplantsProxy>((client) =>
+        _ = services.AddHttpClient<ITransplantProxy, TransplantProxy>((client) =>
         {
             var uriString = AppConfiguration["ApiSettings:BaseUri"];
 

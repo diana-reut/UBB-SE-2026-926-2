@@ -1,4 +1,5 @@
 ﻿using Common.Data.Entity;
+using HospitalManagement.Proxy.PatientProxy;
 using HospitalManagement.Service;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,7 @@ namespace HospitalManagement.ViewModel;
 internal class BloodDonorsViewModel : INotifyPropertyChanged
 {
     private readonly IBloodCompatibilityService _bloodService;
-    private readonly IPatientService _patientService;
+    private readonly IPatientProxy _patientService;
     private string _statusMessage = string.Empty;
 
     public ObservableCollection<DonorMatchModel> Donors { get; } = [];
@@ -35,7 +36,7 @@ internal class BloodDonorsViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public BloodDonorsViewModel(IBloodCompatibilityService bloodService, IPatientService patientService)
+    public BloodDonorsViewModel(IBloodCompatibilityService bloodService, IPatientProxy patientService)
     {
         _bloodService = bloodService ?? throw new ArgumentNullException(nameof(bloodService));
         _patientService = patientService ?? throw new ArgumentNullException(nameof(patientService));

@@ -1,15 +1,15 @@
-﻿using Common.Data.Entity.DTOs;
-using Common.Data.Entity;
-using HospitalManagement.Service;
+﻿using Common.Data.Entity;
+using Common.Data.Entity.DTOs;
 using System;
+using HospitalManagement.Proxy.PatientProxy;
 
 namespace HospitalManagement.Integration.PatientObserver;
 
 internal class PatientSyncObserver : IPatientObserver
 {
-    private readonly IPatientService _patientService;
+    private readonly IPatientProxy _patientService;
 
-    public PatientSyncObserver(IPatientService patientService)
+    public PatientSyncObserver(IPatientProxy patientService)
     {
         _patientService = patientService;
     }

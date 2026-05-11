@@ -3,7 +3,7 @@ using Common.Data.Entity;
 using Common.Data.Repository;
 using Common.Data.Service;
 
-namespace Common.API.Service;
+namespace Common.API.Services;
 
 public class TransplantService : ITransplantService
 {

@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using HospitalManagement.Proxy.PatientProxy;
 
 namespace HospitalManagement.ViewModel;
 
@@ -21,7 +22,7 @@ internal partial class AdminViewModel : ObservableObject
 {
     #region Variables
 
-    private readonly IPatientService _patientService;
+    private readonly IPatientProxy _patientService;
     private readonly IGhostService _ghostService;
     private readonly ITransplantService _transplantService;
     private readonly IDialogService _dialogService;
@@ -157,7 +158,7 @@ internal partial class AdminViewModel : ObservableObject
     public AdminViewModel()
     {
         _ghostService = ServiceRegistry.Services.GetRequiredService<IGhostService>();
-        _patientService = ServiceRegistry.Services.GetRequiredService<IPatientService>();
+        _patientService = ServiceRegistry.Services.GetRequiredService<IPatientProxy>();
         _transplantService = ServiceRegistry.Services.GetRequiredService<ITransplantService>();
         _dialogService = ServiceRegistry.Services.GetRequiredService<IDialogService>();
 

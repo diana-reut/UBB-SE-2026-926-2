@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using HospitalManagement.Proxy.PatientProxy;
 
 namespace HospitalManagement.ViewModel;
 
@@ -19,7 +20,7 @@ namespace HospitalManagement.ViewModel;
 
 internal class PatientViewModel : INotifyPropertyChanged
 {
-    private readonly IPatientService _patientService;
+    private readonly IPatientProxy _patientService;
     private readonly IExportService? _exportService;
     private readonly IBillingService? _billingService;
 
@@ -177,7 +178,7 @@ internal class PatientViewModel : INotifyPropertyChanged
 
     public Func<Prescription, Task>? OpenPrescriptionDialogAction { get; set; }
 
-    public PatientViewModel(IPatientService patientService, IExportService exportService, IBillingService billingService)
+    public PatientViewModel(IPatientProxy patientService, IExportService exportService, IBillingService billingService)
     {
         _patientService = patientService;
         _exportService = exportService;

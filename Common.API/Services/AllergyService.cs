@@ -3,7 +3,7 @@ using Common.Data;
 using Common.Data.Entity;
 using Common.Data.Repository;
 
-namespace Common.API.Service;
+namespace Common.API.Services;
 
 public class AllergyService : IAllergyService
 {
