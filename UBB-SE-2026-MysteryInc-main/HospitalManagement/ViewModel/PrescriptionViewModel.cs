@@ -13,13 +13,15 @@ using System.Globalization;
 using System.Threading.Tasks;
 using Common.Data.Entity;
 using Common.Data.Integration;
+using HospitalManagement.Proxy.AddictDetectionProxy;
+using HospitalManagement.Proxy.PrescriptionProxy;
 
 namespace HospitalManagement.ViewModel;
 
 internal partial class PrescriptionViewModel : ObservableObject
 {
-    private readonly IPrescriptionService _prescriptionService;
-    private readonly IAddictDetectionService _addictDetectionService;
+    private readonly IPrescriptionProxy _prescriptionProxy;
+    private readonly IAddictDetectionProxy _addictDetectionProxy;
     private int _loadVersion;
 
     public ObservableCollection<Prescription> Prescriptions { get; } = new();
@@ -43,11 +45,11 @@ internal partial class PrescriptionViewModel : ObservableObject
     [ObservableProperty] private DateTimeOffset? dateTo;
 
     public PrescriptionViewModel(
-        IPrescriptionService prescriptionService,
-        IAddictDetectionService addictDetectionService)
+        IPrescriptionProxy prescriptionProxy,
+        IAddictDetectionProxy addictDetectionProxy)
     {
-        _prescriptionService = prescriptionService;
-        _addictDetectionService = addictDetectionService;
+        _prescriptionProxy = prescriptionProxy;
+        _addictDetectionProxy = addictDetectionProxy;
 
         _ = LoadPrescriptionsAsync();
     }
@@ -130,7 +132,7 @@ internal partial class PrescriptionViewModel : ObservableObject
     {
         AddictCandidates.Clear();
 
-        foreach (var patient in await _addictDetectionService.GetAddictCandidatesAsync())
+        foreach (var patient in await _addictDetectionProxy.GetAddictCandidatesAsync())
             AddictCandidates.Add(patient);
     }
 
@@ -157,11 +159,11 @@ internal partial class PrescriptionViewModel : ObservableObject
 
         List<Prescription> targetList =
             hasFilter
-            ? (await _prescriptionService.ApplyFilterAsync(ActiveFilter))
+            ? (await _prescriptionProxy.ApplyFilterAsync(ActiveFilter))
                 .Skip((CurrentPage - 1) * PageSize)
                 .Take(PageSize)
                 .ToList()
-            : await _prescriptionService.GetLatestPrescriptionsAsync(PageSize, CurrentPage);
+            : await _prescriptionProxy.GetLatestPrescriptionsAsync(PageSize, CurrentPage);
 
         if (loadVersion != _loadVersion)
         {

@@ -32,7 +32,7 @@ public class MedicalHistory
     [NotMapped]
     public List<(Allergy Allergy, string SeverityLevel)> Allergies
     {
-        get => [.. PatientAllergies.Select(pa => (pa.Allergy, pa.SeverityLevel))];
+        get => [.. (PatientAllergies ?? []).Select(pa => (pa.Allergy, pa.SeverityLevel))];
         set
         {
             PatientAllergies = value?

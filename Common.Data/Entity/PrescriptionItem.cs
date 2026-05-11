@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Common.Data.Entity;
 
@@ -12,6 +13,7 @@ public class PrescriptionItem
     public int PrescriptionId { get; set; }
 
     [ForeignKey(nameof(PrescriptionId))]
+    [JsonIgnore]
     public Prescription Prescription { get; set; } = null!;
 
     [Required]

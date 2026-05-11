@@ -1235,6 +1235,36 @@ SET SourceType = CASE
     ELSE 'Appointment'
 END;
 
+-- adding an addict
+
+SET IDENTITY_INSERT [MedicalRecord] ON;
+INSERT INTO [MedicalRecord]
+([RecordID], [HistoryID], [SourceType], [SourceID], [StaffID], [Symptoms], [Diagnosis],
+ [ConsultationDate], [BasePrice], [FinalPrice], [DiscountApplied], [PoliceNotified], [TransplantID])
+VALUES
+(121, 1, N'Consultation', 121, 301, N'Back pain', N'Pain management', '2026-05-08T00:00:00', 200.00, 200.00, 0, 0, NULL),
+(122, 1, N'Consultation', 122, 302, N'Back pain', N'Pain management', '2026-05-08T00:00:00', 200.00, 200.00, 0, 0, NULL),
+(123, 1, N'Consultation', 123, 303, N'Back pain', N'Pain management', '2026-05-08T00:00:00', 200.00, 200.00, 0, 0, NULL);
+SET IDENTITY_INSERT [MedicalRecord] OFF;
+
+SET IDENTITY_INSERT [Prescription] ON;
+INSERT INTO [Prescription]
+([PrescriptionID], [RecordID], [DoctorNotes], [Date])
+VALUES
+(81, 121, N'Use only as prescribed', '2026-05-08T00:00:00'),
+(82, 122, N'Use only as prescribed', '2026-05-08T00:00:00'),
+(83, 123, N'Use only as prescribed', '2026-05-08T00:00:00');
+SET IDENTITY_INSERT [Prescription] OFF;
+
+SET IDENTITY_INSERT [PrescriptionItems] ON;
+INSERT INTO [PrescriptionItems]
+([PrescrItemID], [PrescriptionID], [MedName], [Quantity])
+VALUES
+(158, 81, N'Tramadol', N'1 tablet daily'),
+(159, 82, N'Tramadol', N'1 tablet daily'),
+(160, 83, N'Tramadol', N'1 tablet daily');
+SET IDENTITY_INSERT [PrescriptionItems] OFF;
+
 
     COMMIT TRANSACTION;
     PRINT 'Seed completed successfully.';

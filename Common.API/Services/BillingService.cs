@@ -5,7 +5,7 @@ using Common.Data.Repository;
 using Common.Data.Entity.Enums;
 using Common.Data.Entity;
 
-namespace HospitalManagement.Service;
+namespace Common.API.Services;
 
 internal class BillingService : IBillingService
 {
@@ -13,6 +13,20 @@ internal class BillingService : IBillingService
     private readonly IMedicalRecordRepository _recordRepo;
     private readonly IPrescriptionRepository _prescriptionRepo;
     private readonly ITransplantRepository _transplantRepo;
+    private const int PercentageDivisor = 100;
+    private const decimal EmergencyRoomBasePrice = 500;
+    private const decimal AppointmentBasePrice = 200;
+    private const decimal PrescriptionItemPrice = 50;
+    private const decimal ChronicConditionPrice = 100;
+    private const decimal MildOrModerateAllergyPrice = 20;
+    private const decimal SevereAllergyPrice = 100;
+    private const decimal TransplantAdditionalPrice = 2000;
+
+
+    private const string MildSeverity = "mild";
+    private const string ModerateSeverity = "moderate";
+    private const string SevereSeverity = "severe";
+    private const string AnaphylacticSeverity = "anaphylactic";
 
     public BillingService(IMedicalHistoryRepository historyRepo, IMedicalRecordRepository recordRepo, IPrescriptionRepository prescriptionRepo, ITransplantRepository transplantRepo)
     {
@@ -41,9 +55,9 @@ internal class BillingService : IBillingService
         return CalculateBasePrice(record, history, prescriptionItems, chronicConditions, allergies, associatedTransplants);
     }
 
-    public decimal ApplyDiscount(decimal basePrice, int discount)
+    public async Task<decimal> ApplyDiscountAsync(decimal basePrice, int discount)
     {
-        return basePrice - basePrice * discount / 100;
+        return await Task.FromResult(basePrice - basePrice * discount / PercentageDivisor);
     }
 
     private static decimal CalculateBasePrice(
@@ -63,31 +77,31 @@ internal class BillingService : IBillingService
 
         if (record.SourceType == SourceType.ER)
         {
-            score += 500;
+            score += EmergencyRoomBasePrice;
         }
         else if (record.SourceType == SourceType.App)
         {
-            score += 200;
+            score += AppointmentBasePrice;
         }
 
-        score += 50 * prescriptionItems.Count;
-        score += 100 * chronicConditions.Count;
+        score += PrescriptionItemPrice * prescriptionItems.Count;
+        score += ChronicConditionPrice * chronicConditions.Count;
 
         foreach ((Allergy Allergy, string SeverityLevel) allergy in allergies)
         {
-            if (string.Equals(allergy.SeverityLevel, "mild", StringComparison.OrdinalIgnoreCase) || string.Equals(allergy.SeverityLevel, "moderate", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(allergy.SeverityLevel, MildSeverity, StringComparison.OrdinalIgnoreCase) || string.Equals(allergy.SeverityLevel, ModerateSeverity, StringComparison.OrdinalIgnoreCase))
             {
-                score += 20;
+                score += MildOrModerateAllergyPrice;
             }
-            else if (string.Equals(allergy.SeverityLevel, "severe", StringComparison.OrdinalIgnoreCase) || string.Equals(allergy.SeverityLevel, "anaphylactic", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(allergy.SeverityLevel, SevereSeverity, StringComparison.OrdinalIgnoreCase) || string.Equals(allergy.SeverityLevel, AnaphylacticSeverity, StringComparison.OrdinalIgnoreCase))
             {
-                score += 100;
+                score += SevereAllergyPrice;
             }
         }
 
         if (associatedTransplants.Count > 0)
         {
-            score += 2000;
+            score += TransplantAdditionalPrice;
         }
 
         return score;
