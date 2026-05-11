@@ -16,6 +16,8 @@ builder.Services.AddDbContext<EFHospitalDbContext>(options =>
 
 builder.Services.AddScoped<IAllergyRepository, AllergyRepository>();
 builder.Services.AddScoped<IAllergyService, AllergyService>();
+builder.Services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
+builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
 builder.Services.AddScoped<IERVisitRepository, ERVisitRepository>();
 builder.Services.AddScoped<IERVisitService, ERVisitService>();
 builder.Services.AddScoped<IERRoomRepository, ERRoomRepository>();
@@ -32,6 +34,7 @@ builder.Services.AddScoped<ITransplantRepository, TransplantRepository>();
 builder.Services.AddScoped<ITransplantsService, TransplantsService>();
 
 
+<<<<<<< controller-Laszlo
 builder.Services.AddScoped<ITransplantRepository, TransplantRepository>();
 builder.Services.AddScoped<ITransplantService, TransplantService>();
 
@@ -42,6 +45,16 @@ builder.Services.AddScoped<IBloodCompatibilityService, BloodCompatibilityService
 builder.Services.AddScoped<ITransplantService, TransplantService>();
 builder.Services.AddScoped<ITransplantRepository, TransplantRepository>();
 
+=======
+builder.Services.AddScoped<IMedicalHistoryRepository, MedicalHistoryRepository>();
+builder.Services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
+builder.Services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
+builder.Services.AddScoped<ITransplantRepository, TransplantRepository>();
+
+builder.Services.AddScoped<IBillingService, BillingService>();
+builder.Services.AddScoped<IAddictDetectionService, AddictDetectionService>();
+
+>>>>>>> main
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
