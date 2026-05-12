@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36603.0 d17.14
+VisualStudioVersion = 17.14.36603.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ERManagementSystem", "ERManagementSystem\ERManagementSystem.csproj", "{9718D668-F264-46DF-918E-314BB850DA06}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common.Data", "..\Common.Data\Common.Data.csproj", "{350D536E-FD97-10D4-1752-29F6537B51CC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HospitalManagement", "..\UBB-SE-2026-MysteryInc-main\HospitalManagement\HospitalManagement.csproj", "{BAC3539B-B218-2619-9A07-7578B5C7027C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +37,30 @@ Global
 		{9718D668-F264-46DF-918E-314BB850DA06}.Release|x86.ActiveCfg = Release|x86
 		{9718D668-F264-46DF-918E-314BB850DA06}.Release|x86.Build.0 = Release|x86
 		{9718D668-F264-46DF-918E-314BB850DA06}.Release|x86.Deploy.0 = Release|x86
+		{350D536E-FD97-10D4-1752-29F6537B51CC}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{350D536E-FD97-10D4-1752-29F6537B51CC}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{350D536E-FD97-10D4-1752-29F6537B51CC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{350D536E-FD97-10D4-1752-29F6537B51CC}.Debug|x64.Build.0 = Debug|Any CPU
+		{350D536E-FD97-10D4-1752-29F6537B51CC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{350D536E-FD97-10D4-1752-29F6537B51CC}.Debug|x86.Build.0 = Debug|Any CPU
+		{350D536E-FD97-10D4-1752-29F6537B51CC}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{350D536E-FD97-10D4-1752-29F6537B51CC}.Release|ARM64.Build.0 = Release|Any CPU
+		{350D536E-FD97-10D4-1752-29F6537B51CC}.Release|x64.ActiveCfg = Release|Any CPU
+		{350D536E-FD97-10D4-1752-29F6537B51CC}.Release|x64.Build.0 = Release|Any CPU
+		{350D536E-FD97-10D4-1752-29F6537B51CC}.Release|x86.ActiveCfg = Release|Any CPU
+		{350D536E-FD97-10D4-1752-29F6537B51CC}.Release|x86.Build.0 = Release|Any CPU
+		{BAC3539B-B218-2619-9A07-7578B5C7027C}.Debug|ARM64.ActiveCfg = Debug|x64
+		{BAC3539B-B218-2619-9A07-7578B5C7027C}.Debug|ARM64.Build.0 = Debug|x64
+		{BAC3539B-B218-2619-9A07-7578B5C7027C}.Debug|x64.ActiveCfg = Debug|x64
+		{BAC3539B-B218-2619-9A07-7578B5C7027C}.Debug|x64.Build.0 = Debug|x64
+		{BAC3539B-B218-2619-9A07-7578B5C7027C}.Debug|x86.ActiveCfg = Debug|x64
+		{BAC3539B-B218-2619-9A07-7578B5C7027C}.Debug|x86.Build.0 = Debug|x64
+		{BAC3539B-B218-2619-9A07-7578B5C7027C}.Release|ARM64.ActiveCfg = Release|x64
+		{BAC3539B-B218-2619-9A07-7578B5C7027C}.Release|ARM64.Build.0 = Release|x64
+		{BAC3539B-B218-2619-9A07-7578B5C7027C}.Release|x64.ActiveCfg = Release|x64
+		{BAC3539B-B218-2619-9A07-7578B5C7027C}.Release|x64.Build.0 = Release|x64
+		{BAC3539B-B218-2619-9A07-7578B5C7027C}.Release|x86.ActiveCfg = Release|x64
+		{BAC3539B-B218-2619-9A07-7578B5C7027C}.Release|x86.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

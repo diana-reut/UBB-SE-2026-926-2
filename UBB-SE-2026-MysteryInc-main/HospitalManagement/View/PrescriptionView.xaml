@@ -45,7 +45,7 @@
                 <TextBlock Text="Filter Options" FontWeight="SemiBold" FontSize="14" Foreground="White" Margin="0,0,0,6"/>
 
                 <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
-                    <TextBox x:Name="SearchIdBox" PlaceholderText="ID..." Width="60" Height="36" CornerRadius="6" VerticalContentAlignment="Center" Text="{x:Bind ViewModel.SearchIdText, Mode=TwoWay}"/>
+                    <TextBox x:Name="SearchIdBox" PlaceholderText="ID..." Width="80" MinWidth="80" Height="36" CornerRadius="6" VerticalContentAlignment="Center" Text="{x:Bind ViewModel.SearchIdText, Mode=TwoWay}"/>
                     <TextBox x:Name="SearchNameBox" PlaceholderText="Patient Name" Width="160" Height="36" CornerRadius="6" VerticalContentAlignment="Center" Text="{x:Bind ViewModel.SearchName, Mode=TwoWay}"/>
                     <TextBox x:Name="SearchMedBox" PlaceholderText="Medication Name" Width="150" Height="36" CornerRadius="6" VerticalContentAlignment="Center"  Text="{x:Bind ViewModel.SearchMedication, Mode=TwoWay}"/>
 
