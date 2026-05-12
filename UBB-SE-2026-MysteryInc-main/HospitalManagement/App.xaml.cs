@@ -18,17 +18,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Xaml;
 using ERManagementSystem.Helpers;
 using Microsoft.Extensions.Logging;
-<<<<<<< controller-Laszlo
-using Common.Data.Repository;
-
 using HospitalManagement.Proxy.AllergyProxy;
 using HospitalManagement.Proxy.TransplantProxy;
-using HospitalManagement.Proxy.PatientProxy
-    ;
-=======
+using HospitalManagement.Proxy.PatientProxy;
+
 using HospitalManagement.Proxy.AllergyProxy;
 using HospitalManagement.Proxy.PrescriptionProxy;
->>>>>>> main
 using ERManagementSystem.Proxy.ERRoomProxy;
 using ERManagementSystem.Proxy.ERVisitProxy;
 using ERManagementSystem.Proxy.ExaminationProxy;

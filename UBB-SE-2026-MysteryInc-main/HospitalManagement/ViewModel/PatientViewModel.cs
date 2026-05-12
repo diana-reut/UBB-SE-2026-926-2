@@ -10,12 +10,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
-<<<<<<< controller-Laszlo
 using HospitalManagement.Proxy.PatientProxy;
-=======
 using HospitalManagement.Proxy.BillingProxy;
->>>>>>> main
-
 namespace HospitalManagement.ViewModel;
 
 // this refactoring took years from my life
@@ -184,13 +180,9 @@ internal class PatientViewModel : INotifyPropertyChanged
 
     public Func<Prescription, Task>? OpenPrescriptionDialogAction { get; set; }
 
-<<<<<<< controller-Laszlo
-    public PatientViewModel(IPatientProxy patientService, IExportService exportService, IBillingService billingService)
-=======
     public Action<string, string>? ShowAlertAction { get; set; }
 
-    public PatientViewModel(IPatientService patientService, IExportService exportService, IBillingProxy billingProxy)
->>>>>>> main
+    public PatientViewModel(IPatientProxy patientService, IExportService exportService, IBillingProxy billingProxy)
     {
         _patientService = patientService;
         _exportService = exportService;

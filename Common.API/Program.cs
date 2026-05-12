@@ -1,3 +1,4 @@
+using Common.API.Service;
 using Common.API.Services;
 using Common.Data.Data;
 using Common.Data.Repository;
@@ -32,29 +33,18 @@ builder.Services.AddScoped<ITransferLogRepository, TransferLogRepository>();
 builder.Services.AddScoped<ITransferLogService, TransferLogService>();
 builder.Services.AddScoped<ITransplantRepository, TransplantRepository>();
 builder.Services.AddScoped<ITransplantsService, TransplantsService>();
-
-
-<<<<<<< controller-Laszlo
+// there's Transplant and Transplants, watch out!
 builder.Services.AddScoped<ITransplantRepository, TransplantRepository>();
 builder.Services.AddScoped<ITransplantService, TransplantService>();
-
+builder.Services.AddScoped<IPatientRepository, PatientRepository>();
 builder.Services.AddScoped<IPatientRepository, PatientRepository>();
 builder.Services.AddScoped<IMedicalHistoryRepository, MedicalHistoryRepository>();
 builder.Services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
 builder.Services.AddScoped<IBloodCompatibilityService, BloodCompatibilityService>();
-builder.Services.AddScoped<ITransplantService, TransplantService>();
-builder.Services.AddScoped<ITransplantRepository, TransplantRepository>();
-
-=======
-builder.Services.AddScoped<IMedicalHistoryRepository, MedicalHistoryRepository>();
-builder.Services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
-builder.Services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
-builder.Services.AddScoped<ITransplantRepository, TransplantRepository>();
-
 builder.Services.AddScoped<IBillingService, BillingService>();
 builder.Services.AddScoped<IAddictDetectionService, AddictDetectionService>();
+builder.Services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
 
->>>>>>> main
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
