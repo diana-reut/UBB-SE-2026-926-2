@@ -22,10 +22,10 @@ public class PatientService : IPatientService
     private const int HighRiskLookbackMonths = -3;
     private const int MinValidId = 1;
 
-    private readonly IPatientRepository patientRepo;
-    private readonly IMedicalHistoryRepository historyRepo;
-    private readonly IMedicalRecordRepository recordRepo;
-    private readonly IPrescriptionRepository? prescriptionRepo;
+    private readonly IPatientRepository _patientRepo;
+    private readonly IMedicalHistoryRepository _historyRepo;
+    private readonly IMedicalRecordRepository _recordRepo;
+    private readonly IPrescriptionRepository? _prescriptionRepo;
 
     public PatientService(
         IPatientRepository patientRepo,
@@ -33,10 +33,10 @@ public class PatientService : IPatientService
         IMedicalRecordRepository recordRepo,
         IPrescriptionRepository? prescriptionRepo = null)
     {
-        patientRepo = patientRepo;
-        historyRepo = historyRepo;
-        recordRepo = recordRepo;
-        prescriptionRepo = prescriptionRepo;
+        _patientRepo = patientRepo;
+        _historyRepo = historyRepo;
+        _recordRepo = recordRepo;
+        _prescriptionRepo = prescriptionRepo;
     }
 
     public bool ValidateCNP(string cnp, Sex sex, DateTime dob)
@@ -77,7 +77,7 @@ public class PatientService : IPatientService
             throw new ArgumentException("Identity Mismatch: The provided CNP does not align with the selected Sex or Date of Birth.");
         }
 
-        await patientRepo.AddAsync(data);
+        await _patientRepo.AddAsync(data);
         return data;
     }
 
@@ -98,20 +98,20 @@ public class PatientService : IPatientService
             throw new ArgumentException("Validation Error: Phone number must be exactly 10 digits and contain no letters.");
         }
 
-        await patientRepo.UpdateAsync(data);
+        await _patientRepo.UpdateAsync(data);
     }
 
     public async Task ArchivePatientAsync(Patient patient)
     {
         patient.IsArchived = true;
-        await patientRepo.UpdateAsync(patient);
+        await _patientRepo.UpdateAsync(patient);
     }
 
     public async Task DearchivePatientAsync(int id)
     {
-        Patient? patient = await patientRepo.GetByIdAsync(id) ?? throw new KeyNotFoundException("Patient not found.");
+        Patient? patient = await _patientRepo.GetByIdAsync(id) ?? throw new KeyNotFoundException("Patient not found.");
         patient.IsArchived = false;
-        await patientRepo.UpdateAsync(patient);
+        await _patientRepo.UpdateAsync(patient);
     }
 
     public async Task ArchiveAsDeceasedAsync(int id, DateTime deathDate)
@@ -121,47 +121,47 @@ public class PatientService : IPatientService
             throw new ArgumentException("Validation Error: Death date cannot be in the future.");
         }
 
-        Patient? patient = await patientRepo.GetByIdAsync(id) ?? throw new KeyNotFoundException("Patient not found.");
+        Patient? patient = await _patientRepo.GetByIdAsync(id) ?? throw new KeyNotFoundException("Patient not found.");
         patient.IsArchived = true;
         patient.Dod = deathDate;
-        await patientRepo.UpdateAsync(patient);
+        await _patientRepo.UpdateAsync(patient);
     }
 
     public async Task DeletePatientAsync(int id)
     {
-        _ = await patientRepo.GetByIdAsync(id) ?? throw new KeyNotFoundException($"Cannot delete: Patient with ID {id} was not found.");
-        await patientRepo.DeleteAsync(id);
+        _ = await _patientRepo.GetByIdAsync(id) ?? throw new KeyNotFoundException($"Cannot delete: Patient with ID {id} was not found.");
+        await _patientRepo.DeleteAsync(id);
     }
 
     public Task<bool> ExistsAsync(string cnp)
     {
-        return patientRepo.ExistsAsync(cnp);
+        return _patientRepo.ExistsAsync(cnp);
     }
 
     public async Task<Patient?> GetByIdAsync(int patientId)
     {
-        return await patientRepo.GetByIdAsync(patientId);
+        return await _patientRepo.GetByIdAsync(patientId);
     }
 
     public async Task<Patient> GetPatientDetailsAsync(int id)
     {
-        Patient? patient = await patientRepo.GetByIdAsync(id) ?? throw new KeyNotFoundException($"Patient with ID {id} not found.");
+        Patient? patient = await _patientRepo.GetByIdAsync(id) ?? throw new KeyNotFoundException($"Patient with ID {id} not found.");
 
-        MedicalHistory? history = await historyRepo.GetByPatientIdAsync(id);
+        MedicalHistory? history = await _historyRepo.GetByPatientIdAsync(id);
         if (history is null)
         {
             history = new MedicalHistory { PatientId = id };
         }
         else
         {
-            history.ChronicConditions = await historyRepo.GetChronicConditionsAsync(history.Id);
-            history.Allergies = await historyRepo.GetAllergiesByHistoryIdAsync(history.Id);
+            history.ChronicConditions = await _historyRepo.GetChronicConditionsAsync(history.Id);
+            history.Allergies = await _historyRepo.GetAllergiesByHistoryIdAsync(history.Id);
         }
 
         var records = new List<MedicalRecord>();
         if (history.Id >= MinValidId)
         {
-            records = [.. (await recordRepo.GetByHistoryIdAsync(history.Id)).OrderByDescending(r => r.ConsultationDate)];
+            records = [.. (await _recordRepo.GetByHistoryIdAsync(history.Id)).OrderByDescending(r => r.ConsultationDate)];
         }
 
         var prescriptions = new List<Prescription>();
@@ -193,21 +193,21 @@ public class PatientService : IPatientService
                 throw new ArgumentException("Validation Error: 'From' date cannot be after 'To' date.");
         }
 
-        return patientRepo.SearchAsync(filter!);
+        return _patientRepo.SearchAsync(filter!);
     }
 
     public async Task<bool> IsHighRiskPatientAsync(int patientId)
     {
         DateTime fromDate = DateTime.UtcNow.AddMonths(HighRiskLookbackMonths);
-        int erVisitCount = await recordRepo.GetERVisitCountAsync(patientId, fromDate);
+        int erVisitCount = await _recordRepo.GetERVisitCountAsync(patientId, fromDate);
         return erVisitCount > HighRiskErVisitThreshold;
     }
 
     public async Task CreateMedicalHistoryAsync(int patientId, MedicalHistory history)
     {
-        _ = await patientRepo.GetByIdAsync(patientId) ?? throw new ArgumentException($"Patient with ID {patientId} not found.");
+        _ = await _patientRepo.GetByIdAsync(patientId) ?? throw new ArgumentException($"Patient with ID {patientId} not found.");
 
-        MedicalHistory? existingHistory = await historyRepo.GetByPatientIdAsync(patientId);
+        MedicalHistory? existingHistory = await _historyRepo.GetByPatientIdAsync(patientId);
         if (existingHistory is not null)
             throw new ArgumentException($"Patient {patientId} already has a medical history.");
 
@@ -215,11 +215,11 @@ public class PatientService : IPatientService
             throw new ArgumentException("Medical history data cannot be null.");
 
         history.PatientId = patientId;
-        int historyId = await historyRepo.CreateAsync(history);
+        int historyId = await _historyRepo.CreateAsync(history);
 
         if (historyId >= MinValidId && history.Allergies?.Count > 0)
         {
-            await historyRepo.SaveAllergiesAsync(historyId, history.Allergies);
+            await _historyRepo.SaveAllergiesAsync(historyId, history.Allergies);
         }
     }
 
@@ -230,7 +230,7 @@ public class PatientService : IPatientService
 
         try
         {
-            return await historyRepo.GetByPatientIdAsync(patientId);
+            return await _historyRepo.GetByPatientIdAsync(patientId);
         }
         catch (Exception ex)
         {
@@ -243,7 +243,7 @@ public class PatientService : IPatientService
     {
         try
         {
-            return await recordRepo.GetByHistoryIdAsync(historyId);
+            return await _recordRepo.GetByHistoryIdAsync(historyId);
         }
         catch (Exception ex)
         {
@@ -256,11 +256,11 @@ public class PatientService : IPatientService
     {
         try
         {
-            MedicalHistory? history = await historyRepo.GetByPatientIdAsync(patientId);
+            MedicalHistory? history = await _historyRepo.GetByPatientIdAsync(patientId);
             if (history is null)
                 return [];
 
-            List<(Allergy Allergy, string SeverityLevel)> allergyTuples = await historyRepo.GetAllergiesByHistoryIdAsync(history.Id);
+            List<(Allergy Allergy, string SeverityLevel)> allergyTuples = await _historyRepo.GetAllergiesByHistoryIdAsync(history.Id);
             return allergyTuples.ConvertAll(tuple => $"{tuple.Allergy.AllergyName} - {tuple.SeverityLevel}");
         }
         catch (Exception ex)
@@ -272,9 +272,9 @@ public class PatientService : IPatientService
 
     public Task<Prescription?> GetPrescriptionByRecordIdAsync(int recordId)
     {
-        if (prescriptionRepo is null)
+        if (_prescriptionRepo is null)
             throw new InvalidOperationException("PrescriptionRepository is not available.");
 
-        return prescriptionRepo.GetByRecordIdAsync(recordId);
+        return _prescriptionRepo.GetByRecordIdAsync(recordId);
     }
 }
