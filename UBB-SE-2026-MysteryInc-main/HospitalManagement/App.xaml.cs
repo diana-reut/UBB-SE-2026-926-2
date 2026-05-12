@@ -1,13 +1,22 @@
 using Common.API.Services;
 using Common.Data.Data;
 using Common.Data.Repository;
-using Common.Data.Repository;
 using ERManagementSystem.Helpers;
 using ERManagementSystem.Infrastructure;
+using ERManagementSystem.Proxy.ERRoomProxy;
+using ERManagementSystem.Proxy.ERVisitProxy;
+using ERManagementSystem.Proxy.ExaminationProxy;
+using ERManagementSystem.Proxy.TransferLogProxy;
+using ERManagementSystem.Proxy.TransplantsProxy;
+using ERManagementSystem.Proxy.TriageParametersProxy;
+using ERManagementSystem.Proxy.TriageProxy;
 using HospitalManagement.Infrastructure;
 using HospitalManagement.Integration.Export;
 using HospitalManagement.Integration.External;
+using HospitalManagement.Proxy.AddictDetectionProxy;
 using HospitalManagement.Proxy.AllergyProxy;
+using HospitalManagement.Proxy.BillingProxy;
+using HospitalManagement.Proxy.PrescriptionProxy;
 using HospitalManagement.Proxy.StatisticsProxy;
 using HospitalManagement.Service;
 using HospitalManagement.View;
@@ -18,19 +27,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
-using ERManagementSystem.Helpers;
-using Microsoft.Extensions.Logging;
-using HospitalManagement.Proxy.AllergyProxy;
-using HospitalManagement.Proxy.PrescriptionProxy;
-using ERManagementSystem.Proxy.ERRoomProxy;
-using ERManagementSystem.Proxy.ERVisitProxy;
-using ERManagementSystem.Proxy.ExaminationProxy;
-using ERManagementSystem.Proxy.TransferLogProxy;
-using ERManagementSystem.Proxy.TransplantsProxy;
-using ERManagementSystem.Proxy.TriageParametersProxy;
-using ERManagementSystem.Proxy.TriageProxy;
-using HospitalManagement.Proxy.BillingProxy;
-using HospitalManagement.Proxy.AddictDetectionProxy;
+using System;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 [assembly: InternalsVisibleTo("HospitalManagementTest")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
@@ -86,12 +86,7 @@ public partial class App : Application
         _ = services.AddTransient<ITransplantService, TransplantService>();
         _ = services.AddTransient<IExportService, ExportService>();
         _ = services.AddTransient<IImportService, ImportService>();
-        _ = services.AddTransient<IBillingService, BillingService>();
-        _ = services.AddTransient<IAddictDetectionService, AddictDetectionService>();
-        _ = services.AddTransient<IPrescriptionService, PrescriptionService>();
-        _ = services.AddTransient<IStatisticsService, StatisticsService>();
         _ = services.AddSingleton<IGhostService, GhostService>();
-
         _ = services.AddHttpClient<IStatisticsProxy, StatisticsProxy>((client) =>
         {
             var uriString = AppConfiguration["ApiSettings:BaseUri"];
@@ -303,6 +298,7 @@ public partial class App : Application
         _ = services.AddTransient<PharmacistDashboardPage>();
 
         _ = services.AddERManagementSystem();
+
 
         return services.BuildServiceProvider();
     }
