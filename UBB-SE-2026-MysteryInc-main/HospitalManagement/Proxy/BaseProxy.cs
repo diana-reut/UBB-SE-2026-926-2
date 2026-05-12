@@ -8,6 +8,7 @@ namespace HospitalManagement.Proxy;
 
 public abstract class ProxyBase
 {
+    
     protected readonly HttpClient HttpClient;
     protected readonly JsonSerializerOptions Options;
 
@@ -26,6 +27,7 @@ public abstract class ProxyBase
 
     protected async Task<TResponse?> PostAsync<TRequest, TResponse>(string uri, TRequest data)
     {
+
         var requestUri = new Uri(uri, UriKind.RelativeOrAbsolute);
         using HttpResponseMessage response = await HttpClient.PostAsJsonAsync(requestUri, data, Options);
         HttpResponseMessage _ = response.EnsureSuccessStatusCode();
