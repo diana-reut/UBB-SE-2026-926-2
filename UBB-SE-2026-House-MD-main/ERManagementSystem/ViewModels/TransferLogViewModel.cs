@@ -2,34 +2,28 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Common.Data.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using ERManagementSystem.Services;
+using ERManagementSystem.Proxy.ERVisitProxy;
+using ERManagementSystem.Proxy.TransferLogProxy;
+using ERManagementSystem.Repositories;
 using Microsoft.UI.Xaml.Controls;
-using Common.Data.Models;
 
 namespace ERManagementSystem.ViewModels
 {
-    /// <summary>
-    /// Tasks 6.7, 6.9, 6.10, 6.11, 6.13
-    ///
-    /// Properties and methods match the class diagram exactly:
-    ///   SelectedVisit  [ObservableProperty]
-    ///   SendPatientData(): void  [RelayCommand]
-    ///   LoadLogs(): void  [RelayCommand]
-    ///
-    /// Task 6.9: validation errors shown via WinUI 3 ContentDialog.
-    /// </summary>
     public partial class TransferLogViewModel : BaseViewModel
     {
+        private const string TargetSystem = "Patient Management";
+        private readonly ITransferLogProxy transferLogProxy;
+        private readonly IERVisitProxy erVisitProxy;
+        private readonly IPatientRepository patientRepository;
+
         public Action? ClearGridSelection { get; set; }
         public Action? RefreshGrid { get; set; }
-        private readonly ITransferService transferService;
 
-        // XamlRoot needed to show ContentDialogs — set by the View
         public Microsoft.UI.Xaml.XamlRoot? XamlRoot { get; set; }
 
-        // Observable Properties
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(HasSelectedVisit))]
         private VisitSummary? selectedVisit;
@@ -48,15 +42,18 @@ namespace ERManagementSystem.ViewModels
 
         public bool HasSelectedVisit => selectedVisit != null;
 
-        // Constructor
-        public TransferLogViewModel(ITransferService transferService)
+        public TransferLogViewModel(
+            ITransferLogProxy transferLogProxy,
+            IERVisitProxy erVisitProxy,
+            IPatientRepository patientRepository)
         {
-            this.transferService = transferService;
+            this.transferLogProxy = transferLogProxy;
+            this.erVisitProxy = erVisitProxy;
+            this.patientRepository = patientRepository;
         }
 
-        // LoadLogs(): void  (Task 6.13)
         [RelayCommand]
-        public void LoadLogs()
+        public async Task LoadLogs()
         {
             TransferLogs.Clear();
             CanRetry = false;
@@ -66,13 +63,12 @@ namespace ERManagementSystem.ViewModels
                 return;
             }
 
-            var logs = transferService.GetLogs(SelectedVisit.Visit_ID);
+            var logs = await transferLogProxy.GetByVisitIdAsync(SelectedVisit.Visit_ID);
             foreach (var log in logs)
             {
                 TransferLogs.Add(log);
             }
 
-            // Task 6.11: enable Retry if most recent attempt was FAILED
             var latest = TransferLogs.FirstOrDefault();
             if (latest != null && latest.Status == "FAILED")
             {
@@ -82,12 +78,11 @@ namespace ERManagementSystem.ViewModels
 
         partial void OnSelectedVisitChanged(VisitSummary? value)
         {
-            LoadLogs();
+            _ = LoadLogs();
         }
 
-        // Task 6.7 — Load visits in IN_EXAMINATION status
         [RelayCommand]
-        public void LoadData()
+        public async Task LoadData()
         {
             SelectedVisit = null;
             TransferLogs.Clear();
@@ -95,28 +90,27 @@ namespace ERManagementSystem.ViewModels
             CanRetry = false;
 
             var freshList = new ObservableCollection<VisitSummary>();
+            var eligibleVisits = await erVisitProxy.GetByStatusAsync(ER_Visit.VisitStatus.IN_EXAMINATION);
 
-            var eligibleVisits = transferService.GetEligibleVisitsForTransfer();
-            foreach (var eligibleVisit in eligibleVisits)
+            foreach (var eligibleVisit in eligibleVisits.OrderBy(visit => visit.Arrival_date_time))
             {
+                var patient = await patientRepository.GetByIdAsync(eligibleVisit.Patient_ID);
                 freshList.Add(new VisitSummary
                 {
-                    Visit_ID = eligibleVisit.VisitId,
-                    Chief_Complaint = eligibleVisit.ChiefComplaint,
+                    Visit_ID = eligibleVisit.Visit_ID,
+                    Chief_Complaint = eligibleVisit.Chief_Complaint,
                     Status = eligibleVisit.Status,
-                    PatientName = $"{eligibleVisit.PatientFirstName} {eligibleVisit.PatientLastName}",
-                    Transferred = eligibleVisit.IsTransferred
+                    PatientName = patient is null ? eligibleVisit.Patient_ID : $"{patient.FirstName} {patient.LastName}",
+                    Transferred = patient?.Transferred ?? false
                 });
             }
 
             EligibleVisits = freshList;
         }
 
-        // SendPatientData(): void  (Tasks 6.7, 6.9, 6.10)
         [RelayCommand]
         public async Task SendPatientData()
         {
-            // Task 6.9: Validation with WinUI 3 ContentDialog
             if (SelectedVisit == null)
             {
                 await ShowDialog("Validation Error", "Please select a visit before sending.");
@@ -137,12 +131,9 @@ namespace ERManagementSystem.ViewModels
 
             try
             {
-                // Task 6.4 & 6.5: send data, save JSON, log attempt
-                await transferService.SendPatientDataAsync(SelectedVisit.Visit_ID);
-
-                // Task 6.10: transition visit + mark patient as transferred
-                await transferService.TransitionVisitToTransferredAsync(SelectedVisit.Visit_ID);
-                await transferService.MarkPatientAsTransferredAsync(SelectedVisit.Visit_ID);
+                await LogTransferAsync(SelectedVisit.Visit_ID, "SUCCESS");
+                await erVisitProxy.UpdateStatusAsync(SelectedVisit.Visit_ID, ER_Visit.VisitStatus.TRANSFERRED);
+                await MarkPatientAsTransferredAsync(SelectedVisit.Visit_ID);
 
                 SelectedVisit.Status = ER_Visit.VisitStatus.TRANSFERRED;
                 SelectedVisit.Transferred = true;
@@ -150,26 +141,23 @@ namespace ERManagementSystem.ViewModels
                 StatusMessage = "SUCCESS";
                 CanRetry = false;
 
-                // Task 6.10: show WinUI 3 ContentDialog success message + refresh data
                 await ShowDialog("Transfer Successful",
                     $"Patient data for Visit {SelectedVisit.Visit_ID} has been successfully sent to Patient Management.");
-                // LoadData();
             }
             catch (Exception ex)
             {
-                StatusMessage = $"FAILED — {ex.Message}";
+                await LogTransferAsync(SelectedVisit.Visit_ID, "FAILED");
+                StatusMessage = $"FAILED - {ex.Message}";
                 CanRetry = true;
                 await ShowDialog("Transfer Failed",
                     $"Transfer failed: {ex.Message}\nYou can retry using the Retry button.");
             }
             finally
             {
-                // Task 6.13: always refresh after every attempt
-                LoadLogs();
+                await LoadLogs();
             }
         }
 
-        // Task 6.11 — Retry failed transfer
         [RelayCommand]
         public async Task RetryTransfer()
         {
@@ -180,31 +168,28 @@ namespace ERManagementSystem.ViewModels
 
             try
             {
-                var result = await transferService.RetryTransferAsync(SelectedVisit.Visit_ID);
+                await LogTransferAsync(SelectedVisit.Visit_ID, "RETRYING");
+                await LogTransferAsync(SelectedVisit.Visit_ID, "SUCCESS");
+                await erVisitProxy.UpdateStatusAsync(SelectedVisit.Visit_ID, ER_Visit.VisitStatus.TRANSFERRED);
+                await MarkPatientAsTransferredAsync(SelectedVisit.Visit_ID);
 
-                if (result.Status == "SUCCESS")
-                {
-                    await transferService.TransitionVisitToTransferredAsync(SelectedVisit.Visit_ID);
-                    await transferService.MarkPatientAsTransferredAsync(SelectedVisit.Visit_ID);
+                SelectedVisit.Status = ER_Visit.VisitStatus.TRANSFERRED;
+                SelectedVisit.Transferred = true;
 
-                    SelectedVisit.Status = ER_Visit.VisitStatus.TRANSFERRED;
-                    SelectedVisit.Transferred = true;
+                StatusMessage = "Retry SUCCESS";
+                CanRetry = false;
 
-                    StatusMessage = "Retry SUCCESS";
-                    CanRetry = false;
-
-                    await ShowDialog("Retry Successful",
-                        $"Patient data for Visit {SelectedVisit.Visit_ID} was successfully sent on retry.");
-                }
+                await ShowDialog("Retry Successful",
+                    $"Patient data for Visit {SelectedVisit.Visit_ID} was successfully sent on retry.");
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Retry FAILED — {ex.Message}";
+                StatusMessage = $"Retry FAILED - {ex.Message}";
                 await ShowDialog("Retry Failed", $"Retry failed: {ex.Message}");
             }
             finally
             {
-                LoadLogs();
+                await LoadLogs();
             }
         }
 
@@ -228,8 +213,7 @@ namespace ERManagementSystem.ViewModels
 
             try
             {
-                await transferService.CloseVisitAsync(visitId);
-
+                await erVisitProxy.UpdateStatusAsync(visitId, ER_Visit.VisitStatus.CLOSED);
                 SelectedVisit.Status = ER_Visit.VisitStatus.CLOSED;
 
                 await ShowDialog("Visit Closed",
@@ -241,7 +225,35 @@ namespace ERManagementSystem.ViewModels
             }
         }
 
-        // Task 6.9 helper — WinUI 3 ContentDialog
+        private async Task LogTransferAsync(int visitId, string status)
+        {
+            await transferLogProxy.CreateAsync(new Transfer_Log
+            {
+                Visit_ID = visitId,
+                Transfer_Time = DateTime.Now,
+                Target_System = TargetSystem,
+                Status = status
+            });
+        }
+
+        private async Task MarkPatientAsTransferredAsync(int visitId)
+        {
+            ER_Visit? visit = await erVisitProxy.GetByIdAsync(visitId);
+            if (visit == null)
+            {
+                return;
+            }
+
+            var patient = await patientRepository.GetByIdAsync(visit.Patient_ID);
+            if (patient == null)
+            {
+                return;
+            }
+
+            patient.Transferred = true;
+            await patientRepository.UpdateAsync(patient);
+        }
+
         private async Task ShowDialog(string title, string message)
         {
             if (XamlRoot == null)
@@ -260,7 +272,6 @@ namespace ERManagementSystem.ViewModels
         }
     }
 
-    // VisitSummary — lightweight helper for the eligible visits DataGrid
     public partial class VisitSummary : ObservableObject
     {
         [ObservableProperty]

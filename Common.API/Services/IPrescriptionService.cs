@@ -3,9 +3,9 @@ using Common.Data.Integration;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace HospitalManagement.Service;
+namespace Common.API.Service;
 
-internal interface IPrescriptionService
+public interface IPrescriptionService
 {
     public Task<List<Prescription>> ApplyFilterAsync(PrescriptionFilter filter);
 

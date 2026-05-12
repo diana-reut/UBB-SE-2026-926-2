@@ -16,10 +16,31 @@ builder.Services.AddDbContext<EFHospitalDbContext>(options =>
 
 builder.Services.AddScoped<IAllergyRepository, AllergyRepository>();
 builder.Services.AddScoped<IAllergyService, AllergyService>();
-builder.Services.AddScoped<IStatisticsService,StatisticsService>();
-builder.Services.AddScoped<IPatientRepository, PatientRepository>();
+builder.Services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
+builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
+builder.Services.AddScoped<IERVisitRepository, ERVisitRepository>();
+builder.Services.AddScoped<IERVisitService, ERVisitService>();
+builder.Services.AddScoped<IERRoomRepository, ERRoomRepository>();
+builder.Services.AddScoped<IERRoomService, ERRoomService>();
+builder.Services.AddScoped<ITriageRepository, TriageRepository>();
+builder.Services.AddScoped<ITriageService, TriageService>();
+builder.Services.AddScoped<ITriageParametersRepository, TriageParametersRepository>();
+builder.Services.AddScoped<ITriageParametersService, TriageParametersService>();
+builder.Services.AddScoped<IExaminationRepository, ExaminationRepository>();
+builder.Services.AddScoped<IExaminationService, ExaminationService>();
+builder.Services.AddScoped<ITransferLogRepository, TransferLogRepository>();
+builder.Services.AddScoped<ITransferLogService, TransferLogService>();
+builder.Services.AddScoped<ITransplantRepository, TransplantRepository>();
+builder.Services.AddScoped<ITransplantsService, TransplantsService>();
+
+
+builder.Services.AddScoped<IMedicalHistoryRepository, MedicalHistoryRepository>();
 builder.Services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
 builder.Services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
+builder.Services.AddScoped<ITransplantRepository, TransplantRepository>();
+
+builder.Services.AddScoped<IBillingService, BillingService>();
+builder.Services.AddScoped<IAddictDetectionService, AddictDetectionService>();
 
 var app = builder.Build();
 

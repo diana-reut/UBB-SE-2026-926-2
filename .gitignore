@@ -11,6 +11,8 @@
 *.sln.docstates
 *.env
 **/config/appsettings.local.json
+**/appsettings.local.json
+
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -431,3 +433,5 @@ FodyWeavers.xsd
 *.msp
 
 *.vs
+/Common.Data/HospitalDbContextFactory.cs
+/Common.API/appsettings.json

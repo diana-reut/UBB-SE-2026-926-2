@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using HospitalManagement.Proxy.BillingProxy;
 
 namespace HospitalManagement.ViewModel;
 
@@ -21,7 +22,7 @@ internal class PatientViewModel : INotifyPropertyChanged
 {
     private readonly IPatientService _patientService;
     private readonly IExportService? _exportService;
-    private readonly IBillingService? _billingService;
+    private readonly IBillingProxy? _billingProxy;
 
     private Patient? _selectedPatient;
 
@@ -91,6 +92,7 @@ internal class PatientViewModel : INotifyPropertyChanged
         {
             _selectedMedicalRecord = value;
             OnPropertyChanged();
+            RefreshCommandStates();
             if (_selectedMedicalRecord is not null)
             {
                 _ = LoadBillingForRecordAsync(_selectedMedicalRecord);
@@ -160,6 +162,7 @@ internal class PatientViewModel : INotifyPropertyChanged
         {
             _discountApplied = value;
             OnPropertyChanged();
+            RefreshCommandStates();
         }
     }
 
@@ -177,22 +180,19 @@ internal class PatientViewModel : INotifyPropertyChanged
 
     public Func<Prescription, Task>? OpenPrescriptionDialogAction { get; set; }
 
-    public PatientViewModel(IPatientService patientService, IExportService exportService, IBillingService billingService)
+    public Action<string, string>? ShowAlertAction { get; set; }
+
+    public PatientViewModel(IPatientService patientService, IExportService exportService, IBillingProxy billingProxy)
     {
         _patientService = patientService;
         _exportService = exportService;
-        _billingService = billingService;
+        _billingProxy = billingProxy;
         MedicalRecords = [];
         Allergies = [];
         BackCommand = new RelayCommand(GoBack);
         ExportRecordCommand = new AsyncRelayCommand(ExportSelectedRecordAsync, CanExportRecord);
         ApplyDiscountCommand = new AsyncRelayCommand(ApplyDiscountAsync, CanApplyDiscount);
         ViewPrescriptionCommand = new AsyncRelayCommand(ViewSelectedPrescriptionAsync, CanViewPrescription);
-    }
-
-    public void LoadFullPatientProfile(int id)
-    {
-        LoadFullPatientProfileAsync(id).GetAwaiter().GetResult();
     }
 
     public async Task LoadFullPatientProfileAsync(int id)
@@ -215,16 +215,16 @@ internal class PatientViewModel : INotifyPropertyChanged
         }
     }
 
-    public void HandleRouletteResult(int discount, decimal finalPrice)
+    public async Task HandleRouletteResultAsync(int discount, decimal finalPrice)
     {
-        if (SelectedMedicalRecord is null || _billingService is null)
+        if (SelectedMedicalRecord is null || _billingProxy is null)
         {
             return;
         }
 
         try
         {
-            decimal calculatedFinalPrice = _billingService.ApplyDiscount(BasePrice, discount);
+            decimal calculatedFinalPrice = await _billingProxy.ApplyDiscountAsync(BasePrice, discount);
 
             SelectedMedicalRecord.DiscountApplied = discount;
             SelectedMedicalRecord.FinalPrice = calculatedFinalPrice;
@@ -241,21 +241,16 @@ internal class PatientViewModel : INotifyPropertyChanged
         }
     }
 
-    private void LoadBillingForRecord(MedicalRecord record)
-    {
-        LoadBillingForRecordAsync(record).GetAwaiter().GetResult();
-    }
-
     private async Task LoadBillingForRecordAsync(MedicalRecord record)
     {
-        if (_billingService is null || SelectedPatient is null)
+        if (_billingProxy is null || SelectedPatient is null)
         {
             return;
         }
 
         try
         {
-            BasePrice = await _billingService.ComputeBasePriceAsync(SelectedPatient.Id, record.Id);
+            BasePrice = await _billingProxy.ComputeBasePriceAsync(SelectedPatient.Id, record.Id);
             FinalPrice = record.FinalPrice > 0 ? record.FinalPrice : BasePrice;
             DiscountApplied = record.DiscountApplied.HasValue;
         }
@@ -265,10 +260,6 @@ internal class PatientViewModel : INotifyPropertyChanged
         }
     }
 
-    private void LoadMedicalRecords()
-    {
-        LoadMedicalRecordsAsync().GetAwaiter().GetResult();
-    }
 
     private async Task LoadMedicalRecordsAsync()
     {
@@ -318,7 +309,7 @@ internal class PatientViewModel : INotifyPropertyChanged
 
     private bool CanApplyDiscount()
     {
-        return SelectedMedicalRecord is not null && !DiscountApplied && _billingService is not null;
+        return SelectedMedicalRecord is not null && !DiscountApplied && _billingProxy is not null;
     }
 
     private async Task ViewSelectedPrescriptionAsync()
@@ -333,7 +324,7 @@ internal class PatientViewModel : INotifyPropertyChanged
             Prescription? prescription = await _patientService.GetPrescriptionByRecordIdAsync(SelectedMedicalRecord.Id);
             if (prescription is null)
             {
-                System.Diagnostics.Debug.WriteLine($"No prescription found for record {SelectedMedicalRecord.Id}");
+                ShowAlertAction?.Invoke("No Prescription", "This consultation does not have an associated prescription.");
                 return;
             }
 
@@ -344,13 +335,14 @@ internal class PatientViewModel : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
+            ShowAlertAction?.Invoke("Prescription Error", ex.Message);
             System.Diagnostics.Debug.WriteLine($"Error loading prescription: {ex.Message}");
         }
     }
 
     private async Task ApplyDiscountAsync()
     {
-        if (SelectedMedicalRecord is null || _billingService is null)
+        if (SelectedMedicalRecord is null || _billingProxy is null)
         {
             return;
         }
@@ -384,5 +376,23 @@ internal class PatientViewModel : INotifyPropertyChanged
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    private void RefreshCommandStates()
+    {
+        if (ExportRecordCommand is AsyncRelayCommand exportCommand)
+        {
+            exportCommand.NotifyCanExecuteChanged();
+        }
+
+        if (ViewPrescriptionCommand is AsyncRelayCommand viewPrescriptionCommand)
+        {
+            viewPrescriptionCommand.NotifyCanExecuteChanged();
+        }
+
+        if (ApplyDiscountCommand is AsyncRelayCommand applyDiscountCommand)
+        {
+            applyDiscountCommand.NotifyCanExecuteChanged();
+        }
     }
 }

@@ -39,7 +39,7 @@ namespace ERManagementSystem.Views
             {
                 ViewModel.XamlRoot = XamlRoot;
             };
-            ViewModel.LoadData();
+            _ = ViewModel.LoadData();
         }
     }
 }
