@@ -307,9 +307,11 @@ public class PatientController : ControllerBase
                 LastName = dto.LastName,
                 Cnp = dto.Cnp,
                 Dob = dto.Dob,
+                Dod = dto.Dod,
                 Sex = dto.Sex,
                 PhoneNo = dto.PhoneNo,
                 EmergencyContact = dto.EmergencyContact,
+                IsArchived = dto.IsArchived,
                 IsDonor = dto.IsDonor,
                 Transferred = dto.Transferred,
             };

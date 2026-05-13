@@ -510,27 +510,12 @@ internal partial class AdminViewModel : ObservableObject
             return;
         }
 
-        UpdatePatientDto updatedPatientVersion = new()
-        {
-            FirstName = SelectedPatient.FirstName,
-            LastName = SelectedPatient.LastName,
-            Cnp = SelectedPatient.Cnp,
-            Dob = SelectedPatient.Dob,
-            PhoneNo = SelectedPatient.PhoneNo
-                .Replace(" ", "", StringComparison.Ordinal)
-                .Replace("-", "", StringComparison.Ordinal)
-                .Replace("+40", "0", StringComparison.Ordinal),
-            EmergencyContact = SelectedPatient.EmergencyContact
-                .Replace(" ", "", StringComparison.Ordinal)
-                .Replace("-", "", StringComparison.Ordinal)
-                .Replace("+40", "0", StringComparison.Ordinal),
-            Dod = chosenDate ?? default,
-            IsArchived = true,
-        };
-
         try
         {
-            await _patientService.UpdatePatientAsync(SelectedPatient.Id, updatedPatientVersion);
+            await _patientService.ArchiveAsDeceasedAsync(SelectedPatient.Id, new ArchiveAsDeceasedDto
+            {
+                DeathDate = chosenDate.Value,
+            });
             await LoadAllPatientsAsync();
             await LoadArchivedPatientsAsync();
             OnPropertyChanged(nameof(IsNotDeceased));
@@ -577,6 +562,7 @@ internal partial class AdminViewModel : ObservableObject
                 LastName = SelectedPatient.LastName,
                 Cnp = SelectedPatient.Cnp,
                 Dob = SelectedPatient.Dob,
+                Dod = SelectedPatient.Dod ?? default,
                 Sex = SelectedPatient.Sex,
                 PhoneNo = SelectedPatient.PhoneNo
                     .Replace(" ", "", StringComparison.Ordinal)
@@ -586,6 +572,7 @@ internal partial class AdminViewModel : ObservableObject
                     .Replace("+40", "0", StringComparison.Ordinal),
                 IsDonor = true,
                 IsArchived = SelectedPatient.IsArchived,
+                Transferred = SelectedPatient.Transferred,
             };
 
             await _patientService.UpdatePatientAsync(SelectedPatient.Id, dto);
