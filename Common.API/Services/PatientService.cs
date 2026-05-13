@@ -8,6 +8,8 @@ using Common.Data.Entity.Enums;
 using Common.Data.Entity;
 using Common.Data.Integration;
 using Common.Data.Repository;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace Common.API.Services;
 
@@ -77,7 +79,20 @@ public class PatientService : IPatientService
             throw new ArgumentException("Identity Mismatch: The provided CNP does not align with the selected Sex or Date of Birth.");
         }
 
-        await _patientRepo.AddAsync(data);
+        if (await _patientRepo.ExistsAsync(data.Cnp))
+        {
+            throw new ArgumentException("A patient with this CNP already exists.");
+        }
+
+        try
+        {
+            await _patientRepo.AddAsync(data);
+        }
+        catch (DbUpdateException ex) when (IsDuplicateCnpException(ex))
+        {
+            throw new ArgumentException("A patient with this CNP already exists.");
+        }
+
         return data;
     }
 
@@ -98,7 +113,14 @@ public class PatientService : IPatientService
             throw new ArgumentException("Validation Error: Phone number must be exactly 10 digits and contain no letters.");
         }
 
-        await _patientRepo.UpdateAsync(data);
+        try
+        {
+            await _patientRepo.UpdateAsync(data);
+        }
+        catch (DbUpdateException ex) when (IsDuplicateCnpException(ex))
+        {
+            throw new ArgumentException("A patient with this CNP already exists.");
+        }
     }
 
     public async Task ArchivePatientAsync(Patient patient)
@@ -276,5 +298,12 @@ public class PatientService : IPatientService
             throw new InvalidOperationException("PrescriptionRepository is not available.");
 
         return _prescriptionRepo.GetByRecordIdAsync(recordId);
+    }
+
+    private static bool IsDuplicateCnpException(DbUpdateException exception)
+    {
+        return exception.InnerException is SqlException sqlException
+            && (sqlException.Number == 2601 || sqlException.Number == 2627)
+            && sqlException.Message.Contains("IX_Patient_CNP", StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -314,20 +314,6 @@ internal partial class AdminViewModel : ObservableObject
 
         try
         {
-            var dto = new CreatePatientDto
-            {
-                FirstName = patient.FirstName,
-                LastName = patient.LastName,
-                Cnp = patient.Cnp,
-                Dob = patient.Dob,
-                Sex = patient.Sex,
-                PhoneNo = patient.PhoneNo,
-                EmergencyContact = patient.EmergencyContact,
-                IsDonor = patient.IsDonor,
-            };
-
-            patient = await _patientService.CreatePatientAsync(dto);
-
             patient.PhoneNo = FormatPhoneNumber(patient.PhoneNo);
             patient.EmergencyContact = FormatPhoneNumber(patient.EmergencyContact);
             Patients.Add(patient);
