@@ -1,6 +1,7 @@
 using System.Net;
 using Common.API.Services;
 using Common.Data.Entity;
+using Common.Data.Entity.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Common.API.Controllers;

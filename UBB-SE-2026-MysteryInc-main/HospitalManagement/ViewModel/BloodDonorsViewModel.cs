@@ -1,6 +1,5 @@
 ﻿using Common.Data.Entity;
 using HospitalManagement.Proxy.PatientProxy;
-using HospitalManagement.Service;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -40,7 +39,7 @@ internal class BloodDonorsViewModel : INotifyPropertyChanged
     public BloodDonorsViewModel(IBloodCompatibilityProxy bloodProxy, IPatientProxy patientService)
     {
         _bloodProxy = bloodProxy ?? throw new ArgumentNullException(nameof(bloodProxy));
-        _patientService = patientService ?? throw new ArgumentNullException(nameof(patientService));
+        _patientProxy = patientService ?? throw new ArgumentNullException(nameof(patientService));
     }
 
     public void LoadCompatibleDonors(int patientId)
@@ -53,7 +52,7 @@ internal class BloodDonorsViewModel : INotifyPropertyChanged
         StatusMessage = string.Empty;
         Donors.Clear();
 
-        Patient? recipient = await _patientService.GetPatientDetailsAsync(patientId);
+        Patient? recipient = await _patientProxy.GetPatientDetailsAsync(patientId);
         if (recipient?.MedicalHistory is null
             || recipient.MedicalHistory.BloodType is null
             || recipient.MedicalHistory.Rh is null)

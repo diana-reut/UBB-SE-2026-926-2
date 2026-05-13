@@ -77,7 +77,7 @@ public class BloodCompatibilityService : IBloodCompatibilityService
             .ToList();
     }
 
-    private int CalculateScore(Patient donor, Patient recipient)
+    public int CalculateScore(Patient donor, Patient recipient)
     {
         int total = 0;
 
@@ -100,7 +100,7 @@ public class BloodCompatibilityService : IBloodCompatibilityService
         return total;
     }
 
-    private bool IsBloodMatch(BloodType? donor, BloodType receiver)
+    public bool IsBloodMatch(BloodType? donor, BloodType receiver)
     {
         if (donor is null) return false;
 
@@ -114,7 +114,7 @@ public class BloodCompatibilityService : IBloodCompatibilityService
         };
     }
 
-    private bool IsRhMatch(Rh? donor, Rh receiver)
+    public bool IsRhMatch(Rh? donor, Rh receiver)
     {
         if (donor is null) return false;
         return receiver != Rh.Negative || donor == Rh.Negative;

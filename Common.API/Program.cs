@@ -2,7 +2,6 @@ using Common.API.Service;
 using Common.API.Services;
 using Common.Data.Data;
 using Common.Data.Repository;
-using Common.Data.Service;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -51,8 +50,6 @@ builder.Services.AddScoped<IPatientService, PatientService>();
 
 builder.Services.AddScoped<IMedicalHistoryRepository, MedicalHistoryRepository>();
 builder.Services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
-
-builder.Services.AddScoped<IBloodCompatibilityService, BloodCompatibilityService>();
 
 builder.Services.AddScoped<IBillingService, BillingService>();
 

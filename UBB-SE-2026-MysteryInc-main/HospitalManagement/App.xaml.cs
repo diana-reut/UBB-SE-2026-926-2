@@ -18,7 +18,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Xaml;
 using ERManagementSystem.Helpers;
 using Microsoft.Extensions.Logging;
-using HospitalManagement.Proxy.AllergyProxy;
 using HospitalManagement.Proxy.TransplantProxy;
 using HospitalManagement.Proxy.PatientProxy;
 using HospitalManagement.Proxy.BloodCompatibilityProxy;
@@ -97,8 +96,6 @@ public partial class App : Application
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.Timeout = TimeSpan.FromSeconds(30);
         });
-        _ = services.AddTransient<IPatientService, PatientService>();
-        //_ = services.AddTransient<ITransplantService, TransplantService>();
         _ = services.AddTransient<IExportService, ExportService>();
         _ = services.AddTransient<IImportService, ImportService>();
         _ = services.AddTransient<IStatisticsService, StatisticsService>();
