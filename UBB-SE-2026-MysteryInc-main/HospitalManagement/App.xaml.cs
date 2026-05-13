@@ -84,7 +84,6 @@ public partial class App : Application
         _ = services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
 
         _ = services.AddTransient<IBloodCompatibilityService, BloodCompatibilityService>();
-        _ = services.AddTransient<ITransplantService, TransplantService>();
         _ = services.AddTransient<IExportService, ExportService>();
         _ = services.AddTransient<IImportService, ImportService>();
         _ = services.AddTransient<IStatisticsService, StatisticsService>();

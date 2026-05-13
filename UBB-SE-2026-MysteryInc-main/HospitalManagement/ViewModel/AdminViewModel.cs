@@ -14,6 +14,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using HospitalManagement.Proxy.PatientProxy;
+using HospitalManagement.Proxy.TransplantProxy;
 using Common.Data.Entity.DTOs;
 
 namespace HospitalManagement.ViewModel;
@@ -24,7 +25,7 @@ internal partial class AdminViewModel : ObservableObject
 
     private readonly IPatientProxy _patientService;
     private readonly IGhostService _ghostService;
-    private readonly ITransplantService _transplantService;
+    private readonly ITransplantProxy _transplantProxy;
     private readonly IDialogService _dialogService;
     private PatientView? _patientDetailsWindow;
     private bool _isOpeningPatientDetails;
@@ -159,7 +160,7 @@ internal partial class AdminViewModel : ObservableObject
     {
         _ghostService = ServiceRegistry.Services.GetRequiredService<IGhostService>();
         _patientService = ServiceRegistry.Services.GetRequiredService<IPatientProxy>();
-        _transplantService = ServiceRegistry.Services.GetRequiredService<ITransplantService>();
+        _transplantProxy = ServiceRegistry.Services.GetRequiredService<ITransplantProxy>();
         _dialogService = ServiceRegistry.Services.GetRequiredService<IDialogService>();
 
         Patients = [];
@@ -248,7 +249,7 @@ internal partial class AdminViewModel : ObservableObject
     {
         try
         {
-            await _transplantService.AssignDonorAsync(transplantId, donorId, score);
+            await _transplantProxy.AssignDonorAsync(transplantId, donorId, score);
             await _dialogService.ShowAlertAsync($"Successfully assigned organ from donor {donorName}.");
         }
         catch (Exception ex)

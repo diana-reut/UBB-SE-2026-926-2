@@ -31,7 +31,19 @@ public abstract class ProxyBase
         var requestUri = new Uri(uri, UriKind.RelativeOrAbsolute);
         using HttpResponseMessage response = await HttpClient.PostAsJsonAsync(requestUri, data, Options);
         HttpResponseMessage _ = response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<TResponse>(Options);
+
+        if (response.Content.Headers.ContentLength == 0)
+        {
+            return default;
+        }
+
+        string responseBody = await response.Content.ReadAsStringAsync();
+        if (string.IsNullOrWhiteSpace(responseBody))
+        {
+            return default;
+        }
+
+        return JsonSerializer.Deserialize<TResponse>(responseBody, Options);
     }
 
     // PUT: Update data
