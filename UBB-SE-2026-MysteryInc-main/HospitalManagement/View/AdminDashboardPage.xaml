@@ -56,7 +56,7 @@
             <StackPanel Grid.RowSpan="2" Visibility="{Binding IsActiveMode, Converter={StaticResource BoolToVis}}">
                 <Border Background="#2C3A4A" Padding="15" CornerRadius="10" Margin="0,0,0,15">
                     <StackPanel Orientation="Horizontal" Spacing="15">
-                        <TextBox PlaceholderText="Search by Name or CNP..." Width="250" Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox PlaceholderText="Search by Name or CNP..." Width="250" Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" CornerRadius="6"/>
                         <Button Content="Add New Patient" Command="{Binding AddPatientCommand}" CornerRadius="6"/>
                         <Button Content="I saw a ghost!" Command="{Binding GhostSightingCommand}" Background="#FFE779" Foreground="#1E2A38" FontWeight="Bold" CornerRadius="4" Padding="12,8"/>
                         <Button Content="" FontFamily="Segoe MDL2 Assets" Background="Transparent" VerticalAlignment="Center">
