@@ -21,6 +21,7 @@ using Microsoft.Extensions.Logging;
 using HospitalManagement.Proxy.AllergyProxy;
 using HospitalManagement.Proxy.TransplantProxy;
 using HospitalManagement.Proxy.PatientProxy;
+using HospitalManagement.Proxy.BloodCompatibilityProxy;
 
 using HospitalManagement.Proxy.AllergyProxy;
 using HospitalManagement.Proxy.PrescriptionProxy;
@@ -83,7 +84,21 @@ public partial class App : Application
         _ = services.AddScoped<ITransplantRepository, TransplantRepository>();
         _ = services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
 
-        _ = services.AddTransient<IBloodCompatibilityService, BloodCompatibilityService>();
+        _ = services.AddHttpClient<IBloodCompatibilityProxy, BloodCompatibilityProxy>((client) =>
+        {
+            var uriString = AppConfiguration["ApiSettings:BaseUri"];
+
+            if (string.IsNullOrEmpty(uriString))
+            {
+                throw new InvalidOperationException("BaseUri is missing from appsettings.local.json");
+            }
+
+            client.BaseAddress = new Uri(uriString);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+        _ = services.AddTransient<IPatientService, PatientService>();
+        //_ = services.AddTransient<ITransplantService, TransplantService>();
         _ = services.AddTransient<IExportService, ExportService>();
         _ = services.AddTransient<IImportService, ImportService>();
         _ = services.AddTransient<IStatisticsService, StatisticsService>();

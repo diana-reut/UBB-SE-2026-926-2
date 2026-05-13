@@ -58,6 +58,8 @@ builder.Services.AddScoped<IBillingService, BillingService>();
 
 builder.Services.AddScoped<IAddictDetectionService, AddictDetectionService>();
 
+builder.Services.AddScoped<IBloodCompatibilityService, BloodCompatibilityService>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
