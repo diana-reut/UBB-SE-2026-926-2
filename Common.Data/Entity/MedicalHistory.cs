@@ -34,15 +34,18 @@ public class MedicalHistory
     [NotMapped]
     public List<(Allergy Allergy, string SeverityLevel)> Allergies
     {
-        get => [.. (PatientAllergies ?? []).Select(pa => (pa.Allergy, pa.SeverityLevel))];
+        get => [.. (PatientAllergies ?? [])
+            .Where(pa => pa?.Allergy is not null)
+            .Select(pa => (pa.Allergy, pa.SeverityLevel))];
         set
         {
             PatientAllergies = value?
+                .Where(item => item.Allergy is not null)
                 .Select(item => new PatientAllergy
                 {
                     Allergy = item.Allergy,
                     AllergyId = item.Allergy.Id,
-                    SeverityLevel = item.SeverityLevel,
+                    SeverityLevel = item.SeverityLevel ?? string.Empty,
                     MedicalHistoryId = Id,
                 })
                 .ToList() ?? [];
