@@ -314,11 +314,15 @@ internal partial class AdminViewModel : ObservableObject
 
         try
         {
+            // Save to DB here
+            await Task.Run(() => _patientService.CreatePatient(patient));
+
             patient.PhoneNo = FormatPhoneNumber(patient.PhoneNo);
             patient.EmergencyContact = FormatPhoneNumber(patient.EmergencyContact);
             Patients.Add(patient);
 
             MedicalHistoryEntry entry = await _dialogService.ShowMedicalHistoryAsync();
+            // patient.Id is now set because CreatePatient populated it via EF
             await ProcessMedicalHistoryResultAsync(patient.Id, entry.History, entry.WasSkipped);
             await _dialogService.ShowAlertAsync("Patient added successfully.");
         }

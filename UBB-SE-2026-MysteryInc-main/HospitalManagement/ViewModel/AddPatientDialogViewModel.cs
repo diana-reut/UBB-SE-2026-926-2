@@ -39,7 +39,7 @@ internal class AddPatientDialogViewModel
     }
 
     public (bool Success, string? ErrorMessage, Patient? Patient) SubmitPatient(
-        string firstName, string lastName, string sex, DateTimeOffset? dob, string cnp, string phone, string emergencyContact)
+    string firstName, string lastName, string sex, DateTimeOffset? dob, string cnp, string phone, string emergencyContact)
     {
         return SubmitPatientAsync(firstName, lastName, sex, dob, cnp, phone, emergencyContact).GetAwaiter().GetResult();
     }

@@ -1,37 +1,33 @@
-using System;
-using System.IO;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using ERManagementSystem.Infrastructure;
+using Common.API.Services;
 using Common.Data.Data;
-using HospitalManagement.Infrastructure;
-using HospitalManagement.Integration.Export;
-using HospitalManagement.Integration.External;
 using Common.Data.Repository;
-using HospitalManagement.Service;
-using HospitalManagement.View;
-using HospitalManagement.View.DialogServiceAdmin;
-using HospitalManagement.ViewModel;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.UI.Xaml;
 using ERManagementSystem.Helpers;
-using Microsoft.Extensions.Logging;
-using HospitalManagement.Proxy.TransplantProxy;
-using HospitalManagement.Proxy.PatientProxy;
-using HospitalManagement.Proxy.BloodCompatibilityProxy;
-
-using HospitalManagement.Proxy.AllergyProxy;
-using HospitalManagement.Proxy.PrescriptionProxy;
+using ERManagementSystem.Infrastructure;
 using ERManagementSystem.Proxy.ERRoomProxy;
 using ERManagementSystem.Proxy.ERVisitProxy;
 using ERManagementSystem.Proxy.ExaminationProxy;
 using ERManagementSystem.Proxy.TransferLogProxy;
+using ERManagementSystem.Proxy.TransplantsProxy;
 using ERManagementSystem.Proxy.TriageParametersProxy;
 using ERManagementSystem.Proxy.TriageProxy;
-using HospitalManagement.Proxy.BillingProxy;
+using HospitalManagement.Infrastructure;
+using HospitalManagement.Integration.Export;
+using HospitalManagement.Integration.External;
 using HospitalManagement.Proxy.AddictDetectionProxy;
+using HospitalManagement.Proxy.AllergyProxy;
+using HospitalManagement.Proxy.BillingProxy;
+using HospitalManagement.Proxy.PrescriptionProxy;
+using HospitalManagement.Proxy.StatisticsProxy;
+using HospitalManagement.Service;
+using HospitalManagement.View;
+using HospitalManagement.View.DialogServiceAdmin;
+using HospitalManagement.ViewModel;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.UI.Xaml;
+
 
 [assembly: InternalsVisibleTo("HospitalManagementTest")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
@@ -98,8 +94,20 @@ public partial class App : Application
         });
         _ = services.AddTransient<IExportService, ExportService>();
         _ = services.AddTransient<IImportService, ImportService>();
-        _ = services.AddTransient<IStatisticsService, StatisticsService>();
         _ = services.AddSingleton<IGhostService, GhostService>();
+        _ = services.AddHttpClient<IStatisticsProxy, StatisticsProxy>((client) =>
+        {
+            var uriString = AppConfiguration["ApiSettings:BaseUri"];
+
+            if (string.IsNullOrEmpty(uriString))
+            {
+                throw new InvalidOperationException("BaseUri is missing from appsettings.local.json");
+            }
+
+            client.BaseAddress = new Uri(uriString);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
 
         _ = services.AddHttpClient<IPrescriptionProxy, PrescriptionProxy>((client) =>
         {
@@ -311,6 +319,7 @@ public partial class App : Application
         _ = services.AddTransient<PharmacistDashboardPage>();
 
         _ = services.AddERManagementSystem();
+
 
         return services.BuildServiceProvider();
     }

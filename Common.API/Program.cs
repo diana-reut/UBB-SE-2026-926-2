@@ -54,6 +54,8 @@ builder.Services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
 builder.Services.AddScoped<IBillingService, BillingService>();
 
 builder.Services.AddScoped<IAddictDetectionService, AddictDetectionService>();
+builder.Services.AddScoped<IStatisticsService, StatisticsService>();
+builder.Services.AddScoped<IPatientRepository, PatientRepository>();
 
 builder.Services.AddScoped<IBloodCompatibilityService, BloodCompatibilityService>();
 

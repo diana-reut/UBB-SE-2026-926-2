@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 using Common.Data.Repository;
 using Common.Data.Entity;
 
-namespace HospitalManagement.Service;
+namespace Common.API.Services;
 
-internal class StatisticsService : IStatisticsService
+public class StatisticsService : IStatisticsService
 {
     private readonly IPatientRepository _patientRepo;
     private readonly IMedicalRecordRepository _recordRepo;
@@ -19,19 +19,9 @@ internal class StatisticsService : IStatisticsService
         _prescriptionRepo = prescriptionRepo;
     }
 
-    public Dictionary<string, int> GetPatientsByBloodType()
-    {
-        return BuildPatientsByBloodType(_patientRepo.GetAllAsync(include_archived: true).GetAwaiter().GetResult());
-    }
-
     public async Task<Dictionary<string, int>> GetPatientsByBloodTypeAsync()
     {
         return BuildPatientsByBloodType(await _patientRepo.GetAllAsync(include_archived: true));
-    }
-
-    public Dictionary<string, int> GetPatientsByRh()
-    {
-        return BuildPatientsByRh(_patientRepo.GetAllAsync(include_archived: true).GetAwaiter().GetResult());
     }
 
     public async Task<Dictionary<string, int>> GetPatientsByRhAsync()
@@ -39,60 +29,33 @@ internal class StatisticsService : IStatisticsService
         return BuildPatientsByRh(await _patientRepo.GetAllAsync(include_archived: true));
     }
 
-    public Dictionary<string, int> GetPatientGenderDistribution()
-    {
-        return BuildPatientGenderDistribution(_patientRepo.GetAllAsync(include_archived: true).GetAwaiter().GetResult());
-    }
 
     public async Task<Dictionary<string, int>> GetPatientGenderDistributionAsync()
     {
         return BuildPatientGenderDistribution(await _patientRepo.GetAllAsync(include_archived: true));
     }
 
-    public Dictionary<string, int> GetConsultationDistribution()
-    {
-        return BuildConsultationDistribution(_recordRepo.GetAllAsync().GetAwaiter().GetResult());
-    }
 
     public async Task<Dictionary<string, int>> GetConsultationDistributionAsync()
     {
         return BuildConsultationDistribution(await _recordRepo.GetAllAsync());
     }
 
-    public Dictionary<string, int> GetTopDiagnoses()
-    {
-        return BuildTopDiagnoses(_recordRepo.GetAllAsync().GetAwaiter().GetResult());
-    }
 
     public async Task<Dictionary<string, int>> GetTopDiagnosesAsync()
     {
         return BuildTopDiagnoses(await _recordRepo.GetAllAsync());
     }
 
-    public Dictionary<string, int> GetAgeDistribution()
-    {
-        return BuildAgeDistribution(_patientRepo.GetAllAsync(include_archived: true).GetAwaiter().GetResult());
-    }
-
     public async Task<Dictionary<string, int>> GetAgeDistributionAsync()
     {
         return BuildAgeDistribution(await _patientRepo.GetAllAsync(include_archived: true));
     }
-
-    public Dictionary<string, int> GetMostPrescribedMeds()
-    {
-        return BuildMostPrescribedMeds(_prescriptionRepo.GetAllAsync().GetAwaiter().GetResult());
-    }
-
     public async Task<Dictionary<string, int>> GetMostPrescribedMedsAsync()
     {
         return BuildMostPrescribedMeds(await _prescriptionRepo.GetAllAsync());
     }
 
-    public Dictionary<string, int> GetActiveVsArchivedRatio()
-    {
-        return BuildActiveVsArchivedRatio(_patientRepo.GetAllAsync(include_archived: true).GetAwaiter().GetResult());
-    }
 
     public async Task<Dictionary<string, int>> GetActiveVsArchivedRatioAsync()
     {
@@ -121,7 +84,8 @@ internal class StatisticsService : IStatisticsService
 
     private static Dictionary<string, int> BuildConsultationDistribution(IEnumerable<MedicalRecord> records)
     {
-        return records.GroupBy(r => r.SourceType.ToString())
+        return records
+            .GroupBy(r => r.SourceType.ToString())
             .ToDictionary(g => g.Key, g => g.Count());
     }
 
