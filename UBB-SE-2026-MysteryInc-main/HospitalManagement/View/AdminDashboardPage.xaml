@@ -62,11 +62,11 @@
                         <Button Content="" FontFamily="Segoe MDL2 Assets" Background="Transparent" VerticalAlignment="Center">
                             <Button.Flyout>
                                 <Flyout Placement="BottomEdgeAlignedRight">
-                                    <StackPanel Width="220" Spacing="10" Padding="10">
+                                    <StackPanel Width="300" Spacing="10" Padding="10">
                                         <TextBlock Text="Advanced Filters" FontWeight="Bold" Margin="0,0,0,5"/>
-                                        <NumberBox Header="Min Age" Value="{Binding MinAge, Mode=TwoWay}" SpinButtonPlacementMode="Compact" />
-                                        <NumberBox Header="Max Age" Value="{Binding MaxAge, Mode=TwoWay}" SpinButtonPlacementMode="Compact" />
-                                        <ComboBox Header="Sex" HorizontalAlignment="Stretch" SelectedItem="{Binding SelectedSexFilter, Mode=TwoWay}">
+                                        <NumberBox Header="Min Age" Value="{Binding MinAge, Mode=TwoWay}" SpinButtonPlacementMode="Hidden" HorizontalAlignment="Stretch"/>
+                                        <NumberBox Header="Max Age" Value="{Binding MaxAge, Mode=TwoWay}" SpinButtonPlacementMode="Hidden" HorizontalAlignment="Stretch"/>
+                                        <ComboBox Header="Sex" HorizontalAlignment="Stretch" Width="280" SelectedItem="{Binding SelectedSexFilter, Mode=TwoWay}">
                                             <ComboBoxItem Content="M"/>
                                             <ComboBoxItem Content="F"/>
                                         </ComboBox>
