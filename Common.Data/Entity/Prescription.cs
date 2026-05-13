@@ -8,6 +8,8 @@ namespace Common.Data.Entity;
 
 public class Prescription
 {
+    private string? _patientName;
+
     [Key]
     public int Id { get; set; }
 
@@ -27,11 +29,22 @@ public class Prescription
     public DateTime Date { get; set; }
 
     [NotMapped]
-    public string PatientName =>
-        MedicalRecord?.History?.Patient == null
-        ? ""
-        : $"{MedicalRecord.History.Patient.FirstName} " +
-          $"{MedicalRecord.History.Patient.LastName}";
+    public string PatientName
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(_patientName))
+            {
+                return _patientName;
+            }
+
+            return MedicalRecord?.History?.Patient == null
+                ? string.Empty
+                : $"{MedicalRecord.History.Patient.FirstName} {MedicalRecord.History.Patient.LastName}";
+        }
+
+        set => _patientName = value;
+    }
 
     [NotMapped]
     public string DoctorName { get; set; } = "Unknown";

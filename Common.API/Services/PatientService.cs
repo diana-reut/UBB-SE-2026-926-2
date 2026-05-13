@@ -1,18 +1,29 @@
-using Common.Data.Entity;
-using Common.Data.Entity.Enums;
-using Common.Data.Integration;
-using Common.Data.Repository;
-using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System;
+using Common.Data.Entity.Enums;
+using Common.Data.Entity;
+using Common.Data.Integration;
+using Common.Data.Repository;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
-namespace HospitalManagement.Service;
+namespace Common.API.Services;
 
-internal class PatientService : IPatientService
+public class PatientService : IPatientService
 {
+    private const int CnpLength = 13;
+    private const int CnpDobStartIndex = 1;
+    private const int CnpDobLength = 6;
+    private const int CnpFirstDigitIndex = 0;
+    private const int PhoneMinDigits = 10;
+    private const int HighRiskErVisitThreshold = 10;
+    private const int HighRiskLookbackMonths = -3;
+    private const int MinValidId = 1;
+
     private readonly IPatientRepository _patientRepo;
     private readonly IMedicalHistoryRepository _historyRepo;
     private readonly IMedicalRecordRepository _recordRepo;
@@ -32,12 +43,12 @@ internal class PatientService : IPatientService
 
     public bool ValidateCNP(string cnp, Sex sex, DateTime dob)
     {
-        if (string.IsNullOrWhiteSpace(cnp) || cnp.Length != 13 || !cnp.All(char.IsDigit))
+        if (string.IsNullOrWhiteSpace(cnp) || cnp.Length != CnpLength || !cnp.All(char.IsDigit))
         {
             return false;
         }
 
-        int firstDigit = cnp[0] - '0';
+        int firstDigit = cnp[CnpFirstDigitIndex] - '0';
         bool isMale = sex == Sex.M;
         bool isFirstDigitOdd = firstDigit % 2 != 0;
 
@@ -46,14 +57,9 @@ internal class PatientService : IPatientService
             return false;
         }
 
-        string cnpDobPart = cnp.Substring(1, 6);
+        string cnpDobPart = cnp.Substring(CnpDobStartIndex, CnpDobLength);
         string expectedDobPart = dob.ToString("yyMMdd", CultureInfo.InvariantCulture);
         return cnpDobPart == expectedDobPart;
-    }
-
-    public Patient CreatePatient(Patient data)
-    {
-        return CreatePatientAsync(data).GetAwaiter().GetResult();
     }
 
     public async Task<Patient> CreatePatientAsync(Patient data)
@@ -68,13 +74,25 @@ internal class PatientService : IPatientService
             throw new ArgumentException("Validation Error: Birth Date must be in the past.");
         }
 
-        bool isValid = ValidateCNP(data.Cnp, data.Sex, data.Dob);
-        if (!isValid)
+        if (!ValidateCNP(data.Cnp, data.Sex, data.Dob))
         {
             throw new ArgumentException("Identity Mismatch: The provided CNP does not align with the selected Sex or Date of Birth.");
         }
 
-        await _patientRepo.AddAsync(data);
+        if (await _patientRepo.ExistsAsync(data.Cnp))
+        {
+            throw new ArgumentException("A patient with this CNP already exists.");
+        }
+
+        try
+        {
+            await _patientRepo.AddAsync(data);
+        }
+        catch (DbUpdateException ex) when (IsDuplicateCnpException(ex))
+        {
+            throw new ArgumentException("A patient with this CNP already exists.");
+        }
+
         return data;
     }
 
@@ -90,17 +108,19 @@ internal class PatientService : IPatientService
             throw new ArgumentException("Identity Mismatch: CNP does not align with Sex or DOB.");
         }
 
-        if (string.IsNullOrWhiteSpace(data.PhoneNo) || !Regex.IsMatch(data.PhoneNo, @"^\+*[\d ]{10,}$"))
+        if (string.IsNullOrWhiteSpace(data.PhoneNo) || !Regex.IsMatch(data.PhoneNo, $@"^\+*[\d ]{{{PhoneMinDigits},}}$"))
         {
             throw new ArgumentException("Validation Error: Phone number must be exactly 10 digits and contain no letters.");
         }
 
-        await _patientRepo.UpdateAsync(data);
-    }
-
-    public void ArchivePatient(int id)
-    {
-       // ArchivePatientAsync(id).GetAwaiter().GetResult();
+        try
+        {
+            await _patientRepo.UpdateAsync(data);
+        }
+        catch (DbUpdateException ex) when (IsDuplicateCnpException(ex))
+        {
+            throw new ArgumentException("A patient with this CNP already exists.");
+        }
     }
 
     public async Task ArchivePatientAsync(Patient patient)
@@ -109,21 +129,11 @@ internal class PatientService : IPatientService
         await _patientRepo.UpdateAsync(patient);
     }
 
-    public void DearchivePatient(int id)
-    {
-        DearchivePatientAsync(id).GetAwaiter().GetResult();
-    }
-
     public async Task DearchivePatientAsync(int id)
     {
         Patient? patient = await _patientRepo.GetByIdAsync(id) ?? throw new KeyNotFoundException("Patient not found.");
         patient.IsArchived = false;
         await _patientRepo.UpdateAsync(patient);
-    }
-
-    public void ArchiveAsDeceased(int id, DateTime deathDate)
-    {
-        ArchiveAsDeceasedAsync(id, deathDate).GetAwaiter().GetResult();
     }
 
     public async Task ArchiveAsDeceasedAsync(int id, DateTime deathDate)
@@ -139,73 +149,21 @@ internal class PatientService : IPatientService
         await _patientRepo.UpdateAsync(patient);
     }
 
-    public List<Patient> SearchPatients(PatientFilter filter)
+    public async Task DeletePatientAsync(int id)
     {
-        return SearchPatientsAsync(filter).GetAwaiter().GetResult();
+        _ = await _patientRepo.GetByIdAsync(id) ?? throw new KeyNotFoundException($"Cannot delete: Patient with ID {id} was not found.");
+        await _patientRepo.DeleteAsync(id);
     }
 
-    public Task<List<Patient>> SearchPatientsAsync(PatientFilter filter)
+    public Task<bool> ExistsAsync(string cnp)
     {
-        if (filter is not null)
-        {
-            if (filter.MinAge.HasValue && filter.MinAge < 0)
-            {
-                throw new ArgumentException("Validation Error: Minimum age cannot be negative.");
-            }
-
-            if (filter.MaxAge.HasValue && filter.MaxAge < 0)
-            {
-                throw new ArgumentException("Validation Error: Maximum age cannot be negative.");
-            }
-
-            if (filter.MinAge.HasValue && filter.MaxAge.HasValue && filter.MinAge > filter.MaxAge)
-            {
-                throw new ArgumentException("Validation Error: Minimum age cannot be greater than maximum age.");
-            }
-
-            if (!string.IsNullOrWhiteSpace(filter.CNP) && filter.CNP.Length != 13)
-            {
-                throw new ArgumentException("Validation Error: CNP must be exactly 13 digits for an exact search.");
-            }
-
-            if (filter.LastUpdatedFrom.HasValue && filter.LastUpdatedTo.HasValue && filter.LastUpdatedFrom.Value > filter.LastUpdatedTo.Value)
-            {
-                throw new ArgumentException("Validation Error: 'From' date cannot be after 'To' date.");
-            }
-        }
-
-        return _patientRepo.SearchAsync(filter!);
+        return _patientRepo.ExistsAsync(cnp);
     }
 
-    public void CreateMedicalHistory(int patientId, MedicalHistory history)
+    public async Task<Patient?> GetByIdAsync(int patientId)
     {
-        CreateMedicalHistoryAsync(patientId, history).GetAwaiter().GetResult();
+        return await _patientRepo.GetByIdAsync(patientId);
     }
-
-    public async Task CreateMedicalHistoryAsync(int patientId, MedicalHistory history)
-    {
-        _ = await _patientRepo.GetByIdAsync(patientId) ?? throw new ArgumentException($"Patient with ID {patientId} not found.");
-
-        MedicalHistory? existingHistory = await _historyRepo.GetByPatientIdAsync(patientId);
-        if (existingHistory is not null)
-        {
-            throw new ArgumentException($"Patient {patientId} already has a medical history.");
-        }
-
-        if (history is null)
-        {
-            throw new ArgumentException("Medical history data cannot be null.");
-        }
-
-        history.PatientId = patientId;
-        int historyId = await _historyRepo.CreateAsync(history);
-
-        if (historyId > 0 && history.Allergies?.Count > 0)
-        {
-            await _historyRepo.SaveAllergiesAsync(historyId, history.Allergies);
-        }
-    }
-
 
     public async Task<Patient> GetPatientDetailsAsync(int id)
     {
@@ -214,10 +172,7 @@ internal class PatientService : IPatientService
         MedicalHistory? history = await _historyRepo.GetByPatientIdAsync(id);
         if (history is null)
         {
-            history = new MedicalHistory
-            {
-                PatientId = id,
-            };
+            history = new MedicalHistory { PatientId = id };
         }
         else
         {
@@ -226,7 +181,7 @@ internal class PatientService : IPatientService
         }
 
         var records = new List<MedicalRecord>();
-        if (history.Id > 0)
+        if (history.Id >= MinValidId)
         {
             records = [.. (await _recordRepo.GetByHistoryIdAsync(history.Id)).OrderByDescending(r => r.ConsultationDate)];
         }
@@ -240,50 +195,60 @@ internal class PatientService : IPatientService
         return patient;
     }
 
-    public bool IsHighRiskPatient(int patientId)
+    public Task<List<Patient>> SearchPatientsAsync(PatientFilter filter)
     {
-        return IsHighRiskPatientAsync(patientId).GetAwaiter().GetResult();
+        if (filter is not null)
+        {
+            if (filter.MinAge.HasValue && filter.MinAge < 0)
+                throw new ArgumentException("Validation Error: Minimum age cannot be negative.");
+
+            if (filter.MaxAge.HasValue && filter.MaxAge < 0)
+                throw new ArgumentException("Validation Error: Maximum age cannot be negative.");
+
+            if (filter.MinAge.HasValue && filter.MaxAge.HasValue && filter.MinAge > filter.MaxAge)
+                throw new ArgumentException("Validation Error: Minimum age cannot be greater than maximum age.");
+
+            if (!string.IsNullOrWhiteSpace(filter.CNP) && filter.CNP.Length != CnpLength)
+                throw new ArgumentException($"Validation Error: CNP must be exactly {CnpLength} digits for an exact search.");
+
+            if (filter.LastUpdatedFrom.HasValue && filter.LastUpdatedTo.HasValue && filter.LastUpdatedFrom.Value > filter.LastUpdatedTo.Value)
+                throw new ArgumentException("Validation Error: 'From' date cannot be after 'To' date.");
+        }
+
+        return _patientRepo.SearchAsync(filter!);
     }
 
     public async Task<bool> IsHighRiskPatientAsync(int patientId)
     {
-        DateTime fromDate = DateTime.UtcNow.AddMonths(-3);
+        DateTime fromDate = DateTime.UtcNow.AddMonths(HighRiskLookbackMonths);
         int erVisitCount = await _recordRepo.GetERVisitCountAsync(patientId, fromDate);
-        return erVisitCount > 10;
+        return erVisitCount > HighRiskErVisitThreshold;
     }
 
-    public void DeletePatient(int id)
+    public async Task CreateMedicalHistoryAsync(int patientId, MedicalHistory history)
     {
-        DeletePatientAsync(id).GetAwaiter().GetResult();
-    }
+        _ = await _patientRepo.GetByIdAsync(patientId) ?? throw new ArgumentException($"Patient with ID {patientId} not found.");
 
-    public async Task DeletePatientAsync(int id)
-    {
-        _ = await _patientRepo.GetByIdAsync(id) ?? throw new KeyNotFoundException($"Cannot delete: Patient with ID {id} was not found.");
-        await _patientRepo.DeleteAsync(id);
-    }
+        MedicalHistory? existingHistory = await _historyRepo.GetByPatientIdAsync(patientId);
+        if (existingHistory is not null)
+            throw new ArgumentException($"Patient {patientId} already has a medical history.");
 
-    public bool Exists(string cnp)
-    {
-        return ExistsAsync(cnp).GetAwaiter().GetResult();
-    }
+        if (history is null)
+            throw new ArgumentException("Medical history data cannot be null.");
 
-    public Task<bool> ExistsAsync(string cnp)
-    {
-        return _patientRepo.ExistsAsync(cnp);
-    }
+        history.PatientId = patientId;
+        int historyId = await _historyRepo.CreateAsync(history);
 
-    public MedicalHistory? GetMedicalHistory(int patientId)
-    {
-        return GetMedicalHistoryAsync(patientId).GetAwaiter().GetResult();
+        if (historyId >= MinValidId && history.Allergies?.Count > 0)
+        {
+            await _historyRepo.SaveAllergiesAsync(historyId, history.Allergies);
+        }
     }
 
     public async Task<MedicalHistory?> GetMedicalHistoryAsync(int patientId)
     {
-        if (patientId <= 0)
-        {
+        if (patientId < MinValidId)
             throw new KeyNotFoundException("Patient ID is invalid.");
-        }
 
         try
         {
@@ -294,11 +259,6 @@ internal class PatientService : IPatientService
             System.Diagnostics.Debug.WriteLine($"Error fetching medical history: {ex.Message}");
             return null;
         }
-    }
-
-    public List<MedicalRecord> GetMedicalRecords(int historyId)
-    {
-        return GetMedicalRecordsAsync(historyId).GetAwaiter().GetResult();
     }
 
     public async Task<List<MedicalRecord>> GetMedicalRecordsAsync(int historyId)
@@ -314,20 +274,13 @@ internal class PatientService : IPatientService
         }
     }
 
-    public List<string> GetPatientAllergies(int patientId)
-    {
-        return GetPatientAllergiesAsync(patientId).GetAwaiter().GetResult();
-    }
-
     public async Task<List<string>> GetPatientAllergiesAsync(int patientId)
     {
         try
         {
             MedicalHistory? history = await _historyRepo.GetByPatientIdAsync(patientId);
             if (history is null)
-            {
                 return [];
-            }
 
             List<(Allergy Allergy, string SeverityLevel)> allergyTuples = await _historyRepo.GetAllergiesByHistoryIdAsync(history.Id);
             return allergyTuples.ConvertAll(tuple => $"{tuple.Allergy.AllergyName} - {tuple.SeverityLevel}");
@@ -339,28 +292,18 @@ internal class PatientService : IPatientService
         }
     }
 
-    public Prescription? GetPrescriptionByRecordId(int recordId)
-    {
-        return GetPrescriptionByRecordIdAsync(recordId).GetAwaiter().GetResult();
-    }
-
     public Task<Prescription?> GetPrescriptionByRecordIdAsync(int recordId)
     {
         if (_prescriptionRepo is null)
-        {
             throw new InvalidOperationException("PrescriptionRepository is not available.");
-        }
 
         return _prescriptionRepo.GetByRecordIdAsync(recordId);
     }
 
-    public Patient? GetById(int patientId)
+    private static bool IsDuplicateCnpException(DbUpdateException exception)
     {
-        return GetByIdAsync(patientId).GetAwaiter().GetResult();
-    }
-
-    public async Task<Patient?> GetByIdAsync(int patientId)
-    {
-        return await _patientRepo.GetByIdAsync(patientId);
+        return exception.InnerException is SqlException sqlException
+            && (sqlException.Number == 2601 || sqlException.Number == 2627)
+            && sqlException.Message.Contains("IX_Patient_CNP", StringComparison.OrdinalIgnoreCase);
     }
 }

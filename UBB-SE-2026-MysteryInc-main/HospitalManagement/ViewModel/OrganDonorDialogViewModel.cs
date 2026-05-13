@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Common.Data.Entity;
-using HospitalManagement.Service;
+using HospitalManagement.Proxy.TransplantProxy;
 using System.Threading.Tasks;
 
 namespace HospitalManagement.ViewModel;
 
 internal partial class OrganDonorDialogViewModel : ObservableObject
 {
-    private readonly ITransplantService _transplantService;
+    private readonly ITransplantProxy _transplantProxy;
 
     [ObservableProperty]
     private Patient? _deceasedPatient;
@@ -39,9 +39,9 @@ internal partial class OrganDonorDialogViewModel : ObservableObject
 
     public Action<int, int, float>? OnAssignmentConfirmed { get; set; }
 
-    public OrganDonorDialogViewModel(ITransplantService transplantService)
+    public OrganDonorDialogViewModel(ITransplantProxy transplantProxy)
     {
-        _transplantService = transplantService ?? throw new ArgumentNullException(nameof(transplantService));
+        _transplantProxy = transplantProxy ?? throw new ArgumentNullException(nameof(transplantProxy));
     }
 
     partial void OnSelectedOrganChanged(string? value) => _ = LoadTopMatchesAsync();
@@ -65,7 +65,7 @@ internal partial class OrganDonorDialogViewModel : ObservableObject
         try
         {
             List<TransplantMatch> matches =
-                await _transplantService.GetTopMatchesAsDisplayModelsAsync(DeceasedPatient.Id, SelectedOrgan);
+                await _transplantProxy.GetTopMatchesAsDisplayModelsAsync(DeceasedPatient.Id, SelectedOrgan);
 
             TopMatches.Clear();
             foreach (TransplantMatch match in matches)
@@ -102,7 +102,7 @@ internal partial class OrganDonorDialogViewModel : ObservableObject
 
         try
         {
-            await _transplantService.AssignDonorAsync(SelectedMatch.TransplantId, DeceasedPatient!.Id, SelectedMatch.CompatibilityScore);
+            await _transplantProxy.AssignDonorAsync(SelectedMatch.TransplantId, DeceasedPatient!.Id, SelectedMatch.CompatibilityScore);
             OnAssignmentConfirmed?.Invoke(SelectedMatch.TransplantId, DeceasedPatient.Id, SelectedMatch.CompatibilityScore);
             return (true, null);
         }

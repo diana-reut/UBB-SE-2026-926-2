@@ -10,8 +10,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using HospitalManagement.Proxy.PatientProxy;
 using HospitalManagement.Proxy.BillingProxy;
-
 namespace HospitalManagement.ViewModel;
 
 // this refactoring took years from my life
@@ -20,7 +20,7 @@ namespace HospitalManagement.ViewModel;
 
 internal class PatientViewModel : INotifyPropertyChanged
 {
-    private readonly IPatientService _patientService;
+    private readonly IPatientProxy _patientService;
     private readonly IExportService? _exportService;
     private readonly IBillingProxy? _billingProxy;
 
@@ -182,7 +182,7 @@ internal class PatientViewModel : INotifyPropertyChanged
 
     public Action<string, string>? ShowAlertAction { get; set; }
 
-    public PatientViewModel(IPatientService patientService, IExportService exportService, IBillingProxy billingProxy)
+    public PatientViewModel(IPatientProxy patientService, IExportService exportService, IBillingProxy billingProxy)
     {
         _patientService = patientService;
         _exportService = exportService;

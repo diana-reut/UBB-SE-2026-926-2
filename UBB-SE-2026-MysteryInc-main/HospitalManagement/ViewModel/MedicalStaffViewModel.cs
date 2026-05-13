@@ -14,6 +14,8 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Common.Data.Integration;
+using HospitalManagement.Proxy.PatientProxy;
+using Common.Data.Entity.DTOs;
 
 namespace HospitalManagement.ViewModel;
 
@@ -22,7 +24,7 @@ internal partial class MedicalStaffViewModel : INotifyPropertyChanged
     private string _searchQuery = "";
     private string _errorMessage = "";
     private ObservableCollection<Patient> _searchResults = [];
-    private readonly IPatientService _patientService;
+    private readonly IPatientProxy _patientService;
     private Patient? _selectedPatient;
     private readonly IGhostService _ghostService;
     private bool _isExorcismAlertVisible;
@@ -123,7 +125,7 @@ internal partial class MedicalStaffViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public MedicalStaffViewModel(IPatientService patientService, IGhostService ghostService)
+    public MedicalStaffViewModel(IPatientProxy patientService, IGhostService ghostService)
     {
         _patientService = patientService;
         _ghostService = ghostService;
@@ -144,20 +146,20 @@ internal partial class MedicalStaffViewModel : INotifyPropertyChanged
             return;
         }
 
-        var filter = new PatientFilter();
+        var dto = new SearchPatientsDto();
 
         if (SearchQuery.Length == 13 && SearchQuery.All(char.IsDigit))
         {
-            filter.CNP = SearchQuery;
+            dto.Cnp = SearchQuery;
         }
         else
         {
-            filter.NamePart = SearchQuery;
+            dto.NamePart = SearchQuery;
         }
 
         try
         {
-            System.Collections.Generic.List<Patient> results = await _patientService.SearchPatientsAsync(filter);
+            System.Collections.Generic.List<Patient> results = await _patientService.SearchPatientsAsync(dto);
 
             if (results is null || results.Count == 0)
             {

@@ -1,18 +1,19 @@
 ﻿using Common.Data.Entity;
-using HospitalManagement.Service;
+using HospitalManagement.Proxy.PatientProxy;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using HospitalManagement.Proxy.BloodCompatibilityProxy;
 
 namespace HospitalManagement.ViewModel;
 
 internal class BloodDonorsViewModel : INotifyPropertyChanged
 {
-    private readonly IBloodCompatibilityService _bloodService;
-    private readonly IPatientService _patientService;
+    private readonly IBloodCompatibilityProxy _bloodProxy;
+    private readonly IPatientProxy _patientProxy;
     private string _statusMessage = string.Empty;
 
     public ObservableCollection<DonorMatchModel> Donors { get; } = [];
@@ -35,10 +36,10 @@ internal class BloodDonorsViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public BloodDonorsViewModel(IBloodCompatibilityService bloodService, IPatientService patientService)
+    public BloodDonorsViewModel(IBloodCompatibilityProxy bloodProxy, IPatientProxy patientService)
     {
-        _bloodService = bloodService ?? throw new ArgumentNullException(nameof(bloodService));
-        _patientService = patientService ?? throw new ArgumentNullException(nameof(patientService));
+        _bloodProxy = bloodProxy ?? throw new ArgumentNullException(nameof(bloodProxy));
+        _patientProxy = patientService ?? throw new ArgumentNullException(nameof(patientService));
     }
 
     public void LoadCompatibleDonors(int patientId)
@@ -51,7 +52,7 @@ internal class BloodDonorsViewModel : INotifyPropertyChanged
         StatusMessage = string.Empty;
         Donors.Clear();
 
-        Patient? recipient = await _patientService.GetPatientDetailsAsync(patientId);
+        Patient? recipient = await _patientProxy.GetPatientDetailsAsync(patientId);
         if (recipient?.MedicalHistory is null
             || recipient.MedicalHistory.BloodType is null
             || recipient.MedicalHistory.Rh is null)
@@ -59,11 +60,12 @@ internal class BloodDonorsViewModel : INotifyPropertyChanged
             StatusMessage = "The selected patient needs a blood type and Rh factor in their medical history first.";
             return;
         }
+        List<Patient> topDonors = await _bloodProxy.GetTopCompatibleDonorsAsync(patientId);
 
-        List<Patient> topDonors = await _bloodService.GetTopCompatibleDonorsAsync(patientId);
+ 
         foreach (Patient donor in topDonors)
         {
-            int matchScore = _bloodService.CalculateScore(donor, recipient);
+            int matchScore = CalculateScore(donor, recipient);
 
             Donors.Add(new DonorMatchModel
             {
@@ -82,6 +84,25 @@ internal class BloodDonorsViewModel : INotifyPropertyChanged
         }
     }
 
+    private int CalculateScore(Patient donor, Patient recipient)
+    {
+        int total = 0;
+
+        if (donor.MedicalHistory is null || recipient.MedicalHistory is null)
+            return 0;
+
+        total += donor.MedicalHistory.BloodType == recipient.MedicalHistory.BloodType &&
+                 donor.MedicalHistory.Rh == recipient.MedicalHistory.Rh
+            ? 50
+            : 25;
+
+        int ageGap = Math.Abs(donor.Dob.Year - recipient.Dob.Year);
+        total += Math.Max(0, 30 - ageGap / 5 * 5);
+
+        total += donor.Sex == recipient.Sex ? 20 : 10;
+
+        return total;
+    }
     protected void OnPropertyChanged([CallerMemberName] string? name = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

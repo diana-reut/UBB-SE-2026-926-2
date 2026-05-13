@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using HospitalManagement.Service;
+using HospitalManagement.Proxy.PatientProxy;
+using HospitalManagement.Proxy.TransplantProxy;
 using Microsoft.UI.Xaml;
 using System;
 using System.Threading.Tasks;
@@ -9,8 +10,8 @@ namespace HospitalManagement.ViewModel;
 
 internal partial class TransplantRequestViewModel : ObservableObject
 {
-    private readonly ITransplantService _transplantService;
-    private readonly IPatientService _patientService;
+    private readonly ITransplantProxy _transplantProxy;
+    private readonly IPatientProxy _patientService;
 
     private int _patientId;
 
@@ -20,10 +21,10 @@ internal partial class TransplantRequestViewModel : ObservableObject
     public Func<string, string, Task>? ShowDialogAction { get; set; }
 
     public TransplantRequestViewModel(
-        ITransplantService transplantService,
-        IPatientService patientService)
+        ITransplantProxy transplantProxy,
+        IPatientProxy patientService)
     {
-        _transplantService = transplantService;
+        _transplantProxy = transplantProxy;
         _patientService = patientService;
     }
 
@@ -79,8 +80,8 @@ internal partial class TransplantRequestViewModel : ObservableObject
         if (patient is not null)
             PatientName = $"{patient.FirstName} {patient.LastName}";
 
-        IsUrgent = await _transplantService.IsUrgentAsync(patientId);
-        WarningMessage = await _transplantService.GetChronicWarningAsync(patientId);
+        IsUrgent = await _transplantProxy.IsUrgentAsync(patientId);
+        WarningMessage = await _transplantProxy.GetChronicWarningAsync(patientId);
     }
 
     [RelayCommand]
@@ -97,7 +98,7 @@ internal partial class TransplantRequestViewModel : ObservableObject
 
         try
         {
-            await _transplantService.CreateWaitlistRequestAsync(_patientId, SelectedOrgan);
+            await _transplantProxy.CreateWaitlistRequestAsync(_patientId, SelectedOrgan);
 
             RequestSucceeded = true;
 

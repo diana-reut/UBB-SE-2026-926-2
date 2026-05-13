@@ -5,19 +5,21 @@ using Common.Data.Entity;
 using Common.Data.Entity.DTOs;
 using Common.Data.Repository;
 using HospitalManagement.Integration.External;
+using HospitalManagement.Proxy.PatientProxy;
+
 
 namespace HospitalManagement.Service;
 
 internal class ImportService : IImportService
 {
-    private readonly IPatientService _patientService;
+    private readonly IPatientProxy _patientService;
     private readonly IMedicalRecordRepository _recordRepo;
     private readonly IPrescriptionRepository _prescriptionRepo;
     private readonly IExternalProvider _externalER;
     private readonly IExternalProvider _externalAppointment;
 
     public ImportService(
-        IPatientService patientService,
+        IPatientProxy patientService,
         IMedicalRecordRepository recordRepo,
         IPrescriptionRepository prescriptionRepo,
         IExternalProvider externalER,

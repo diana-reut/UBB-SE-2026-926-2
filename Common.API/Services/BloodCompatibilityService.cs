@@ -1,0 +1,122 @@
+using Common.Data.Entity;
+using Common.Data.Entity.Enums;
+using Common.Data.Repository;
+
+namespace Common.API.Services;
+
+public class BloodCompatibilityService : IBloodCompatibilityService
+{
+    private readonly IPatientRepository _patientRepo;
+    private readonly IMedicalHistoryRepository _historyRepo;
+
+    public BloodCompatibilityService(
+        IPatientRepository patientRepo,
+        IMedicalHistoryRepository historyRepo)
+    {
+        _patientRepo = patientRepo;
+        _historyRepo = historyRepo;
+    }
+
+    public async Task<List<Patient>> GetTopCompatibleDonorsAsync(int recipientId)
+    {
+        Patient? recipient = await _patientRepo.GetByIdAsync(recipientId);
+
+        if (recipient != null)
+        {
+            recipient.MedicalHistory =
+                await _historyRepo.GetByPatientIdAsync(recipientId);
+        }
+
+        if (recipient?.MedicalHistory?.BloodType is null
+            || recipient.MedicalHistory.Rh is null)
+        {
+            return [];
+        }
+
+        List<Patient> allPatients =
+            await _patientRepo.GetAllAsync(include_archived: true);
+
+        var rankedDonors = new List<(Patient Donor, int Score)>();
+
+        foreach (var donor in allPatients)
+        {
+            if (donor.Id == recipientId || donor.IsDeceased)
+                continue;
+
+            donor.MedicalHistory =
+                await _historyRepo.GetByPatientIdAsync(donor.Id);
+
+            if (donor.MedicalHistory?.BloodType is null
+                || donor.MedicalHistory.Rh is null)
+                continue;
+
+            if (!IsBloodMatch(
+                    donor.MedicalHistory.BloodType,
+                    recipient.MedicalHistory.BloodType.Value))
+                continue;
+
+            if (!IsRhMatch(
+                    donor.MedicalHistory.Rh,
+                    recipient.MedicalHistory.Rh.Value))
+                continue;
+
+            if (donor.MedicalHistory.Allergies?
+                .Any(a => a.SeverityLevel.Equals(
+                    "Anaphylactic",
+                    StringComparison.OrdinalIgnoreCase)) == true)
+                continue;
+
+            rankedDonors.Add((donor,
+                CalculateScore(donor, recipient)));
+        }
+
+        return rankedDonors
+            .OrderByDescending(x => x.Score)
+            .Select(x => x.Donor)
+            .Take(20)
+            .ToList();
+    }
+
+    public int CalculateScore(Patient donor, Patient recipient)
+    {
+        int total = 0;
+
+        if (donor.MedicalHistory is null
+            || recipient.MedicalHistory is null)
+            return 0;
+
+        total += donor.MedicalHistory.BloodType ==
+                 recipient.MedicalHistory.BloodType
+                 && donor.MedicalHistory.Rh ==
+                 recipient.MedicalHistory.Rh
+            ? 50
+            : 25;
+
+        int ageGap = Math.Abs(donor.Dob.Year - recipient.Dob.Year);
+        total += Math.Max(0, 30 - ageGap / 5 * 5);
+
+        total += donor.Sex == recipient.Sex ? 20 : 10;
+
+        return total;
+    }
+
+    public bool IsBloodMatch(BloodType? donor, BloodType receiver)
+    {
+        if (donor is null) return false;
+
+        return donor switch
+        {
+            BloodType.O => true,
+            BloodType.A => receiver is BloodType.A or BloodType.AB,
+            BloodType.B => receiver is BloodType.B or BloodType.AB,
+            BloodType.AB => receiver == BloodType.AB,
+            _ => false
+        };
+    }
+
+    public bool IsRhMatch(Rh? donor, Rh receiver)
+    {
+        if (donor is null) return false;
+        return receiver != Rh.Negative || donor == Rh.Negative;
+    }
+}

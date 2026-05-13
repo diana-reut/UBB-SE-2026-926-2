@@ -1,6 +1,7 @@
 ﻿using Common.Data.Entity;
+using Common.Data.Entity.DTOs;
 using Common.Data.Entity.Enums;
-using HospitalManagement.Service;
+using HospitalManagement.Proxy.PatientProxy;
 using HospitalManagement.Validators;
 using System;
 using System.Threading.Tasks;
@@ -9,9 +10,9 @@ namespace HospitalManagement.ViewModel;
 
 internal class AddPatientDialogViewModel
 {
-    private readonly IPatientService _patientService;
+    private readonly IPatientProxy _patientService;
 
-    public AddPatientDialogViewModel(IPatientService patientService)
+    public AddPatientDialogViewModel(IPatientProxy patientService)
     {
         _patientService = patientService ?? throw new ArgumentNullException(nameof(patientService));
     }
@@ -46,7 +47,7 @@ internal class AddPatientDialogViewModel
     public async Task<(bool Success, string? ErrorMessage, Patient? Patient)> SubmitPatientAsync(
         string firstName, string lastName, string sex, DateTimeOffset? dob, string cnp, string phone, string emergencyContact)
     {
-        Patient data = new()
+        var dto = new CreatePatientDto
         {
             FirstName = firstName,
             LastName = lastName,
@@ -59,7 +60,7 @@ internal class AddPatientDialogViewModel
 
         try
         {
-            Patient created = await _patientService.CreatePatientAsync(data);
+            Patient created = await _patientService.CreatePatientAsync(dto);
             return (true, null, created);
         }
         catch (ArgumentException ex)

@@ -8,12 +8,13 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using HospitalManagement.Proxy.PatientProxy;
 
 namespace HospitalManagement.ViewModel;
 
 internal partial class PatientProfileViewModel : ObservableObject
 {
-    private readonly IPatientService _patientService;
+    private readonly IPatientProxy _patientService;
     private readonly IImportService _importService;
     private readonly IExportService _exportService;
     private readonly Func<PrescriptionView> _prescriptionViewFactory;
@@ -78,7 +79,7 @@ internal partial class PatientProfileViewModel : ObservableObject
         }
     }
 
-    public PatientProfileViewModel(IPatientService patientService, IExportService exportService, IImportService importService, Func<PrescriptionView> prescriptionViewFactory)
+    public PatientProfileViewModel(IPatientProxy patientService, IExportService exportService, IImportService importService, Func<PrescriptionView> prescriptionViewFactory)
     {
         _patientService = patientService;
         _exportService = exportService;

@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Common.Data.Entity.Enums;
 
 namespace Common.Data.Entity;
@@ -15,6 +16,7 @@ public class MedicalRecord
     public int HistoryId { get; set; }
 
     [Required]
+    [JsonIgnore]
     public MedicalHistory History { get; set; } = null!;
 
     public SourceType SourceType { get; set; }
