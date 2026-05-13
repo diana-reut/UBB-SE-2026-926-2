@@ -45,6 +45,8 @@ public sealed partial class MainWindow : Window
             return;
         }
 
+        AppNavigationView.IsPaneVisible = tag != "PharmacistDashboard";
+
         switch (tag)
         {
             case "AdminDashboard":
@@ -78,5 +80,11 @@ public sealed partial class MainWindow : Window
                 ContentFrame.Navigate(typeof(RoomManagementView), ERManagementSystem.Infrastructure.ServiceRegistry.Services.GetRequiredService<RoomManagementViewModel>());
                 break;
         }
+    }
+    public void NavigateToHome()
+    {
+        AppNavigationView.IsPaneVisible = true;
+        ContentFrame.Navigate(typeof(AdminDashboardPage));
+        AppNavigationView.SelectedItem = AppNavigationView.MenuItems[0];
     }
 }
