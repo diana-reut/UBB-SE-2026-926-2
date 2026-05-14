@@ -6,8 +6,8 @@ using Common.Data.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ERManagementSystem.Proxy.ERVisitProxy;
+using ERManagementSystem.Proxy.PatientProxy;
 using ERManagementSystem.Proxy.TransferLogProxy;
-using ERManagementSystem.Repositories;
 using Microsoft.UI.Xaml.Controls;
 
 namespace ERManagementSystem.ViewModels
@@ -17,7 +17,7 @@ namespace ERManagementSystem.ViewModels
         private const string TargetSystem = "Patient Management";
         private readonly ITransferLogProxy transferLogProxy;
         private readonly IERVisitProxy erVisitProxy;
-        private readonly IPatientRepository patientRepository;
+        private readonly IPatientProxy patientProxy;
 
         public Action? ClearGridSelection { get; set; }
         public Action? RefreshGrid { get; set; }
@@ -45,11 +45,11 @@ namespace ERManagementSystem.ViewModels
         public TransferLogViewModel(
             ITransferLogProxy transferLogProxy,
             IERVisitProxy erVisitProxy,
-            IPatientRepository patientRepository)
+            IPatientProxy patientProxy)
         {
             this.transferLogProxy = transferLogProxy;
             this.erVisitProxy = erVisitProxy;
-            this.patientRepository = patientRepository;
+            this.patientProxy = patientProxy;
         }
 
         [RelayCommand]
@@ -94,7 +94,7 @@ namespace ERManagementSystem.ViewModels
 
             foreach (var eligibleVisit in eligibleVisits.OrderBy(visit => visit.Arrival_date_time))
             {
-                var patient = await patientRepository.GetByIdAsync(eligibleVisit.Patient_ID);
+                var patient = await patientProxy.GetByCnpAsync(eligibleVisit.Patient_ID);
                 freshList.Add(new VisitSummary
                 {
                     Visit_ID = eligibleVisit.Visit_ID,
@@ -244,14 +244,14 @@ namespace ERManagementSystem.ViewModels
                 return;
             }
 
-            var patient = await patientRepository.GetByIdAsync(visit.Patient_ID);
+            var patient = await patientProxy.GetByCnpAsync(visit.Patient_ID);
             if (patient == null)
             {
                 return;
             }
 
             patient.Transferred = true;
-            await patientRepository.UpdateAsync(patient);
+            await patientProxy.UpdatePatientAsync(patient);
         }
 
         private async Task ShowDialog(string title, string message)

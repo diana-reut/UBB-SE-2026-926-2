@@ -10,9 +10,9 @@ using CommunityToolkit.Mvvm.Input;
 using ERManagementSystem.Helpers;
 using ERManagementSystem.Proxy.ERRoomProxy;
 using ERManagementSystem.Proxy.ERVisitProxy;
+using ERManagementSystem.Proxy.PatientProxy;
 using ERManagementSystem.Proxy.TriageParametersProxy;
 using ERManagementSystem.Proxy.TriageProxy;
-using ERManagementSystem.Repositories;
 using Microsoft.UI.Xaml.Controls;
 
 namespace ERManagementSystem.ViewModels
@@ -23,7 +23,7 @@ namespace ERManagementSystem.ViewModels
         private readonly IERVisitProxy erVisitProxy;
         private readonly ITriageProxy triageProxy;
         private readonly ITriageParametersProxy triageParametersProxy;
-        private readonly IPatientRepository patientRepository;
+        private readonly IPatientProxy patientProxy;
 
         public Microsoft.UI.Xaml.XamlRoot? XamlRoot { get; set; }
 
@@ -32,13 +32,13 @@ namespace ERManagementSystem.ViewModels
             IERVisitProxy erVisitProxy,
             ITriageProxy triageProxy,
             ITriageParametersProxy triageParametersProxy,
-            IPatientRepository patientRepository)
+            IPatientProxy patientProxy)
         {
             this.erRoomProxy = erRoomProxy;
             this.erVisitProxy = erVisitProxy;
             this.triageProxy = triageProxy;
             this.triageParametersProxy = triageParametersProxy;
-            this.patientRepository = patientRepository;
+            this.patientProxy = patientProxy;
         }
 
         [ObservableProperty] private ObservableCollection<ER_Visit> waitingVisits = new ObservableCollection<ER_Visit>();
@@ -63,7 +63,7 @@ namespace ERManagementSystem.ViewModels
 
             try
             {
-                SelectedPatient = await patientRepository.GetByIdAsync(value.Patient_ID);
+                SelectedPatient = await patientProxy.GetByCnpAsync(value.Patient_ID);
                 SelectedTriage = await triageProxy.GetByVisitIdAsync(value.Visit_ID);
             }
             catch

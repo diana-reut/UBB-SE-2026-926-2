@@ -13,11 +13,13 @@ public class ExaminationProxy : ProxyBase, IExaminationProxy
     private const string BaseUri = "api/examinations";
 
     public ExaminationProxy(HttpClient httpClient)
-        : base(httpClient) { }
+        : base(httpClient)
+    {
+    }
 
     public async Task<List<Examination>> GetAllAsync()
     {
-        return await GetAsync<List<Examination>>(BaseUri) ?? [];
+        return await GetAsync<List<Examination>>(BaseUri) ?? new List<Examination>();
     }
 
     public Task<Examination?> GetByIdAsync(int id)

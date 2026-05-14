@@ -7,19 +7,21 @@ using CommunityToolkit.Mvvm.Input;
 using ERManagementSystem.Infrastructure;
 using ERManagementSystem.Models;
 using ERManagementSystem.Proxy.ERVisitProxy;
-using ERManagementSystem.Repositories;
+using ERManagementSystem.Proxy.PatientProxy;
+using Common.Data.Entity.DTOs;
+using Common.Data.Entity.Enums;
 using Microsoft.UI.Xaml.Controls;
 
 namespace ERManagementSystem.ViewModels
 {
     public partial class PatientRegistrationViewModel : BaseViewModel
     {
-        private readonly IPatientRepository patientRepository;
+        private readonly IPatientProxy patientProxy;
         private readonly IERVisitProxy erVisitProxy;
 
-        public PatientRegistrationViewModel(IPatientRepository patientRepository, IERVisitProxy erVisitProxy)
+        public PatientRegistrationViewModel(IPatientProxy patientProxy, IERVisitProxy erVisitProxy)
         {
-            this.patientRepository = patientRepository;
+            this.patientProxy = patientProxy;
             this.erVisitProxy = erVisitProxy;
         }
 
@@ -270,10 +272,22 @@ namespace ERManagementSystem.ViewModels
                         "Patient data is invalid:\n" + string.Join("\n", patientErrors));
                 }
 
-                Patient? existingPatient = await patientRepository.GetByIdAsync(patient.Patient_ID);
-                if (existingPatient == null)
+                bool patientExists = await patientProxy.ExistsAsync(patient.Patient_ID);
+                if (!patientExists)
                 {
-                    await patientRepository.AddAsync(patient);
+                    CreatePatientDto dto = new CreatePatientDto()
+                    {
+                        FirstName = patient.First_Name,
+                        LastName = patient.Last_Name,
+                        Cnp = patient.Patient_ID,
+                        Dob = patient.Date_of_Birth,
+                        Sex = patient.Gender == "Female" ? Sex.F : Sex.M,
+                        PhoneNo = patient.Phone,
+                        EmergencyContact = patient.Emergency_Contact,
+                        IsDonor = false,
+                    };
+
+                    _ = await patientProxy.CreatePatientAsync(dto);
                 }
 
                 var visitToCreate = new ER_Visit

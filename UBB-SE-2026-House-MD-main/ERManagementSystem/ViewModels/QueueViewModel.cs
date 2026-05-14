@@ -22,12 +22,12 @@ namespace ERManagementSystem.ViewModels
         }
 
         // ── Observable collection for DataGrid ──────────────────────────────
-        public ObservableCollection<QueueItemDisplay> ActiveVisits { get; } = new ObservableCollection<QueueItemDisplay>();
+        [ObservableProperty]
+        private ObservableCollection<QueueItemDisplay> activeVisits = new ObservableCollection<QueueItemDisplay>();
 
         [RelayCommand]
         private async Task LoadQueue()
         {
-            ActiveVisits.Clear();
             var waitingVisits = await erVisitProxy.GetByStatusAsync(ER_Visit.VisitStatus.WAITING_FOR_ROOM);
             var triages = await triageProxy.GetAllAsync();
             var queue = waitingVisits
@@ -39,10 +39,14 @@ namespace ERManagementSystem.ViewModels
                 .OrderBy(queueEntry => queueEntry.triage.Triage_Level)
                 .ThenBy(queueEntry => queueEntry.visit.Arrival_date_time);
 
+            ObservableCollection<QueueItemDisplay> refreshedQueue = new ObservableCollection<QueueItemDisplay>();
+
             foreach (var (visit, triage) in queue)
             {
-                ActiveVisits.Add(new QueueItemDisplay(visit, triage));
+                refreshedQueue.Add(new QueueItemDisplay(visit, triage));
             }
+
+            ActiveVisits = refreshedQueue;
         }
 
         [RelayCommand]

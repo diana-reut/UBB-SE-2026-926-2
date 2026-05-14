@@ -40,7 +40,7 @@ namespace ERManagementSystem.Views
             }
 
             Bindings.Update();
-            ViewModel.LoadData();
+            _ = ViewModel.LoadData();
         }
     }
 }

@@ -12,11 +12,13 @@ public class TransferLogProxy : ProxyBase, ITransferLogProxy
     private const string BaseUri = "api/transfer-logs";
 
     public TransferLogProxy(HttpClient httpClient)
-        : base(httpClient) { }
+        : base(httpClient)
+    {
+    }
 
     public async Task<List<Transfer_Log>> GetAllAsync()
     {
-        return await GetAsync<List<Transfer_Log>>(BaseUri) ?? [];
+        return await GetAsync<List<Transfer_Log>>(BaseUri) ?? new List<Transfer_Log>();
     }
 
     public Task<Transfer_Log?> GetByIdAsync(int id)

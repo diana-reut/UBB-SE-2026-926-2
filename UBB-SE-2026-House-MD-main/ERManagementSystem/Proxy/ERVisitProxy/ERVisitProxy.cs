@@ -13,11 +13,13 @@ public class ERVisitProxy : ProxyBase, IERVisitProxy
     private const string BaseUri = "api/er-visits";
 
     public ERVisitProxy(HttpClient httpClient)
-        : base(httpClient) { }
+        : base(httpClient)
+    {
+    }
 
     public async Task<List<ER_Visit>> GetAllAsync()
     {
-        return await GetAsync<List<ER_Visit>>(BaseUri) ?? [];
+        return await GetAsync<List<ER_Visit>>(BaseUri) ?? new List<ER_Visit>();
     }
 
     public Task<ER_Visit?> GetByIdAsync(int id)

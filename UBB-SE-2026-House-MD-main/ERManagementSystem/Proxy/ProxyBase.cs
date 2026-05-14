@@ -20,29 +20,29 @@ public abstract class ProxyBase
     protected async Task<T?> GetAsync<T>(string uri)
     {
         using HttpResponseMessage response = await HttpClient.GetAsync(uri);
-        HttpResponseMessage _ = response.EnsureSuccessStatusCode();
+        response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<T>(Options);
     }
 
     protected async Task<TResponse?> PostAsync<TRequest, TResponse>(string uri, TRequest data)
     {
-        var requestUri = new Uri(uri, UriKind.RelativeOrAbsolute);
+        Uri requestUri = new Uri(uri, UriKind.RelativeOrAbsolute);
         using HttpResponseMessage response = await HttpClient.PostAsJsonAsync(requestUri, data, Options);
-        HttpResponseMessage _ = response.EnsureSuccessStatusCode();
+        response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<TResponse>(Options);
     }
 
     protected async Task PutAsync<TRequest>(string uri, TRequest data)
     {
-        var requestUri = new Uri(uri, UriKind.RelativeOrAbsolute);
+        Uri requestUri = new Uri(uri, UriKind.RelativeOrAbsolute);
         using HttpResponseMessage response = await HttpClient.PutAsJsonAsync(requestUri, data, Options);
-        HttpResponseMessage _ = response.EnsureSuccessStatusCode();
+        response.EnsureSuccessStatusCode();
     }
 
     protected async Task DeleteAsync(string uri)
     {
-        var requestUri = new Uri(uri, UriKind.RelativeOrAbsolute);
+        Uri requestUri = new Uri(uri, UriKind.RelativeOrAbsolute);
         using HttpResponseMessage response = await HttpClient.DeleteAsync(requestUri);
-        HttpResponseMessage _ = response.EnsureSuccessStatusCode();
+        response.EnsureSuccessStatusCode();
     }
 }

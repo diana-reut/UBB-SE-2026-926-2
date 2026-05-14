@@ -13,11 +13,13 @@ public class ERRoomProxy : ProxyBase, IERRoomProxy
     private const string BaseUri = "api/er-rooms";
 
     public ERRoomProxy(HttpClient httpClient)
-        : base(httpClient) { }
+        : base(httpClient)
+    {
+    }
 
     public async Task<List<ER_Room>> GetAllAsync()
     {
-        return await GetAsync<List<ER_Room>>(BaseUri) ?? [];
+        return await GetAsync<List<ER_Room>>(BaseUri) ?? new List<ER_Room>();
     }
 
     public Task<ER_Room?> GetByIdAsync(int id)

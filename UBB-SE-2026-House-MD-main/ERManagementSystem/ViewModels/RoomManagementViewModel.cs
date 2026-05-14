@@ -11,8 +11,8 @@ using ERManagementSystem.Models;
 using ERManagementSystem.Proxy.ERRoomProxy;
 using ERManagementSystem.Proxy.ERVisitProxy;
 using ERManagementSystem.Proxy.ExaminationProxy;
+using ERManagementSystem.Proxy.PatientProxy;
 using ERManagementSystem.Proxy.TriageProxy;
-using ERManagementSystem.Repositories;
 using Microsoft.UI.Xaml.Controls;
 
 namespace ERManagementSystem.ViewModels
@@ -23,7 +23,7 @@ namespace ERManagementSystem.ViewModels
         private readonly IERVisitProxy erVisitProxy;
         private readonly IExaminationProxy examinationProxy;
         private readonly ITriageProxy triageProxy;
-        private readonly IPatientRepository patientRepository;
+        private readonly IPatientProxy patientProxy;
 
         public Microsoft.UI.Xaml.XamlRoot? XamlRoot { get; set; }
 
@@ -32,13 +32,13 @@ namespace ERManagementSystem.ViewModels
             IERVisitProxy erVisitProxy,
             IExaminationProxy examinationProxy,
             ITriageProxy triageProxy,
-            IPatientRepository patientRepository)
+            IPatientProxy patientProxy)
         {
             this.erRoomProxy = erRoomProxy;
             this.erVisitProxy = erVisitProxy;
             this.examinationProxy = examinationProxy;
             this.triageProxy = triageProxy;
-            this.patientRepository = patientRepository;
+            this.patientProxy = patientProxy;
         }
 
         [ObservableProperty] private Patient? selectedPatient;
@@ -135,7 +135,7 @@ namespace ERManagementSystem.ViewModels
             return new RoomVisitDetails
             {
                 Visit = visit,
-                Patient = await patientRepository.GetByIdAsync(visit.Patient_ID),
+                Patient = await patientProxy.GetByCnpAsync(visit.Patient_ID),
                 Triage = await triageProxy.GetByVisitIdAsync(visit.Visit_ID)
             };
         }
@@ -192,9 +192,22 @@ namespace ERManagementSystem.ViewModels
             try
             {
                 IsBusy = true;
+                int? visitId = SelectedOccupiedRoom.Current_Visit_ID;
                 SelectedOccupiedRoom.UpdateAvailabilityStatus(ER_Room.RoomStatus.Cleaning);
                 await erRoomProxy.UpdateAsync(SelectedOccupiedRoom.Room_ID, SelectedOccupiedRoom);
                 await erRoomProxy.ClearCurrentVisitAsync(SelectedOccupiedRoom.Room_ID);
+
+                if (visitId.HasValue)
+                {
+                    ER_Visit? visit = await erVisitProxy.GetByIdAsync(visitId.Value);
+                    if (visit != null &&
+                        (visit.Status == ER_Visit.VisitStatus.IN_ROOM ||
+                         visit.Status == ER_Visit.VisitStatus.WAITING_FOR_DOCTOR))
+                    {
+                        await erVisitProxy.UpdateStatusAsync(visit.Visit_ID, ER_Visit.VisitStatus.WAITING_FOR_ROOM);
+                    }
+                }
+
                 await ShowDialog("Room Cleaning", $"Room {SelectedOccupiedRoom.Room_ID} ({SelectedOccupiedRoom.Room_Type}) is now being cleaned.");
                 SelectedOccupiedRoom = null;
                 await LoadRooms();

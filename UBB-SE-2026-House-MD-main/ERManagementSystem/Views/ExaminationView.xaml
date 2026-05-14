@@ -33,9 +33,11 @@
                         AutoGenerateColumns="False"
                         IsReadOnly="True"
                         MinHeight="180"
+                        MaxHeight="320"
                         GridLinesVisibility="Horizontal"
                         BorderThickness="1"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        VerticalScrollBarVisibility="Auto">
                         <controls:DataGrid.Columns>
                             <controls:DataGridTextColumn
                                 Header="Visit ID"
@@ -160,8 +162,9 @@
                         IsReadOnly="True"
                         GridLinesVisibility="Horizontal"
                         SelectionMode="Single"
-                        MinHeight="100" MaxHeight="200"
+                        MinHeight="100" MaxHeight="220"
                         HeadersVisibility="Column"
+                        VerticalScrollBarVisibility="Auto"
                         Margin="0,8,0,0">
                         <controls:DataGrid.Columns>
                             <controls:DataGridTextColumn Header="Exam ID" Binding="{Binding Exam_ID}" />

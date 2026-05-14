@@ -38,9 +38,11 @@
                         AutoGenerateColumns="False"
                         IsReadOnly="True"
                         MinHeight="180"
+                        MaxHeight="320"
                         GridLinesVisibility="Horizontal"
                         BorderThickness="1"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        VerticalScrollBarVisibility="Auto">
                         <controls:DataGrid.Columns>
                             <controls:DataGridTextColumn
                                 Header="Visit ID"
@@ -101,9 +103,11 @@
                         AutoGenerateColumns="False"
                         IsReadOnly="True"
                         MinHeight="180"
+                        MaxHeight="320"
                         GridLinesVisibility="Horizontal"
                         BorderThickness="1"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        VerticalScrollBarVisibility="Auto">
                         <controls:DataGrid.Columns>
                             <controls:DataGridTextColumn
                                 Header="Transfer ID"

@@ -17,7 +17,9 @@
     </Page.Resources>
 
     <!-- Outer 2-column grid: left = main content, right = details panel -->
-    <Grid ColumnDefinitions="*,320" ColumnSpacing="0">
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+        <Grid ColumnDefinitions="*,320" ColumnSpacing="0">
 
         <!-- ── LEFT: main assignment UI ── -->
         <Grid Grid.Column="0"
@@ -40,7 +42,11 @@
                     <ListView x:Name="WaitingVisitsList"
                               ItemsSource="{x:Bind ViewModel.WaitingVisits, Mode=OneWay}"
                               SelectedItem="{x:Bind ViewModel.SelectedVisit, Mode=TwoWay}"
-                              SelectionMode="Single" MinHeight="300">
+                              SelectionMode="Single"
+                              MinHeight="300"
+                              MaxHeight="520"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.VerticalScrollMode="Enabled">
                         <ListView.ItemTemplate>
                             <DataTemplate>
                                 <Border Style="{StaticResource CardBorderStyle}" Margin="0,4">
@@ -67,7 +73,11 @@
                     <TextBlock Text="Select a room for manual assignment" Style="{StaticResource CaptionTextBlockStyle}"/>
                     <ListView ItemsSource="{x:Bind ViewModel.AvailableRooms, Mode=OneWay}"
                               SelectedItem="{x:Bind ViewModel.SelectedRoom, Mode=TwoWay}"
-                              SelectionMode="Single" MinHeight="300">
+                              SelectionMode="Single"
+                              MinHeight="300"
+                              MaxHeight="520"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.VerticalScrollMode="Enabled">
                         <ListView.ItemTemplate>
                             <DataTemplate>
                                 <Border Style="{StaticResource CardBorderStyle}" Margin="0,4">
@@ -106,5 +116,6 @@
                                      Triage="{x:Bind ViewModel.SelectedTriage, Mode=OneWay}"/>
         </Border>
 
-    </Grid>
+        </Grid>
+    </ScrollViewer>
 </Page>
