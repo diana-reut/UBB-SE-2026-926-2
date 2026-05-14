@@ -11,11 +11,13 @@ public class TransplantsProxy : ProxyBase, ITransplantsProxy
     private const string BaseUri = "api/transplants";
 
     public TransplantsProxy(HttpClient httpClient)
-        : base(httpClient) { }
+        : base(httpClient)
+    {
+    }
 
     public async Task<List<Transplant>> GetAllAsync()
     {
-        return await GetAsync<List<Transplant>>(BaseUri) ?? [];
+        return await GetAsync<List<Transplant>>(BaseUri) ?? new List<Transplant>();
     }
 
     public Task<Transplant?> GetByIdAsync(int id)

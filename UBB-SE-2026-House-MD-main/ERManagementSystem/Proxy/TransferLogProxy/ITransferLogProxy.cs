@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Common.Data.Entity.DTOs;
 using Common.Data.Models;
 
 namespace ERManagementSystem.Proxy.TransferLogProxy;
@@ -12,4 +13,5 @@ public interface ITransferLogProxy
     Task UpdateAsync(int id, Transfer_Log transferLog);
     Task DeleteAsync(int id);
     Task<List<Transfer_Log>> GetByVisitIdAsync(int visitId);
+    Task<List<ERTransferEligibleVisitDto>> GetEligibleVisitsAsync();
 }

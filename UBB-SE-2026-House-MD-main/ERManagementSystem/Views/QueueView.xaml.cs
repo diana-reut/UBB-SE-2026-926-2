@@ -1,3 +1,4 @@
+using System;
 using ERManagementSystem.Infrastructure;
 using ERManagementSystem.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,6 +36,22 @@ namespace ERManagementSystem.Views
 
             ViewModel.LoadQueueCommand.Execute(null);
             Bindings.Update();
+            UpdateQueueGridHeight();
+        }
+
+        private void Page_SizeChanged(object sender, Microsoft.UI.Xaml.SizeChangedEventArgs e)
+        {
+            UpdateQueueGridHeight();
+        }
+
+        private void UpdateQueueGridHeight()
+        {
+            double availableHeight = RootGrid.ActualHeight
+                - QueueTitleText.ActualHeight
+                - QueueActionsPanel.ActualHeight
+                - 56;
+
+            QueueDataGrid.Height = Math.Max(240, availableHeight);
         }
     }
 }

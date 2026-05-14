@@ -1,3 +1,4 @@
+using System;
 using ERManagementSystem.Infrastructure;
 using ERManagementSystem.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,7 +41,19 @@ namespace ERManagementSystem.Views
             }
 
             Bindings.Update();
-            ViewModel.LoadData();
+            _ = ViewModel.LoadData();
+            UpdateGridHeights();
+        }
+
+        private void Page_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateGridHeights();
+        }
+
+        private void UpdateGridHeights()
+        {
+            VisitsDataGrid.Height = Math.Clamp(ActualHeight * 0.26, 180, 420);
+            HistoryDataGrid.Height = Math.Clamp(ActualHeight * 0.18, 120, 280);
         }
     }
 }

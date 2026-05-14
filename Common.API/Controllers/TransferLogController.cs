@@ -1,5 +1,6 @@
 using System.Net;
 using Common.API.Services;
+using Common.Data.Entity.DTOs;
 using Common.Data.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -59,6 +60,40 @@ namespace Common.API.Controllers
                     detail: "Failed to fetch transfer log.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
                     title: "Could not fetch transfer log.");
+            }
+        }
+
+        [HttpGet("visit/{visitId:int}")]
+        public async Task<ActionResult<List<Transfer_Log>>> GetByVisitId(int visitId)
+        {
+            try
+            {
+                return Ok(await _transferLogService.GetByVisitIdAsync(visitId));
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to fetch transfer logs for visit {VisitId}.", visitId);
+                return Problem(
+                    detail: "Failed to fetch transfer logs for visit.",
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not fetch transfer logs.");
+            }
+        }
+
+        [HttpGet("eligible-visits")]
+        public async Task<ActionResult<List<ERTransferEligibleVisitDto>>> GetEligibleVisits()
+        {
+            try
+            {
+                return Ok(await _transferLogService.GetEligibleVisitsAsync());
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to fetch eligible transfer visits.");
+                return Problem(
+                    detail: "Failed to fetch eligible transfer visits.",
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not fetch eligible transfer visits.");
             }
         }
 

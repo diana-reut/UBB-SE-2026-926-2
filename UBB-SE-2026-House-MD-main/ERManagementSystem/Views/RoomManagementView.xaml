@@ -17,7 +17,9 @@
     </Page.Resources>
 
     <!-- Outer 2-column grid: left = main content, right = details panel -->
-    <Grid ColumnDefinitions="*,320" ColumnSpacing="0">
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Auto">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="0">
 
         <!-- ── LEFT: room management UI ── -->
         <Grid Grid.Column="0"
@@ -156,6 +158,9 @@
 
         <!-- ── RIGHT: Visit Details Panel ── -->
         <Border Grid.Column="1"
+                Width="420"
+                MinWidth="380"
+                MaxWidth="460"
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1,0,0,0">
             <local:VisitDetailsPanel x:Name="DetailsPanel"
@@ -164,5 +169,6 @@
                                      Triage="{x:Bind ViewModel.SelectedTriage, Mode=OneWay}"/>
         </Border>
 
-    </Grid>
+        </Grid>
+    </ScrollViewer>
 </Page>

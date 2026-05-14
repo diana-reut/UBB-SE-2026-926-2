@@ -9,6 +9,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Loaded="Page_Loaded"
+    SizeChanged="Page_SizeChanged"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Page.Resources>
@@ -17,14 +18,21 @@
     </Page.Resources>
 
     <!-- Outer 2-column grid: left = main content, right = details panel -->
-    <Grid ColumnDefinitions="*,320" ColumnSpacing="0">
+    <Grid x:Name="RootLayoutGrid"
+          ColumnDefinitions="*,Auto" ColumnSpacing="0"
+          MinWidth="1120">
 
         <!-- ── LEFT: main assignment UI ── -->
-        <Grid Grid.Column="0"
+        <Grid x:Name="LeftContentGrid"
+              Grid.Column="0"
               RowDefinitions="Auto,*,Auto"
               Padding="32,24,16,32" RowSpacing="16">
 
-            <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+            <StackPanel x:Name="HeaderPanel"
+                        Grid.Row="0"
+                        Orientation="Horizontal"
+                        Spacing="16"
+                        VerticalAlignment="Center">
                 <TextBlock Text="Room Assignment" Style="{StaticResource TitleTextBlockStyle}" VerticalAlignment="Center"/>
                 <Button Content="Refresh" Command="{x:Bind ViewModel.LoadDataCommand}"/>
             </StackPanel>
@@ -33,14 +41,22 @@
             <Grid Grid.Row="1" ColumnDefinitions="*,1,*" ColumnSpacing="16">
 
                 <!-- Waiting visits -->
-                <StackPanel Grid.Column="0" Spacing="8">
-                    <TextBlock Text="Waiting for Room" Style="{StaticResource SubtitleTextBlockStyle}"/>
-                    <TextBlock Text="Ordered by triage level then arrival time"
+                <Grid Grid.Column="0" RowDefinitions="Auto,Auto,*" RowSpacing="8">
+                    <TextBlock Grid.Row="0"
+                               Text="Waiting for Room"
+                               Style="{StaticResource SubtitleTextBlockStyle}"/>
+                    <TextBlock Grid.Row="1"
+                               Text="Ordered by triage level then arrival time"
                                Style="{StaticResource CaptionTextBlockStyle}"/>
                     <ListView x:Name="WaitingVisitsList"
+                              Grid.Row="2"
                               ItemsSource="{x:Bind ViewModel.WaitingVisits, Mode=OneWay}"
                               SelectedItem="{x:Bind ViewModel.SelectedVisit, Mode=TwoWay}"
-                              SelectionMode="Single" MinHeight="300">
+                              SelectionMode="Single"
+                              MinHeight="0"
+                              VerticalAlignment="Stretch"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.VerticalScrollMode="Enabled">
                         <ListView.ItemTemplate>
                             <DataTemplate>
                                 <Border Style="{StaticResource CardBorderStyle}" Margin="0,4">
@@ -57,17 +73,27 @@
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
-                </StackPanel>
+                </Grid>
 
                 <Rectangle Grid.Column="1" Fill="{ThemeResource CardStrokeColorDefaultBrush}" VerticalAlignment="Stretch"/>
 
                 <!-- Available rooms -->
-                <StackPanel Grid.Column="2" Spacing="8">
-                    <TextBlock Text="Available Rooms" Style="{StaticResource SubtitleTextBlockStyle}"/>
-                    <TextBlock Text="Select a room for manual assignment" Style="{StaticResource CaptionTextBlockStyle}"/>
-                    <ListView ItemsSource="{x:Bind ViewModel.AvailableRooms, Mode=OneWay}"
+                <Grid Grid.Column="2" RowDefinitions="Auto,Auto,*" RowSpacing="8">
+                    <TextBlock Grid.Row="0"
+                               Text="Available Rooms"
+                               Style="{StaticResource SubtitleTextBlockStyle}"/>
+                    <TextBlock Grid.Row="1"
+                               Text="Select a room for manual assignment"
+                               Style="{StaticResource CaptionTextBlockStyle}"/>
+                    <ListView x:Name="AvailableRoomsList"
+                              ItemsSource="{x:Bind ViewModel.AvailableRooms, Mode=OneWay}"
+                              Grid.Row="2"
                               SelectedItem="{x:Bind ViewModel.SelectedRoom, Mode=TwoWay}"
-                              SelectionMode="Single" MinHeight="300">
+                              SelectionMode="Single"
+                              MinHeight="0"
+                              VerticalAlignment="Stretch"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.VerticalScrollMode="Enabled">
                         <ListView.ItemTemplate>
                             <DataTemplate>
                                 <Border Style="{StaticResource CardBorderStyle}" Margin="0,4">
@@ -85,11 +111,15 @@
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
-                </StackPanel>
+                </Grid>
             </Grid>
 
             <!-- Action buttons -->
-            <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
+            <StackPanel x:Name="ActionButtonsPanel"
+                        Grid.Row="2"
+                        Orientation="Horizontal"
+                        Spacing="12"
+                        HorizontalAlignment="Right">
                 <Button Content="Auto-Assign Room" Command="{x:Bind ViewModel.AssignRoomCommand}"/>
                 <Button Content="Manual Assign" Command="{x:Bind ViewModel.ManualAssignRoomCommand}"
                         Style="{StaticResource AccentButtonStyle}"/>
@@ -98,6 +128,9 @@
 
         <!-- ── RIGHT: Visit Details Panel ── -->
         <Border Grid.Column="1"
+                Width="420"
+                MinWidth="380"
+                MaxWidth="460"
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1,0,0,0">
             <local:VisitDetailsPanel x:Name="DetailsPanel"

@@ -130,5 +130,95 @@ namespace Common.API.Controllers
                     title: "Could not delete ER visit.");
             }
         }
+
+        [HttpPost("auto-assign-room")]
+        public async Task<ActionResult<bool>> AutoAssignRoom()
+        {
+            try
+            {
+                bool assigned = await _erVisitService.AutoAssignHighestPriorityRoomAsync();
+                return Ok(assigned);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to auto-assign room.");
+                return Problem(
+                    detail: "Failed to auto-assign room.",
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not auto-assign room.");
+            }
+        }
+
+        [HttpPost("{visitId:int}/assign-room/{roomId:int}")]
+        public async Task<IActionResult> AssignRoom(int visitId, int roomId)
+        {
+            try
+            {
+                await _erVisitService.AssignRoomAsync(visitId, roomId);
+                return NoContent();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to assign room {RoomId} to visit {VisitId}.", roomId, visitId);
+                return Problem(
+                    detail: e.Message,
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not assign room.");
+            }
+        }
+
+        [HttpPost("{visitId:int}/transfer")]
+        public async Task<IActionResult> Transfer(int visitId)
+        {
+            try
+            {
+                await _erVisitService.TransferVisitAsync(visitId);
+                return NoContent();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to transfer visit {VisitId}.", visitId);
+                return Problem(
+                    detail: e.Message,
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not transfer visit.");
+            }
+        }
+
+        [HttpPost("{visitId:int}/retry-transfer")]
+        public async Task<IActionResult> RetryTransfer(int visitId)
+        {
+            try
+            {
+                await _erVisitService.RetryTransferAsync(visitId);
+                return NoContent();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to retry transfer for visit {VisitId}.", visitId);
+                return Problem(
+                    detail: e.Message,
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not retry transfer.");
+            }
+        }
+
+        [HttpPost("{visitId:int}/close")]
+        public async Task<IActionResult> Close(int visitId)
+        {
+            try
+            {
+                await _erVisitService.CloseVisitAsync(visitId);
+                return NoContent();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to close visit {VisitId}.", visitId);
+                return Problem(
+                    detail: e.Message,
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not close visit.");
+            }
+        }
     }
 }

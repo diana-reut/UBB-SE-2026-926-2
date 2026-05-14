@@ -14,9 +14,9 @@ namespace ERManagementSystem.Proxy.TriageProxy;
 public class TriageProxy : ProxyBase, ITriageProxy
 {
     private const string BaseUri = "api/triages";
-    private readonly IERVisitProxy _erVisitProxy;
-    private readonly ITriageParametersProxy _triageParametersProxy;
-    private readonly NurseService _nurseService;
+    private readonly IERVisitProxy erVisitProxy;
+    private readonly ITriageParametersProxy triageParametersProxy;
+    private readonly NurseService nurseService;
 
     public TriageProxy(
         HttpClient httpClient,
@@ -25,14 +25,14 @@ public class TriageProxy : ProxyBase, ITriageProxy
         NurseService nurseService)
         : base(httpClient)
     {
-        _erVisitProxy = erVisitProxy;
-        _triageParametersProxy = triageParametersProxy;
-        _nurseService = nurseService;
+        this.erVisitProxy = erVisitProxy;
+        this.triageParametersProxy = triageParametersProxy;
+        this.nurseService = nurseService;
     }
 
     public async Task<List<Triage>> GetAllAsync()
     {
-        return await GetAsync<List<Triage>>(BaseUri) ?? [];
+        return await GetAsync<List<Triage>>(BaseUri) ?? new List<Triage>();
     }
 
     public Task<Triage?> GetByIdAsync(int id)
@@ -53,7 +53,7 @@ public class TriageProxy : ProxyBase, ITriageProxy
         if (existingTriage is not null)
         {
             Triage_Parameters? existingParameters =
-                await _triageParametersProxy.GetByTriageIdAsync(existingTriage.Triage_ID);
+                await triageParametersProxy.GetByTriageIdAsync(existingTriage.Triage_ID);
 
             if (existingParameters is not null)
             {
@@ -63,13 +63,13 @@ public class TriageProxy : ProxyBase, ITriageProxy
             await DeleteAsync(existingTriage.Triage_ID);
         }
 
-        int? nurseId = _nurseService.RequestAvailableNurse();
+        int? nurseId = nurseService.RequestAvailableNurse();
         if (nurseId is null)
         {
             throw new InvalidOperationException("No available nurse.");
         }
 
-        var triage = new Triage
+        Triage triage = new Triage
         {
             Visit_ID = visitId,
             Triage_Level = CalculateTriageLevel(parameters),
@@ -80,8 +80,8 @@ public class TriageProxy : ProxyBase, ITriageProxy
 
         Triage createdTriage = await CreateAsync(triage);
         parameters.Triage_ID = createdTriage.Triage_ID;
-        await _triageParametersProxy.CreateAsync(parameters);
-        await _erVisitProxy.UpdateStatusAsync(visitId, ER_Visit.VisitStatus.TRIAGED);
+        await triageParametersProxy.CreateAsync(parameters);
+        await erVisitProxy.UpdateStatusAsync(visitId, ER_Visit.VisitStatus.TRIAGED);
 
         return createdTriage;
     }
@@ -104,8 +104,8 @@ public class TriageProxy : ProxyBase, ITriageProxy
 
     public async Task<IReadOnlyList<ER_Visit>> GetVisitsForTriageAsync()
     {
-        List<ER_Visit> registeredVisits = await _erVisitProxy.GetByStatusAsync(ER_Visit.VisitStatus.REGISTERED);
-        List<ER_Visit> triagedVisits = await _erVisitProxy.GetByStatusAsync(ER_Visit.VisitStatus.TRIAGED);
+        List<ER_Visit> registeredVisits = await erVisitProxy.GetByStatusAsync(ER_Visit.VisitStatus.REGISTERED);
+        List<ER_Visit> triagedVisits = await erVisitProxy.GetByStatusAsync(ER_Visit.VisitStatus.TRIAGED);
 
         return registeredVisits
             .Concat(triagedVisits)
@@ -115,12 +115,12 @@ public class TriageProxy : ProxyBase, ITriageProxy
 
     public Task MoveVisitToQueueAsync(int visitId)
     {
-        return _erVisitProxy.UpdateStatusAsync(visitId, ER_Visit.VisitStatus.WAITING_FOR_ROOM);
+        return erVisitProxy.UpdateStatusAsync(visitId, ER_Visit.VisitStatus.WAITING_FOR_ROOM);
     }
 
     public Task CloseVisitAsync(int visitId)
     {
-        return _erVisitProxy.UpdateStatusAsync(visitId, ER_Visit.VisitStatus.CLOSED);
+        return erVisitProxy.UpdateStatusAsync(visitId, ER_Visit.VisitStatus.CLOSED);
     }
 
     private static int CalculateTriageLevel(Triage_Parameters parameters)

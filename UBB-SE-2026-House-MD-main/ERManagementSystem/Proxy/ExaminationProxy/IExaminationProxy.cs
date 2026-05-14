@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Common.Data.Entity.DTOs;
 using Common.Data.Models;
 
 namespace ERManagementSystem.Proxy.ExaminationProxy;
@@ -13,4 +14,7 @@ public interface IExaminationProxy
     Task DeleteAsync(int id);
     Task<List<Examination>> GetByVisitIdAsync(int visitId);
     Task UpdateNotesAsync(int examId, string notes);
+    Task<List<ER_Visit>> GetEligibleVisitsAsync();
+    Task<List<Examination>> GetPatientHistoryAsync(string patientId);
+    Task<ERExaminationSummaryDto?> GetSummaryByVisitIdAsync(int visitId);
 }
