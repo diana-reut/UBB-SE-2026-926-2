@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Common.Data.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ERManagementSystem.Proxy.ERRoomProxy;
 using ERManagementSystem.Proxy.ERVisitProxy;
 using ERManagementSystem.Proxy.PatientProxy;
 using ERManagementSystem.Proxy.TransferLogProxy;
@@ -16,6 +17,7 @@ namespace ERManagementSystem.ViewModels
     {
         private const string TargetSystem = "Patient Management";
         private readonly ITransferLogProxy transferLogProxy;
+        private readonly IERRoomProxy erRoomProxy;
         private readonly IERVisitProxy erVisitProxy;
         private readonly IPatientProxy patientProxy;
 
@@ -44,10 +46,12 @@ namespace ERManagementSystem.ViewModels
 
         public TransferLogViewModel(
             ITransferLogProxy transferLogProxy,
+            IERRoomProxy erRoomProxy,
             IERVisitProxy erVisitProxy,
             IPatientProxy patientProxy)
         {
             this.transferLogProxy = transferLogProxy;
+            this.erRoomProxy = erRoomProxy;
             this.erVisitProxy = erVisitProxy;
             this.patientProxy = patientProxy;
         }
@@ -133,6 +137,7 @@ namespace ERManagementSystem.ViewModels
             {
                 await LogTransferAsync(SelectedVisit.Visit_ID, "SUCCESS");
                 await erVisitProxy.UpdateStatusAsync(SelectedVisit.Visit_ID, ER_Visit.VisitStatus.TRANSFERRED);
+                await ReleaseRoomAsync(SelectedVisit.Visit_ID);
                 await MarkPatientAsTransferredAsync(SelectedVisit.Visit_ID);
 
                 SelectedVisit.Status = ER_Visit.VisitStatus.TRANSFERRED;
@@ -171,6 +176,7 @@ namespace ERManagementSystem.ViewModels
                 await LogTransferAsync(SelectedVisit.Visit_ID, "RETRYING");
                 await LogTransferAsync(SelectedVisit.Visit_ID, "SUCCESS");
                 await erVisitProxy.UpdateStatusAsync(SelectedVisit.Visit_ID, ER_Visit.VisitStatus.TRANSFERRED);
+                await ReleaseRoomAsync(SelectedVisit.Visit_ID);
                 await MarkPatientAsTransferredAsync(SelectedVisit.Visit_ID);
 
                 SelectedVisit.Status = ER_Visit.VisitStatus.TRANSFERRED;
@@ -214,6 +220,7 @@ namespace ERManagementSystem.ViewModels
             try
             {
                 await erVisitProxy.UpdateStatusAsync(visitId, ER_Visit.VisitStatus.CLOSED);
+                await ReleaseRoomAsync(visitId);
                 SelectedVisit.Status = ER_Visit.VisitStatus.CLOSED;
 
                 await ShowDialog("Visit Closed",
@@ -252,6 +259,25 @@ namespace ERManagementSystem.ViewModels
 
             patient.Transferred = true;
             await patientProxy.UpdatePatientAsync(patient);
+        }
+
+        private async Task ReleaseRoomAsync(int visitId)
+        {
+            ER_Room? room = (await erRoomProxy.GetAllAsync())
+                .FirstOrDefault(existingRoom => existingRoom.Current_Visit_ID == visitId);
+
+            if (room == null)
+            {
+                return;
+            }
+
+            if (ER_Room.StatusEquals(room.Availability_Status, ER_Room.RoomStatus.Occupied))
+            {
+                room.UpdateAvailabilityStatus(ER_Room.RoomStatus.Cleaning);
+            }
+
+            room.Current_Visit_ID = null;
+            await erRoomProxy.UpdateAsync(room.Room_ID, room);
         }
 
         private async Task ShowDialog(string title, string message)

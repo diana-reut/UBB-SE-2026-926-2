@@ -9,6 +9,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
+    SizeChanged="Page_SizeChanged"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Page.Resources>
@@ -38,7 +39,6 @@
                         AutoGenerateColumns="False"
                         IsReadOnly="True"
                         MinHeight="180"
-                        MaxHeight="320"
                         GridLinesVisibility="Horizontal"
                         BorderThickness="1"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -103,7 +103,6 @@
                         AutoGenerateColumns="False"
                         IsReadOnly="True"
                         MinHeight="180"
-                        MaxHeight="320"
                         GridLinesVisibility="Horizontal"
                         BorderThickness="1"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"

@@ -18,24 +18,36 @@
                 <StackPanel Spacing="8">
                     <TextBlock Text="Patient Information"
                                Style="{StaticResource SectionTitleTextBlockStyle}"/>
-                    <Grid ColumnDefinitions="Auto,*,Auto,*"
+                    <Grid ColumnDefinitions="*,*"
                           RowDefinitions="Auto,Auto,Auto"
                           ColumnSpacing="8" RowSpacing="6">
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Full Name:"  FontWeight="SemiBold"/>
-                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="FullNameText"/>
-                        <TextBlock Grid.Row="0" Grid.Column="2" Text="CNP:"        FontWeight="SemiBold"/>
-                        <TextBlock Grid.Row="0" Grid.Column="3" x:Name="PatientIdText"/>
+                        <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
+                            <TextBlock Text="Full Name:" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="FullNameText" TextWrapping="WrapWholeWords"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
+                            <TextBlock Text="CNP:" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="PatientIdText" TextWrapping="WrapWholeWords"/>
+                        </StackPanel>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Date of Birth:" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="DateOfBirthText"/>
-                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Gender:"     FontWeight="SemiBold"/>
-                        <TextBlock Grid.Row="1" Grid.Column="3" x:Name="GenderText"/>
+                        <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2">
+                            <TextBlock Text="Date of Birth:" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="DateOfBirthText"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2">
+                            <TextBlock Text="Gender:" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="GenderText"/>
+                        </StackPanel>
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Phone:"      FontWeight="SemiBold"/>
-                        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="PhoneText"/>
-                        <TextBlock Grid.Row="2" Grid.Column="2" Text="Emergency:"  FontWeight="SemiBold"/>
-                        <TextBlock Grid.Row="2" Grid.Column="3" x:Name="EmergencyContactText"/>
+                        <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2">
+                            <TextBlock Text="Phone:" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="PhoneText" TextWrapping="WrapWholeWords"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2">
+                            <TextBlock Text="Emergency:" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="EmergencyContactText" TextWrapping="WrapWholeWords"/>
+                        </StackPanel>
                     </Grid>
                 </StackPanel>
             </Border>
@@ -45,18 +57,23 @@
                 <StackPanel Spacing="8">
                     <TextBlock Text="Visit Information"
                                Style="{StaticResource SectionTitleTextBlockStyle}"/>
-                    <Grid ColumnDefinitions="Auto,*,Auto,*"
+                    <Grid ColumnDefinitions="*,*"
                           RowDefinitions="Auto,Auto"
                           ColumnSpacing="8" RowSpacing="6">
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Visit ID:"  FontWeight="SemiBold"/>
-                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="VisitIdText"/>
-                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Arrival:"   FontWeight="SemiBold"/>
-                        <TextBlock Grid.Row="0" Grid.Column="3" x:Name="ArrivalText"/>
+                        <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
+                            <TextBlock Text="Visit ID:" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="VisitIdText"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
+                            <TextBlock Text="Arrival:" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="ArrivalText"/>
+                        </StackPanel>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Chief Complaint:" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3"
-                                   x:Name="ChiefComplaintText" TextWrapping="Wrap"/>
+                        <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Spacing="2">
+                            <TextBlock Text="Chief Complaint:" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="ChiefComplaintText" TextWrapping="WrapWholeWords"/>
+                        </StackPanel>
                     </Grid>
                 </StackPanel>
             </Border>
@@ -68,19 +85,27 @@
                 <StackPanel Spacing="8">
                     <TextBlock Text="Triage Information"
                                Style="{StaticResource SectionTitleTextBlockStyle}"/>
-                    <Grid ColumnDefinitions="Auto,*,Auto,*"
+                    <Grid ColumnDefinitions="*,*"
                           RowDefinitions="Auto,Auto"
                           ColumnSpacing="8" RowSpacing="6">
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Triage Level:"   FontWeight="SemiBold"/>
-                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TriageLevelText"/>
-                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Specialization:" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Row="0" Grid.Column="3" x:Name="SpecializationText"/>
+                        <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
+                            <TextBlock Text="Triage Level:" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="TriageLevelText"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
+                            <TextBlock Text="Specialization:" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="SpecializationText" TextWrapping="WrapWholeWords"/>
+                        </StackPanel>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Nurse ID:"    FontWeight="SemiBold"/>
-                        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="NurseIdText"/>
-                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Triage Time:" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Row="1" Grid.Column="3" x:Name="TriageTimeText"/>
+                        <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2">
+                            <TextBlock Text="Nurse ID:" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="NurseIdText"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2">
+                            <TextBlock Text="Triage Time:" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="TriageTimeText"/>
+                        </StackPanel>
                     </Grid>
                 </StackPanel>
             </Border>

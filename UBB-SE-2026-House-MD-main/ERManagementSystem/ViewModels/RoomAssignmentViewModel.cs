@@ -238,9 +238,29 @@ namespace ERManagementSystem.ViewModels
             }
 
             room.UpdateAvailabilityStatus(ER_Room.RoomStatus.Occupied);
+            room.Current_Visit_ID = visitId;
             await erRoomProxy.UpdateAsync(roomId, room);
-            await erRoomProxy.SetCurrentVisitAsync(roomId, visitId);
             await erVisitProxy.UpdateStatusAsync(visitId, ER_Visit.VisitStatus.IN_ROOM);
+
+            ER_Room updatedRoom = await erRoomProxy.GetByIdAsync(roomId)
+                ?? throw new InvalidOperationException($"Room {roomId} could not be reloaded after assignment.");
+
+            ER_Visit updatedVisit = await erVisitProxy.GetByIdAsync(visitId)
+                ?? throw new InvalidOperationException($"Visit {visitId} could not be reloaded after assignment.");
+
+            if (!ER_Room.StatusEquals(updatedRoom.Availability_Status, ER_Room.RoomStatus.Occupied) ||
+                updatedRoom.Current_Visit_ID != visitId)
+            {
+                throw new InvalidOperationException(
+                    $"Room {roomId} was not persisted correctly after assignment.");
+            }
+
+            if (updatedVisit.Status != ER_Visit.VisitStatus.IN_ROOM)
+            {
+                throw new InvalidOperationException(
+                    $"Visit {visitId} did not transition to IN_ROOM after assignment.");
+            }
+
             Logger.Info($"Visit {visitId} assigned to Room {roomId}.");
         }
 

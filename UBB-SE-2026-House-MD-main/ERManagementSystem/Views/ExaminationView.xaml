@@ -8,6 +8,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
+    SizeChanged="Page_SizeChanged"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <ScrollViewer Padding="24">
@@ -33,7 +34,6 @@
                         AutoGenerateColumns="False"
                         IsReadOnly="True"
                         MinHeight="180"
-                        MaxHeight="320"
                         GridLinesVisibility="Horizontal"
                         BorderThickness="1"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -157,12 +157,13 @@
                         Text="Past Examinations"
                         Style="{StaticResource SectionTitleTextBlockStyle}"/>
                     <controls:DataGrid
+                        x:Name="HistoryDataGrid"
                         ItemsSource="{x:Bind ViewModel.ExaminationHistory, Mode=OneWay}"
                         AutoGenerateColumns="False"
                         IsReadOnly="True"
                         GridLinesVisibility="Horizontal"
                         SelectionMode="Single"
-                        MinHeight="100" MaxHeight="220"
+                        MinHeight="100"
                         HeadersVisibility="Column"
                         VerticalScrollBarVisibility="Auto"
                         Margin="0,8,0,0">
