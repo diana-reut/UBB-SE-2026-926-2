@@ -32,6 +32,13 @@ public abstract class ProxyBase
         return await response.Content.ReadFromJsonAsync<TResponse>(Options);
     }
 
+    protected async Task PostAsync(string uri)
+    {
+        Uri requestUri = new Uri(uri, UriKind.RelativeOrAbsolute);
+        using HttpResponseMessage response = await HttpClient.PostAsync(requestUri, content: null);
+        response.EnsureSuccessStatusCode();
+    }
+
     protected async Task PutAsync<TRequest>(string uri, TRequest data)
     {
         Uri requestUri = new Uri(uri, UriKind.RelativeOrAbsolute);
@@ -44,5 +51,10 @@ public abstract class ProxyBase
         Uri requestUri = new Uri(uri, UriKind.RelativeOrAbsolute);
         using HttpResponseMessage response = await HttpClient.DeleteAsync(requestUri);
         response.EnsureSuccessStatusCode();
+    }
+
+    protected Task DeleteRequestAsync(string uri)
+    {
+        return DeleteAsync(uri);
     }
 }

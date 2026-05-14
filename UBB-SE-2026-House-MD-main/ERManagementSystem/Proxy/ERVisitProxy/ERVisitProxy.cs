@@ -39,7 +39,7 @@ public class ERVisitProxy : ProxyBase, IERVisitProxy
 
     public Task DeleteAsync(int id)
     {
-        return DeleteAsync($"{BaseUri}/{id}");
+        return DeleteRequestAsync($"{BaseUri}/{id}");
     }
 
     public async Task<List<ER_Visit>> GetByStatusAsync(string status)
@@ -57,5 +57,31 @@ public class ERVisitProxy : ProxyBase, IERVisitProxy
 
         visit.Status = status;
         await UpdateAsync(id, visit);
+    }
+
+    public async Task<bool> AutoAssignHighestPriorityRoomAsync()
+    {
+        bool? assigned = await PostAsync<object, bool>($"{BaseUri}/auto-assign-room", new { });
+        return assigned ?? false;
+    }
+
+    public Task AssignRoomAsync(int visitId, int roomId)
+    {
+        return PostAsync($"{BaseUri}/{visitId}/assign-room/{roomId}");
+    }
+
+    public Task TransferVisitAsync(int visitId)
+    {
+        return PostAsync($"{BaseUri}/{visitId}/transfer");
+    }
+
+    public Task RetryTransferAsync(int visitId)
+    {
+        return PostAsync($"{BaseUri}/{visitId}/retry-transfer");
+    }
+
+    public Task CloseVisitAsync(int visitId)
+    {
+        return PostAsync($"{BaseUri}/{visitId}/close");
     }
 }

@@ -1,5 +1,6 @@
 using System.Net;
 using Common.API.Services;
+using Common.Data.Entity.DTOs;
 using Common.Data.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -59,6 +60,46 @@ namespace Common.API.Controllers
                     detail: "Failed to fetch ER room.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
                     title: "Could not fetch ER room.");
+            }
+        }
+
+        [HttpGet("status/{status}")]
+        public async Task<ActionResult<List<ER_Room>>> GetByStatus(string status)
+        {
+            try
+            {
+                return Ok(await _erRoomService.GetByStatusAsync(status));
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to fetch ER rooms with status {Status}.", status);
+                return Problem(
+                    detail: "Failed to fetch ER rooms by status.",
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not fetch ER rooms by status.");
+            }
+        }
+
+        [HttpGet("{id:int}/visit-details")]
+        public async Task<ActionResult<ERRoomVisitDetailsDto>> GetVisitDetails(int id)
+        {
+            try
+            {
+                ERRoomVisitDetailsDto? result = await _erRoomService.GetVisitDetailsAsync(id);
+                if (result == null)
+                {
+                    return NotFound();
+                }
+
+                return Ok(result);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to fetch visit details for room {RoomId}.", id);
+                return Problem(
+                    detail: "Failed to fetch room visit details.",
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not fetch room visit details.");
             }
         }
 
@@ -128,6 +169,42 @@ namespace Common.API.Controllers
                     detail: "Failed to delete ER room.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
                     title: "Could not delete ER room.");
+            }
+        }
+
+        [HttpPost("{id:int}/mark-cleaning")]
+        public async Task<IActionResult> MarkCleaning(int id)
+        {
+            try
+            {
+                await _erRoomService.MarkRoomAsCleaningAsync(id);
+                return NoContent();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to mark room {RoomId} as cleaning.", id);
+                return Problem(
+                    detail: e.Message,
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not mark room as cleaning.");
+            }
+        }
+
+        [HttpPost("{id:int}/mark-available")]
+        public async Task<IActionResult> MarkAvailable(int id)
+        {
+            try
+            {
+                await _erRoomService.MarkRoomAsAvailableAsync(id);
+                return NoContent();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to mark room {RoomId} as available.", id);
+                return Problem(
+                    detail: e.Message,
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not mark room as available.");
             }
         }
     }

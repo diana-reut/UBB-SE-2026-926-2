@@ -1,18 +1,12 @@
 using System;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Threading.Tasks;
-using Common.Data.Entity;
+using Common.Data.Entity.DTOs;
 using Common.Data.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ERManagementSystem.Helpers;
-using ERManagementSystem.Models;
 using ERManagementSystem.Proxy.ERRoomProxy;
-using ERManagementSystem.Proxy.ERVisitProxy;
-using ERManagementSystem.Proxy.ExaminationProxy;
-using ERManagementSystem.Proxy.PatientProxy;
-using ERManagementSystem.Proxy.TriageProxy;
 using Microsoft.UI.Xaml.Controls;
 
 namespace ERManagementSystem.ViewModels
@@ -20,25 +14,12 @@ namespace ERManagementSystem.ViewModels
     public partial class RoomManagementViewModel : BaseViewModel
     {
         private readonly IERRoomProxy erRoomProxy;
-        private readonly IERVisitProxy erVisitProxy;
-        private readonly IExaminationProxy examinationProxy;
-        private readonly ITriageProxy triageProxy;
-        private readonly IPatientProxy patientProxy;
 
         public Microsoft.UI.Xaml.XamlRoot? XamlRoot { get; set; }
 
-        public RoomManagementViewModel(
-            IERRoomProxy erRoomProxy,
-            IERVisitProxy erVisitProxy,
-            IExaminationProxy examinationProxy,
-            ITriageProxy triageProxy,
-            IPatientProxy patientProxy)
+        public RoomManagementViewModel(IERRoomProxy erRoomProxy)
         {
             this.erRoomProxy = erRoomProxy;
-            this.erVisitProxy = erVisitProxy;
-            this.examinationProxy = examinationProxy;
-            this.triageProxy = triageProxy;
-            this.patientProxy = patientProxy;
         }
 
         [ObservableProperty] private Patient? selectedPatient;
@@ -79,7 +60,7 @@ namespace ERManagementSystem.ViewModels
         {
             try
             {
-                var roomVisitDetails = await GetRoomVisitDetailsAsync(room);
+                ERRoomVisitDetailsDto? roomVisitDetails = await erRoomProxy.GetVisitDetailsAsync(room.Room_ID);
                 if (roomVisitDetails == null)
                 {
                     ClearVisitDetails();
@@ -101,43 +82,6 @@ namespace ERManagementSystem.ViewModels
             SelectedPatient = null;
             SelectedVisit = null;
             SelectedTriage = null;
-        }
-
-        private async Task<RoomVisitDetails?> GetRoomVisitDetailsAsync(ER_Room room)
-        {
-            ER_Visit? visit = null;
-
-            if (room.Current_Visit_ID.HasValue)
-            {
-                visit = await erVisitProxy.GetByIdAsync(room.Current_Visit_ID.Value);
-            }
-
-            if (visit == null)
-            {
-                var examinations = await examinationProxy.GetAllAsync();
-                int? fallbackVisitId = examinations
-                    .Where(examination => examination.Room_ID == room.Room_ID)
-                    .OrderByDescending(examination => examination.Exam_Time)
-                    .Select(examination => (int?)examination.Visit_ID)
-                    .FirstOrDefault();
-
-                if (fallbackVisitId.HasValue)
-                {
-                    visit = await erVisitProxy.GetByIdAsync(fallbackVisitId.Value);
-                }
-            }
-
-            if (visit == null)
-            {
-                return null;
-            }
-
-            return new RoomVisitDetails
-            {
-                Visit = visit,
-                Patient = await patientProxy.GetByCnpAsync(visit.Patient_ID),
-                Triage = await triageProxy.GetByVisitIdAsync(visit.Visit_ID)
-            };
         }
 
         [ObservableProperty] private ObservableCollection<ER_Room> availableRooms = new ObservableCollection<ER_Room>();
@@ -192,21 +136,7 @@ namespace ERManagementSystem.ViewModels
             try
             {
                 IsBusy = true;
-                int? visitId = SelectedOccupiedRoom.Current_Visit_ID;
-                SelectedOccupiedRoom.UpdateAvailabilityStatus(ER_Room.RoomStatus.Cleaning);
-                await erRoomProxy.UpdateAsync(SelectedOccupiedRoom.Room_ID, SelectedOccupiedRoom);
-                await erRoomProxy.ClearCurrentVisitAsync(SelectedOccupiedRoom.Room_ID);
-
-                if (visitId.HasValue)
-                {
-                    ER_Visit? visit = await erVisitProxy.GetByIdAsync(visitId.Value);
-                    if (visit != null &&
-                        (visit.Status == ER_Visit.VisitStatus.IN_ROOM ||
-                         visit.Status == ER_Visit.VisitStatus.WAITING_FOR_DOCTOR))
-                    {
-                        await erVisitProxy.UpdateStatusAsync(visit.Visit_ID, ER_Visit.VisitStatus.WAITING_FOR_ROOM);
-                    }
-                }
+                await erRoomProxy.MarkRoomAsCleaningAsync(SelectedOccupiedRoom.Room_ID);
 
                 await ShowDialog("Room Cleaning", $"Room {SelectedOccupiedRoom.Room_ID} ({SelectedOccupiedRoom.Room_Type}) is now being cleaned.");
                 SelectedOccupiedRoom = null;
@@ -233,8 +163,7 @@ namespace ERManagementSystem.ViewModels
             try
             {
                 IsBusy = true;
-                SelectedCleaningRoom.UpdateAvailabilityStatus(ER_Room.RoomStatus.Available);
-                await erRoomProxy.UpdateAsync(SelectedCleaningRoom.Room_ID, SelectedCleaningRoom);
+                await erRoomProxy.MarkRoomAsAvailableAsync(SelectedCleaningRoom.Room_ID);
                 await ShowDialog("Room Ready", $"Room {SelectedCleaningRoom.Room_ID} ({SelectedCleaningRoom.Room_Type}) is now available.");
                 SelectedCleaningRoom = null;
                 await LoadRooms();

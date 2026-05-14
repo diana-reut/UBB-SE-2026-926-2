@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Common.Data.Entity.DTOs;
 using Common.Data.Models;
 using ERManagementSystem.Proxy;
 
@@ -39,15 +39,12 @@ public class ERRoomProxy : ProxyBase, IERRoomProxy
 
     public Task DeleteAsync(int id)
     {
-        return DeleteAsync($"{BaseUri}/{id}");
+        return DeleteRequestAsync($"{BaseUri}/{id}");
     }
 
     public async Task<List<ER_Room>> GetRoomsByStatusAsync(string status)
     {
-        List<ER_Room> rooms = await GetAllAsync();
-        return rooms
-            .Where(room => ER_Room.StatusEquals(room.Availability_Status, status))
-            .ToList();
+        return await GetAsync<List<ER_Room>>($"{BaseUri}/status/{status}") ?? new List<ER_Room>();
     }
 
     public Task<List<ER_Room>> GetAvailableRoomsAsync()
@@ -81,5 +78,20 @@ public class ERRoomProxy : ProxyBase, IERRoomProxy
 
         room.Current_Visit_ID = null;
         await UpdateAsync(roomId, room);
+    }
+
+    public Task<ERRoomVisitDetailsDto?> GetVisitDetailsAsync(int roomId)
+    {
+        return GetAsync<ERRoomVisitDetailsDto>($"{BaseUri}/{roomId}/visit-details");
+    }
+
+    public Task MarkRoomAsCleaningAsync(int roomId)
+    {
+        return PostAsync($"{BaseUri}/{roomId}/mark-cleaning");
+    }
+
+    public Task MarkRoomAsAvailableAsync(int roomId)
+    {
+        return PostAsync($"{BaseUri}/{roomId}/mark-available");
     }
 }

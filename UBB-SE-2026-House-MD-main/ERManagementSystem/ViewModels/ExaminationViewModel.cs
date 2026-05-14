@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Common.Data.Entity;
+using Common.Data.Entity.DTOs;
 using Common.Data.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -11,7 +12,6 @@ using ERManagementSystem.Models;
 using ERManagementSystem.Proxy.ERRoomProxy;
 using ERManagementSystem.Proxy.ERVisitProxy;
 using ERManagementSystem.Proxy.ExaminationProxy;
-using ERManagementSystem.Proxy.PatientProxy;
 using ERManagementSystem.Proxy.TriageParametersProxy;
 using ERManagementSystem.Proxy.TriageProxy;
 using ERManagementSystem.Services;
@@ -27,7 +27,6 @@ namespace ERManagementSystem.ViewModels
         private readonly IERRoomProxy erRoomProxy;
         private readonly ITriageProxy triageProxyApi;
         private readonly ITriageParametersProxy triageParametersProxy;
-        private readonly IPatientProxy patientProxy;
 
         public Microsoft.UI.Xaml.XamlRoot? XamlRoot { get; set; }
 
@@ -81,8 +80,7 @@ namespace ERManagementSystem.ViewModels
             IERVisitProxy erVisitProxyApi,
             IERRoomProxy erRoomProxy,
             ITriageProxy triageProxyApi,
-            ITriageParametersProxy triageParametersProxy,
-            IPatientProxy patientProxy)
+            ITriageParametersProxy triageParametersProxy)
         {
             this.examinationProxy = examinationProxy;
             this.mockStaffService = mockStaffService;
@@ -90,7 +88,6 @@ namespace ERManagementSystem.ViewModels
             this.erRoomProxy = erRoomProxy;
             this.triageProxyApi = triageProxyApi;
             this.triageParametersProxy = triageParametersProxy;
-            this.patientProxy = patientProxy;
 
             autoSaveTimer = new Microsoft.UI.Xaml.DispatcherTimer
             {
@@ -155,18 +152,7 @@ namespace ERManagementSystem.ViewModels
             StatusMessage = string.Empty;
             ClearTriageDetails();
 
-            HashSet<int> roomLinkedVisitIds = (await erRoomProxy.GetAllAsync())
-                .Where(room => room.Current_Visit_ID.HasValue)
-                .Select(room => room.Current_Visit_ID!.Value)
-                .ToHashSet();
-
-            List<ER_Visit> inRoom = await erVisitProxyApi.GetByStatusAsync(ER_Visit.VisitStatus.IN_ROOM);
-            List<ER_Visit> waiting = await erVisitProxyApi.GetByStatusAsync(ER_Visit.VisitStatus.WAITING_FOR_DOCTOR);
-
-            IEnumerable<ER_Visit> eligibleVisits = inRoom
-                .Concat(waiting)
-                .Where(visit => visit.Status != ER_Visit.VisitStatus.IN_ROOM || roomLinkedVisitIds.Contains(visit.Visit_ID))
-                .OrderBy(visit => visit.Arrival_date_time);
+            List<ER_Visit> eligibleVisits = await examinationProxy.GetEligibleVisitsAsync();
 
             foreach (ER_Visit visit in eligibleVisits)
             {
@@ -191,7 +177,7 @@ namespace ERManagementSystem.ViewModels
             }
 
             ExaminationHistory.Clear();
-            List<Examination> history = await GetPatientHistoryAsync(value.Patient_ID);
+            List<Examination> history = await examinationProxy.GetPatientHistoryAsync(value.Patient_ID);
             foreach (Examination exam in history)
             {
                 ExaminationHistory.Add(exam);
@@ -395,7 +381,7 @@ namespace ERManagementSystem.ViewModels
                 return;
             }
 
-            ExaminationSummaryDTO? summary = await BuildExaminationSummaryAsync(existingExam);
+            ERExaminationSummaryDto? summary = await examinationProxy.GetSummaryByVisitIdAsync(SelectedVisit.Visit_ID);
             if (summary == null)
             {
                 await ShowDialog("Error", "Could not aggregate summary data to display.");
@@ -448,24 +434,6 @@ namespace ERManagementSystem.ViewModels
             await dialog.ShowAsync();
         }
 
-        private async Task<List<Examination>> GetPatientHistoryAsync(string patientId)
-        {
-            HashSet<int> patientVisitIds = (await erVisitProxyApi.GetAllAsync())
-                .Where(visit => visit.Patient_ID == patientId)
-                .Select(visit => visit.Visit_ID)
-                .ToHashSet();
-
-            if (patientVisitIds.Count == 0)
-            {
-                return new List<Examination>();
-            }
-
-            return (await examinationProxy.GetAllAsync())
-                .Where(examination => patientVisitIds.Contains(examination.Visit_ID))
-                .OrderByDescending(examination => examination.Exam_Time)
-                .ToList();
-        }
-
         private async Task<int> ResolveAssignedRoomIdAsync(int visitId)
         {
             ER_Room? currentRoom = (await erRoomProxy.GetAllAsync())
@@ -491,47 +459,6 @@ namespace ERManagementSystem.ViewModels
 
             return fallbackRoom?.Room_ID ?? throw new InvalidOperationException("No ER rooms are available.");
         }
-
-        private async Task<ExaminationSummaryDTO?> BuildExaminationSummaryAsync(Examination examination)
-        {
-            ER_Visit? visit = await erVisitProxyApi.GetByIdAsync(examination.Visit_ID);
-            if (visit == null)
-            {
-                return null;
-            }
-
-            Patient? patient = await patientProxy.GetByCnpAsync(visit.Patient_ID);
-            Triage? triage = await triageProxyApi.GetByVisitIdAsync(visit.Visit_ID);
-            if (patient == null || triage == null)
-            {
-                return null;
-            }
-
-            Triage_Parameters? parameters = await triageParametersProxy.GetByTriageIdAsync(triage.Triage_ID);
-            if (parameters == null)
-            {
-                return null;
-            }
-
-            return new ExaminationSummaryDTO
-            {
-                FirstName = patient.First_Name,
-                LastName = patient.Last_Name,
-                ArrivalDateTime = visit.Arrival_date_time,
-                ChiefComplaint = visit.Chief_Complaint,
-                TriageLevel = triage.Triage_Level,
-                Specialization = triage.Specialization,
-                Consciousness = parameters.Consciousness,
-                Breathing = parameters.Breathing,
-                Bleeding = parameters.Bleeding,
-                InjuryType = parameters.Injury_Type,
-                PainLevel = parameters.Pain_Level,
-                DoctorId = examination.Doctor_ID,
-                ExamTime = examination.Exam_Time,
-                Notes = examination.Notes,
-            };
-        }
-
         private async Task ShowDialog(string title, string message)
         {
             if (XamlRoot == null)
