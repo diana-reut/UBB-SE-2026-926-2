@@ -27,17 +27,6 @@
             </StackPanel>
 
             <StackPanel Grid.Row="1" Spacing="10" Margin="0,0,0,10">
-                <Button HorizontalAlignment="Stretch"
-                Background="#2A6478"
-                Foreground="White"
-                CornerRadius="4"
-                Padding="10,8"
-                Command="{Binding NavigateHomeCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
-                        <FontIcon Glyph="&#xE72B;" FontSize="14" Foreground="White"/>
-                        <TextBlock Text="Back to Home" Foreground="White" FontWeight="SemiBold"/>
-                    </StackPanel>
-                </Button>
                 <Button Command="{Binding ReportGhostCommand}" HorizontalAlignment="Stretch" Background="#FFE779" BorderBrush="Transparent" Padding="10" CornerRadius="4" ToolTipService.ToolTip="Report Paranormal Activity">
                     <Button.Resources>
                         <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#FFD54F"/>

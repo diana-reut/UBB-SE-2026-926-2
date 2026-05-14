@@ -14,6 +14,5 @@ internal sealed partial class PharmacistDashboardPage : Page
         ViewModel = ServiceRegistry.Services.GetRequiredService<PharmacistViewModel>();
         InitializeComponent();
         DataContext = ViewModel;
-        ViewModel.RequestNavigateHome += (ServiceRegistry.MainWindow as MainWindow)!.NavigateToHome;
     }
 }

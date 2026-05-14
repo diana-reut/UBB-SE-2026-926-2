@@ -87,9 +87,4 @@ public partial class PharmacistViewModel : ObservableObject
     {
         IsExorcismAlertVisible = true;
     }
-
-    public event Action? RequestNavigateHome;
-
-    [RelayCommand]
-    private void NavigateHome() => RequestNavigateHome?.Invoke();
 }
