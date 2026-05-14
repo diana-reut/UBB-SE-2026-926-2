@@ -82,7 +82,7 @@
                         <Button Content="" FontFamily="Segoe MDL2 Assets" Background="Transparent" VerticalAlignment="Center">
                             <Button.Flyout>
                                 <Flyout Placement="BottomEdgeAlignedRight">
-                                    <StackPanel Width="220" Spacing="10" Padding="10">
+                                    <StackPanel Width="280" Spacing="10" Padding="10">
                                         <TextBlock Text="Advanced Filters" FontWeight="Bold" Margin="0,0,0,5"/>
                                         <NumberBox Header="Min Age" Value="{Binding MinAge, Mode=TwoWay}" SpinButtonPlacementMode="Compact" />
                                         <NumberBox Header="Max Age" Value="{Binding MaxAge, Mode=TwoWay}" SpinButtonPlacementMode="Compact" />

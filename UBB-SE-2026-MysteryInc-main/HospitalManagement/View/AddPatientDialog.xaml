@@ -7,7 +7,9 @@
     CloseButtonText="Cancel"
     DefaultButton="Primary"
     PrimaryButtonClick="ContentDialog_PrimaryButtonClick">
-
+    <ContentDialog.Resources>
+        <CornerRadius x:Key="ControlCornerRadius">6</CornerRadius>
+    </ContentDialog.Resources>
     <StackPanel Spacing="12" Width="400" Margin="0,10,0,0">
         <TextBlock x:Name="ErrorLabel" 
                Foreground="Red" 
@@ -15,28 +17,26 @@
                TextWrapping="WrapWholeWords" 
                FontSize="12" 
                FontStyle="Italic"/>
-        <TextBox x:Name="FirstNameEntry" Header="First Name" PlaceholderText="e.g. Ion"/>
+        <TextBox x:Name="FirstNameEntry" Header="First Name" PlaceholderText="e.g. Ion" CornerRadius="6"/>
         <TextBlock x:Name="FirstNameError" Text="First Name is required" Foreground="Red" FontSize="11" Visibility="Collapsed" Margin="0,-4,0,0"/>
-        <TextBox x:Name="LastNameEntry" Header="Last Name" PlaceholderText="e.g. Popescu"/>
+        <TextBox x:Name="LastNameEntry" Header="Last Name" PlaceholderText="e.g. Popescu" CornerRadius="6"/>
         <TextBlock x:Name="LastNameError" Text="Last Name is required" Foreground="Red" FontSize="11" Visibility="Collapsed" Margin="0,-4,0,0"/>
-
         <Grid ColumnSpacing="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*"/>
                 <ColumnDefinition Width="2*"/>
             </Grid.ColumnDefinitions>
-            <ComboBox x:Name="SexEntry" Header="Sex" HorizontalAlignment="Stretch" SelectedIndex="0">
+            <ComboBox x:Name="SexEntry" Header="Sex" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" SelectedIndex="0">
                 <ComboBoxItem Content="M"/>
                 <ComboBoxItem Content="F"/>
             </ComboBox>
             <CalendarDatePicker x:Name="DobEntry" Header="Birth Date" Grid.Column="1" HorizontalAlignment="Stretch" PlaceholderText="Pick a date"/>
         </Grid>
-
-        <TextBox x:Name="CnpEntry" Header="CNP" MaxLength="13" PlaceholderText="13 digits"/>
+        <TextBox x:Name="CnpEntry" Header="CNP" MaxLength="13" PlaceholderText="13 digits" CornerRadius="6"/>
         <TextBlock x:Name="CnpError" Text="CNP must be exactly 13 digits and match Sex/Birth Date" Foreground="Red" FontSize="11" Visibility="Collapsed" Margin="0,-4,0,0"/>
-        <TextBox x:Name="PhoneEntry" Header="Phone Number" PlaceholderText="+40..."/>
+        <TextBox x:Name="PhoneEntry" Header="Phone Number" PlaceholderText="+40..." CornerRadius="6"/>
         <TextBlock x:Name="PhoneError" Text="Phone must be 10 digits" Foreground="Red" FontSize="11" Visibility="Collapsed" Margin="0,-4,0,0"/>
-        <TextBox x:Name="EmergencyEntry" Header="Emergency Contact"/>
+        <TextBox x:Name="EmergencyEntry" Header="Emergency Contact" CornerRadius="6"/>
         <TextBlock x:Name="EmergencyError" 
            Text="Emergency contact must be 10 digits" 
            Foreground="Red" FontSize="11" 

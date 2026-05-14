@@ -56,17 +56,17 @@
             <StackPanel Grid.RowSpan="2" Visibility="{Binding IsActiveMode, Converter={StaticResource BoolToVis}}">
                 <Border Background="#2C3A4A" Padding="15" CornerRadius="10" Margin="0,0,0,15">
                     <StackPanel Orientation="Horizontal" Spacing="15">
-                        <TextBox PlaceholderText="Search by Name or CNP..." Width="250" Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox PlaceholderText="Search by Name or CNP..." Width="250" Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" CornerRadius="6"/>
                         <Button Content="Add New Patient" Command="{Binding AddPatientCommand}" CornerRadius="6"/>
                         <Button Content="I saw a ghost!" Command="{Binding GhostSightingCommand}" Background="#FFE779" Foreground="#1E2A38" FontWeight="Bold" CornerRadius="4" Padding="12,8"/>
                         <Button Content="" FontFamily="Segoe MDL2 Assets" Background="Transparent" VerticalAlignment="Center">
                             <Button.Flyout>
                                 <Flyout Placement="BottomEdgeAlignedRight">
-                                    <StackPanel Width="220" Spacing="10" Padding="10">
+                                    <StackPanel Width="300" Spacing="10" Padding="10">
                                         <TextBlock Text="Advanced Filters" FontWeight="Bold" Margin="0,0,0,5"/>
-                                        <NumberBox Header="Min Age" Value="{Binding MinAge, Mode=TwoWay}" SpinButtonPlacementMode="Compact" />
-                                        <NumberBox Header="Max Age" Value="{Binding MaxAge, Mode=TwoWay}" SpinButtonPlacementMode="Compact" />
-                                        <ComboBox Header="Sex" HorizontalAlignment="Stretch" SelectedItem="{Binding SelectedSexFilter, Mode=TwoWay}">
+                                        <NumberBox Header="Min Age" Value="{Binding MinAge, Mode=TwoWay}" SpinButtonPlacementMode="Hidden" HorizontalAlignment="Stretch"/>
+                                        <NumberBox Header="Max Age" Value="{Binding MaxAge, Mode=TwoWay}" SpinButtonPlacementMode="Hidden" HorizontalAlignment="Stretch"/>
+                                        <ComboBox Header="Sex" HorizontalAlignment="Stretch" Width="280" SelectedItem="{Binding SelectedSexFilter, Mode=TwoWay}">
                                             <ComboBoxItem Content="M"/>
                                             <ComboBoxItem Content="F"/>
                                         </ComboBox>
