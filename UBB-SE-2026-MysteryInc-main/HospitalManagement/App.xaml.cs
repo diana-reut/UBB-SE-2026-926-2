@@ -72,14 +72,6 @@ public partial class App : Application
         var services = new ServiceCollection();
         _ = services.AddSingleton(AppConfiguration);
 
-        _ = services.AddDbContext<EFHospitalDbContext>(options =>
-            options.UseSqlServer(AppConfiguration.GetConnectionString("DefaultConnection")));
-
-        _ = services.AddScoped<IPatientRepository, PatientRepository>();
-        _ = services.AddScoped<IMedicalHistoryRepository, MedicalHistoryRepository>();
-        _ = services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
-        _ = services.AddScoped<ITransplantRepository, TransplantRepository>();
-        _ = services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
 
         _ = services.AddHttpClient<IBloodCompatibilityProxy, BloodCompatibilityProxy>((client) =>
         {
