@@ -354,8 +354,8 @@ public partial class App : Application
     private void EnsureDatabaseCreated()
     {
         using IServiceScope scope = Services.CreateScope();
-        EFHospitalDbContext dbContext = scope.ServiceProvider.GetRequiredService<EFHospitalDbContext>();
-        dbContext.Database.EnsureCreated();
+        // EFHospitalDbContext dbContext = scope.ServiceProvider.GetRequiredService<EFHospitalDbContext>();
+        // dbContext.Database.EnsureCreated();
     }
 
     private static void CurrentDomain_UnhandledException(object sender, System.UnhandledExceptionEventArgs e)
