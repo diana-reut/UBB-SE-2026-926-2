@@ -320,7 +320,6 @@ public partial class App : Application
         _ = services.AddSingleton<DiscountRouletteViewModel>();
         _ = services.AddSingleton<Func<PrescriptionView>>(sp => () => sp.GetRequiredService<PrescriptionView>());
 
-        _ = services.AddSingleton<IExternalProvider, MockERProxy>();
         _ = services.AddSingleton<IExternalProvider, MockStaffProxy>();
         _ = services.AddSingleton<IExternalPatientPublisher, ExternalPatientPublisher>();
         _ = services.AddSingleton<IDialogService, DialogService>();
