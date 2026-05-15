@@ -8,6 +8,7 @@ using System;
 using System.Globalization;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace HospitalManagement.View;
 
@@ -75,11 +76,26 @@ internal sealed partial class PatientProfileView : Page
 
     private void OpenFile(string path)
     {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            ShowAlertAsync("Export Failed", "The exported PDF could not be found.");
+            return;
+        }
+
         var psi = new System.Diagnostics.ProcessStartInfo
         {
             FileName = path,
             UseShellExecute = true,
         };
+
+        try
+        {
+            System.Diagnostics.Process.Start(psi);
+        }
+        catch (Exception ex)
+        {
+            ShowAlertAsync("Export Failed", $"Could not open the exported PDF. {ex.Message}");
+        }
     }
 
     private async Task OnShowPrescriptionAsync(int prescriptionId)

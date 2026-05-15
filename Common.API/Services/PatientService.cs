@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System;
+using Common.Data.Entity.DTOs;
 using Common.Data.Entity.Enums;
 using Common.Data.Entity;
 using Common.Data.Integration;
@@ -245,6 +246,35 @@ public class PatientService : IPatientService
         }
     }
 
+    public async Task<int> CreateMedicalRecordAsync(int patientId, MedicalRecord record)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+
+        _ = await _patientRepo.GetByIdAsync(patientId) ?? throw new KeyNotFoundException($"Patient with ID {patientId} not found.");
+
+        MedicalHistory? history = await _historyRepo.GetByPatientIdAsync(patientId);
+        if (history is null)
+        {
+            throw new InvalidOperationException($"Patient {patientId} does not have a medical history.");
+        }
+
+        record.HistoryId = history.Id;
+        return await _recordRepo.AddAsync(record);
+    }
+
+    public async Task CreatePrescriptionAsync(int recordId, Prescription prescription)
+    {
+        if (_prescriptionRepo is null)
+            throw new InvalidOperationException("PrescriptionRepository is not available.");
+
+        ArgumentNullException.ThrowIfNull(prescription);
+
+        _ = await _recordRepo.GetByIdAsync(recordId) ?? throw new KeyNotFoundException($"Medical record {recordId} not found.");
+
+        prescription.RecordId = recordId;
+        await _prescriptionRepo.AddAsync(prescription);
+    }
+
     public async Task<MedicalHistory?> GetMedicalHistoryAsync(int patientId)
     {
         if (patientId < MinValidId)
@@ -272,6 +302,36 @@ public class PatientService : IPatientService
             System.Diagnostics.Debug.WriteLine($"Error fetching medical records: {ex.Message}");
             return [];
         }
+    }
+
+    public async Task<RecordExportDataDto> GetRecordExportDataAsync(int recordId)
+    {
+        MedicalRecord record = await _recordRepo.GetByIdAsync(recordId)
+            ?? throw new KeyNotFoundException($"Medical record {recordId} not found.");
+
+        MedicalHistory? history = await _historyRepo.GetByIdAsync(record.HistoryId);
+        if (history?.Patient is null)
+        {
+            throw new KeyNotFoundException($"Patient for medical record {recordId} not found.");
+        }
+
+        Prescription? prescription = _prescriptionRepo is null
+            ? null
+            : await _prescriptionRepo.GetByRecordIdAsync(recordId);
+
+        List<PrescriptionItem> items = [];
+        if (prescription is not null)
+        {
+            items = await _prescriptionRepo!.GetItemsAsync(prescription.Id);
+        }
+
+        return new RecordExportDataDto
+        {
+            Record = record,
+            Patient = history.Patient,
+            Prescription = prescription,
+            Items = items
+        };
     }
 
     public async Task<List<string>> GetPatientAllergiesAsync(int patientId)

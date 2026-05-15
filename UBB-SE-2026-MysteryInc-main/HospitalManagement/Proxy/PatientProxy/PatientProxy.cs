@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Net;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System;
 using Common.Data.Entity.DTOs;
@@ -35,6 +37,16 @@ internal class PatientProxy : ProxyBase, IPatientProxy
         return await GetAsync<List<MedicalRecord>>($"{BaseUri}/{historyId}/medical-records") ?? [];
     }
 
+    public async Task<int> CreateMedicalRecordAsync(int patientId, CreateMedicalRecordDto dto)
+    {
+        return await PostAsync<CreateMedicalRecordDto, int>($"{BaseUri}/{patientId}/medical-records", dto);
+    }
+
+    public async Task CreatePrescriptionForRecordAsync(int recordId, CreatePrescriptionDto dto)
+    {
+        await PostAsync<CreatePrescriptionDto, object>($"{BaseUri}/records/{recordId}/prescription", dto);
+    }
+
     public async Task<List<string>> GetPatientAllergiesAsync(int id)
     {
         return await GetAsync<List<string>>($"{BaseUri}/{id}/allergies") ?? [];
@@ -42,7 +54,19 @@ internal class PatientProxy : ProxyBase, IPatientProxy
 
     public async Task<Prescription?> GetPrescriptionByRecordIdAsync(int recordId)
     {
-        return await GetAsync<Prescription>($"{BaseUri}/records/{recordId}/prescription");
+        using HttpResponseMessage response = await HttpClient.GetAsync($"{BaseUri}/records/{recordId}/prescription");
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<Prescription>(Options);
+    }
+
+    public async Task<RecordExportDataDto> GetRecordExportDataAsync(int recordId)
+    {
+        return await GetAsync<RecordExportDataDto>($"{BaseUri}/records/{recordId}/export-data") ?? throw new KeyNotFoundException($"Medical record {recordId} not found.");
     }
 
     public async Task<bool> IsHighRiskPatientAsync(int id)
