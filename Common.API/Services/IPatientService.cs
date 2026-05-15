@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
+using Common.Data.Entity.DTOs;
 using Common.Data.Entity.Enums;
 using Common.Data.Entity;
 using Common.Data.Integration;
@@ -22,8 +23,11 @@ public interface IPatientService
     Task<List<Patient>> SearchPatientsAsync(PatientFilter filter);
     Task<bool> IsHighRiskPatientAsync(int patientId);
     Task CreateMedicalHistoryAsync(int patientId, MedicalHistory history);
+    Task<int> CreateMedicalRecordAsync(int patientId, MedicalRecord record);
+    Task CreatePrescriptionAsync(int recordId, Prescription prescription);
     Task<MedicalHistory?> GetMedicalHistoryAsync(int patientId);
     Task<List<MedicalRecord>> GetMedicalRecordsAsync(int historyId);
+    Task<RecordExportDataDto> GetRecordExportDataAsync(int recordId);
     Task<List<string>> GetPatientAllergiesAsync(int patientId);
     Task<Prescription?> GetPrescriptionByRecordIdAsync(int recordId);
 }

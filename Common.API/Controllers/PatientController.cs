@@ -295,6 +295,125 @@ public class PatientController : ControllerBase
         }
     }
 
+    [HttpPost("{id}/medical-records")]
+    public async Task<ActionResult<int>> CreateMedicalRecord(int id, [FromBody] CreateMedicalRecordDto dto)
+    {
+        try
+        {
+            var record = new MedicalRecord
+            {
+                SourceType = dto.SourceType,
+                SourceId = dto.SourceId,
+                StaffId = dto.StaffId,
+                Symptoms = dto.Symptoms,
+                Diagnosis = dto.Diagnosis,
+                ConsultationDate = dto.ConsultationDate,
+                BasePrice = dto.BasePrice,
+                FinalPrice = dto.FinalPrice,
+                PoliceNotified = dto.PoliceNotified
+            };
+
+            int recordId = await _patientService.CreateMedicalRecordAsync(id, record);
+            return Ok(recordId);
+        }
+        catch (KeyNotFoundException e)
+        {
+            _logger.LogWarning(e, "Patient {Id} not found when creating medical record.", id);
+            return NotFound(e.Message);
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogWarning(e, "Patient {Id} has no medical history when creating record.", id);
+            return Problem(
+                detail: e.Message,
+                statusCode: (int)HttpStatusCode.Conflict,
+                title: "Could not create medical record.");
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning(e, "Failed to create medical record for patient {Id}.", id);
+            return Problem(
+                detail: $"Failed to create medical record for patient {id}.",
+                statusCode: (int)HttpStatusCode.InternalServerError,
+                title: "Could not create medical record.");
+        }
+    }
+
+    [HttpPost("records/{recordId}/prescription")]
+    public async Task<ActionResult> CreatePrescriptionForRecord(int recordId, [FromBody] CreatePrescriptionDto dto)
+    {
+        try
+        {
+            var prescription = new Prescription
+            {
+                DoctorNotes = dto.DoctorNotes,
+                Date = dto.Date,
+                MedicationList = dto.Items
+                    .Select(item => new PrescriptionItem
+                    {
+                        MedName = item.MedName,
+                        Quantity = item.Quantity
+                    })
+                    .ToList()
+            };
+
+            await _patientService.CreatePrescriptionAsync(recordId, prescription);
+            return Ok();
+        }
+        catch (KeyNotFoundException e)
+        {
+            _logger.LogWarning(e, "Medical record {RecordId} not found when creating prescription.", recordId);
+            return NotFound(e.Message);
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogWarning(e, "Prescription repository unavailable when creating prescription for record {RecordId}.", recordId);
+            return Problem(
+                detail: e.Message,
+                statusCode: (int)HttpStatusCode.ServiceUnavailable,
+                title: "Could not create prescription.");
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning(e, "Failed to create prescription for record {RecordId}.", recordId);
+            return Problem(
+                detail: $"Failed to create prescription for record {recordId}.",
+                statusCode: (int)HttpStatusCode.InternalServerError,
+                title: "Could not create prescription.");
+        }
+    }
+
+    [HttpGet("records/{recordId}/export-data")]
+    public async Task<ActionResult<RecordExportDataDto>> GetRecordExportData(int recordId)
+    {
+        try
+        {
+            RecordExportDataDto result = await _patientService.GetRecordExportDataAsync(recordId);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException e)
+        {
+            _logger.LogWarning(e, "Export data for medical record {RecordId} not found.", recordId);
+            return NotFound(e.Message);
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogWarning(e, "Export data unavailable for medical record {RecordId}.", recordId);
+            return Problem(
+                detail: e.Message,
+                statusCode: (int)HttpStatusCode.ServiceUnavailable,
+                title: "Could not fetch export data.");
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning(e, "Failed to fetch export data for medical record {RecordId}.", recordId);
+            return Problem(
+                detail: $"Failed to fetch export data for medical record {recordId}.",
+                statusCode: (int)HttpStatusCode.InternalServerError,
+                title: "Could not fetch export data.");
+        }
+    }
+
     [HttpPut("{id}")]
     public async Task<ActionResult> UpdatePatient(int id, [FromBody] UpdatePatientDto dto)
     {

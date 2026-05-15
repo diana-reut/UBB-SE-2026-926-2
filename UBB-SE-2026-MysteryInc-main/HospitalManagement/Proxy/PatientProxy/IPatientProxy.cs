@@ -13,8 +13,11 @@ internal interface IPatientProxy
     Task<Patient> GetPatientDetailsAsync(int id);
     Task<MedicalHistory?> GetMedicalHistoryAsync(int id);
     Task<List<MedicalRecord>> GetMedicalRecordsAsync(int historyId);
+    Task<int> CreateMedicalRecordAsync(int patientId, CreateMedicalRecordDto dto);
+    Task CreatePrescriptionForRecordAsync(int recordId, CreatePrescriptionDto dto);
     Task<List<string>> GetPatientAllergiesAsync(int id);
     Task<Prescription?> GetPrescriptionByRecordIdAsync(int recordId);
+    Task<RecordExportDataDto> GetRecordExportDataAsync(int recordId);
     Task<bool> IsHighRiskPatientAsync(int id);
     Task<bool> ExistsAsync(string cnp);
     Task<List<Patient>> SearchPatientsAsync(SearchPatientsDto dto);

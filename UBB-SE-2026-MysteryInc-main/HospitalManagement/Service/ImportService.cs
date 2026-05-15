@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Common.Data.Entity;
 using Common.Data.Entity.DTOs;
-using Common.Data.Repository;
 using HospitalManagement.Integration.External;
 using HospitalManagement.Proxy.PatientProxy;
 
@@ -13,21 +12,15 @@ namespace HospitalManagement.Service;
 internal class ImportService : IImportService
 {
     private readonly IPatientProxy _patientService;
-    private readonly IMedicalRecordRepository _recordRepo;
-    private readonly IPrescriptionRepository _prescriptionRepo;
     private readonly IExternalProvider _externalER;
     private readonly IExternalProvider _externalAppointment;
 
     public ImportService(
         IPatientProxy patientService,
-        IMedicalRecordRepository recordRepo,
-        IPrescriptionRepository prescriptionRepo,
         IExternalProvider externalER,
         IExternalProvider externalAppointment)
     {
         _patientService = patientService;
-        _recordRepo = recordRepo;
-        _prescriptionRepo = prescriptionRepo;
         _externalER = externalER;
         _externalAppointment = externalAppointment;
     }
@@ -63,8 +56,8 @@ internal class ImportService : IImportService
             throw new InvalidOperationException("Patient medical history must be initialized before importing records.");
         }
 
-        MedicalRecord record = BuildRecordFromDTO(dto, patient.MedicalHistory.Id);
-        int recordId = await _recordRepo.AddAsync(record);
+        var recordDto = BuildRecordFromDTO(dto);
+        int recordId = await _patientService.CreateMedicalRecordAsync(patientId, recordDto);
 
         if (!string.IsNullOrWhiteSpace(dto.PrescribedMeds))
         {
@@ -76,26 +69,24 @@ internal class ImportService : IImportService
     {
         string[] meds = medsString.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-        var prescription = new Prescription
+        var prescription = new CreatePrescriptionDto
         {
-            RecordId = recordId,
             Date = DateTime.Now,
             DoctorNotes = "Imported from external provider",
-            MedicationList = [.. meds.Select(m => new PrescriptionItem
+            Items = [.. meds.Select(m => new CreatePrescriptionItemDto
             {
                 MedName = m,
                 Quantity = "1",
             })],
         };
 
-        return _prescriptionRepo.AddAsync(prescription);
+        return _patientService.CreatePrescriptionForRecordAsync(recordId, prescription);
     }
 
-    private static MedicalRecord BuildRecordFromDTO(RecordDTO dto, int historyId)
+    private static CreateMedicalRecordDto BuildRecordFromDTO(RecordDTO dto)
     {
-        return new MedicalRecord
+        return new CreateMedicalRecordDto
         {
-            HistoryId = historyId,
             SourceType = dto.SourceType,
             SourceId = dto.ExternalRecordId,
             StaffId = 1,
