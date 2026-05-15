@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel;
 using ERManagementSystem.Infrastructure;
 using ERManagementSystem.ViewModels;
@@ -38,6 +39,7 @@ namespace ERManagementSystem.Views
             ViewModel.PropertyChanged += ViewModel_PropertyChanged;
             ViewModel.LoadVisitsForTriageCommand.Execute(null);
             Bindings.Update();
+            UpdateRegisteredVisitsHeight();
         }
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
@@ -140,6 +142,16 @@ namespace ERManagementSystem.Views
             {
                 ViewModel.PainLevel = int.Parse(item.Tag?.ToString() ?? "0");
             }
+        }
+
+        private void Page_SizeChanged(object sender, Microsoft.UI.Xaml.SizeChangedEventArgs e)
+        {
+            UpdateRegisteredVisitsHeight();
+        }
+
+        private void UpdateRegisteredVisitsHeight()
+        {
+            TriageDataGrid.Height = Math.Clamp(ActualHeight * 0.28, 180, 420);
         }
     }
 }

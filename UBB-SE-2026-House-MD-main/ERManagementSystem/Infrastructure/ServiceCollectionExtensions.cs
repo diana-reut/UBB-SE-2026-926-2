@@ -1,8 +1,7 @@
-using ERManagementSystem.Repositories;
-using ERManagementSystem.Services;
 using ERManagementSystem.ViewModels;
 using ERManagementSystem.Views;
 using Microsoft.Extensions.DependencyInjection;
+using ERManagementSystem.Services;
 
 namespace ERManagementSystem.Infrastructure
 {
@@ -13,28 +12,8 @@ namespace ERManagementSystem.Infrastructure
             services.AddSingleton<NavigationService>();
             services.AddSingleton<INavigationService>(sp =>
                 sp.GetRequiredService<NavigationService>());
-
-            services.AddTransient<IPatientRepository, PatientRepository>();
-            services.AddTransient<IERVisitRepository, ERVisitRepository>();
-            services.AddTransient<ITriageRepository, TriageRepository>();
-            services.AddTransient<ITriageParametersRepository, TriageParametersRepository>();
-            services.AddTransient<IExaminationRepository, ExaminationRepository>();
-            services.AddTransient<ITransferLogRepository, TransferLogRepository>();
-            services.AddTransient<IRoomRepository, RoomRepository>();
-
-            services.AddTransient<IRegistrationService, RegistrationService>();
-            services.AddTransient<IStateManagementService>(sp =>
-                new StateManagementService(
-                    sp.GetRequiredService<IERVisitRepository>(),
-                    sp.GetRequiredService<IRoomRepository>()));
             services.AddSingleton<NurseService>();
-            services.AddTransient<ITriageService, TriageService>();
-            services.AddTransient<IQueueService, QueueService>();
-            services.AddTransient<IRoomAssignmentService, RoomAssignmentService>();
-            services.AddTransient<IRoomManagementService, RoomManagementService>();
             services.AddSingleton<MockStaffService>();
-            services.AddTransient<IExaminationService, ExaminationService>();
-            services.AddTransient<ITransferService, TransferService>();
 
             services.AddSingleton<MainWindowViewModel>();
             services.AddTransient<PatientRegistrationViewModel>();

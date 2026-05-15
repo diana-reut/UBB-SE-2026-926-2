@@ -1,3 +1,4 @@
+using System;
 using ERManagementSystem.Infrastructure;
 using ERManagementSystem.ViewModels;
 using Microsoft.UI.Xaml.Controls;
@@ -31,6 +32,25 @@ namespace ERManagementSystem.Views
         private void Page_Loaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
         {
             ViewModel.XamlRoot = XamlRoot;
+            UpdateListHeights();
+        }
+
+        private void Page_SizeChanged(object sender, Microsoft.UI.Xaml.SizeChangedEventArgs e)
+        {
+            UpdateListHeights();
+        }
+
+        private void UpdateListHeights()
+        {
+            double availableHeight = LeftContentGrid.ActualHeight
+                - HeaderPanel.ActualHeight
+                - ActionButtonsPanel.ActualHeight
+                - 48;
+
+            double listHeight = Math.Max(220, availableHeight);
+
+            WaitingVisitsList.Height = listHeight;
+            AvailableRoomsList.Height = listHeight;
         }
     }
 }

@@ -1,6 +1,8 @@
+using System;
 using ERManagementSystem.Infrastructure;
 using ERManagementSystem.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 
@@ -40,6 +42,18 @@ namespace ERManagementSystem.Views
                 ViewModel.XamlRoot = XamlRoot;
             };
             _ = ViewModel.LoadData();
+            UpdateGridHeights();
+        }
+
+        private void Page_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateGridHeights();
+        }
+
+        private void UpdateGridHeights()
+        {
+            EligibleVisitsGrid.Height = Math.Clamp(ActualHeight * 0.24, 180, 360);
+            TransferHistoryGrid.Height = Math.Clamp(ActualHeight * 0.24, 180, 360);
         }
     }
 }

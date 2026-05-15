@@ -7,7 +7,8 @@
     xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    SizeChanged="Page_SizeChanged">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24">
         <StackPanel Spacing="16" Margin="24">
@@ -31,7 +32,6 @@
             SelectionMode="Single"
             CanUserSortColumns="True"
             MinHeight="180"
-            MaxHeight="300"
             HorizontalScrollBarVisibility="Auto">
 
                         <controls:DataGrid.Columns>

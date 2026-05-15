@@ -12,48 +12,35 @@ namespace ERManagementSystem.Helpers
             int consciousness,
             int breathing)
         {
-            // 1. Strict Specializations assigned by Triage take utmost priority
-            if (specialization == "General Surgery")
+            // 1. Surgical emergencies take highest priority.
+            if (specialization == "General Surgery" || bleeding == 3 || injuryType == 3)
             {
                 return ER_Room.RoomType.OperatingRoom;
             }
 
-            if (specialization == "Neurology")
-            {
-                return ER_Room.RoomType.NeurologyRoom;
-            }
-
-            if (specialization == "Pulmonology")
-            {
-                return ER_Room.RoomType.RespiratoryRoom;
-            }
-
-            if (specialization == "Orthopedics")
-            {
-                return ER_Room.RoomType.OrthopedicRoom;
-            }
-
-            // 2. Fallbacks for 'Emergency Medicine' based on critical vitals
-            if (consciousness == 3 || breathing == 3 || bleeding == 3 || injuryType == 3)
+            // 2. Critical airway / consciousness cases use trauma bays.
+            if (consciousness == 3 || breathing == 3)
             {
                 return ER_Room.RoomType.TraumaBay;
             }
 
-            if (consciousness == 2)
-            {
-                return ER_Room.RoomType.NeurologyRoom;
-            }
-
-            if (breathing == 2)
+            // 3. Non-critical specialization-specific routing.
+            if (specialization == "Pulmonology" || breathing == 2)
             {
                 return ER_Room.RoomType.RespiratoryRoom;
             }
 
-            if (injuryType == 2)
+            if (specialization == "Neurology" || consciousness == 2)
+            {
+                return ER_Room.RoomType.NeurologyRoom;
+            }
+
+            if (specialization == "Orthopedics" || injuryType == 2)
             {
                 return ER_Room.RoomType.OrthopedicRoom;
             }
 
+            // 4. Standard / general cases.
             return ER_Room.RoomType.GeneralRoom;
         }
     }

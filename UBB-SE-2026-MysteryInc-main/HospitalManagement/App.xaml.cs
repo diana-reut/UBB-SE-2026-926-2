@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Common.Data.Data;
@@ -143,6 +144,22 @@ public partial class App : Application
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.Timeout = TimeSpan.FromSeconds(30);
         });
+        _ = services.AddHttpClient("ERPatientProxy", (client) =>
+        {
+            string? uriString = AppConfiguration["ApiSettings:BaseUri"];
+
+            if (string.IsNullOrEmpty(uriString))
+            {
+                throw new InvalidOperationException("BaseUri is missing from appsettings.local.json");
+            }
+
+            client.BaseAddress = new Uri(uriString);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+        _ = services.AddTransient<ERManagementSystem.Proxy.PatientProxy.IPatientProxy>((serviceProvider) =>
+            new ERManagementSystem.Proxy.PatientProxy.PatientProxy(
+                serviceProvider.GetRequiredService<IHttpClientFactory>().CreateClient("ERPatientProxy")));
 
         _ = services.AddHttpClient<IERVisitProxy, ERVisitProxy>((client) =>
         {

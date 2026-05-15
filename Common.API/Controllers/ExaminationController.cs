@@ -1,5 +1,6 @@
 using System.Net;
 using Common.API.Services;
+using Common.Data.Entity.DTOs;
 using Common.Data.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -59,6 +60,80 @@ namespace Common.API.Controllers
                     detail: "Failed to fetch examination.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
                     title: "Could not fetch examination.");
+            }
+        }
+
+        [HttpGet("visit/{visitId:int}")]
+        public async Task<ActionResult<List<Examination>>> GetByVisitId(int visitId)
+        {
+            try
+            {
+                return Ok(await _examinationService.GetByVisitIdAsync(visitId));
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to fetch examinations for visit {VisitId}.", visitId);
+                return Problem(
+                    detail: "Failed to fetch examinations for visit.",
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not fetch examinations.");
+            }
+        }
+
+        [HttpGet("eligible-visits")]
+        public async Task<ActionResult<List<ER_Visit>>> GetEligibleVisits()
+        {
+            try
+            {
+                return Ok(await _examinationService.GetEligibleVisitsAsync());
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to fetch eligible examination visits.");
+                return Problem(
+                    detail: "Failed to fetch eligible examination visits.",
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not fetch eligible examination visits.");
+            }
+        }
+
+        [HttpGet("patient-history/{patientId}")]
+        public async Task<ActionResult<List<Examination>>> GetPatientHistory(string patientId)
+        {
+            try
+            {
+                return Ok(await _examinationService.GetPatientHistoryAsync(patientId));
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to fetch examination history for patient {PatientId}.", patientId);
+                return Problem(
+                    detail: "Failed to fetch examination history.",
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not fetch examination history.");
+            }
+        }
+
+        [HttpGet("summary/{visitId:int}")]
+        public async Task<ActionResult<ERExaminationSummaryDto>> GetSummary(int visitId)
+        {
+            try
+            {
+                ERExaminationSummaryDto? result = await _examinationService.GetSummaryByVisitIdAsync(visitId);
+                if (result == null)
+                {
+                    return NotFound();
+                }
+
+                return Ok(result);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to fetch examination summary for visit {VisitId}.", visitId);
+                return Problem(
+                    detail: "Failed to fetch examination summary.",
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not fetch examination summary.");
             }
         }
 

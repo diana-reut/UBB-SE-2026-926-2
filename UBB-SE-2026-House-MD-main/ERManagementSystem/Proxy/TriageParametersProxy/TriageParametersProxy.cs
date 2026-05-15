@@ -11,11 +11,13 @@ public class TriageParametersProxy : ProxyBase, ITriageParametersProxy
     private const string BaseUri = "api/triage-parameters";
 
     public TriageParametersProxy(HttpClient httpClient)
-        : base(httpClient) { }
+        : base(httpClient)
+    {
+    }
 
     public async Task<List<Triage_Parameters>> GetAllAsync()
     {
-        return await GetAsync<List<Triage_Parameters>>(BaseUri) ?? [];
+        return await GetAsync<List<Triage_Parameters>>(BaseUri) ?? new List<Triage_Parameters>();
     }
 
     public Task<Triage_Parameters?> GetByIdAsync(int id)

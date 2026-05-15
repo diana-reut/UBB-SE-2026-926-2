@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Common.Data.Entity.DTOs;
 using Common.Data.Models;
 
 namespace ERManagementSystem.Proxy.ERRoomProxy;
@@ -17,4 +18,7 @@ public interface IERRoomProxy
     Task<List<ER_Room>> GetCleaningRoomsAsync();
     Task SetCurrentVisitAsync(int roomId, int visitId);
     Task ClearCurrentVisitAsync(int roomId);
+    Task<ERRoomVisitDetailsDto?> GetVisitDetailsAsync(int roomId);
+    Task MarkRoomAsCleaningAsync(int roomId);
+    Task MarkRoomAsAvailableAsync(int roomId);
 }

@@ -13,4 +13,9 @@ public interface IERVisitProxy
     Task DeleteAsync(int id);
     Task<List<ER_Visit>> GetByStatusAsync(string status);
     Task UpdateStatusAsync(int id, string status);
+    Task<bool> AutoAssignHighestPriorityRoomAsync();
+    Task AssignRoomAsync(int visitId, int roomId);
+    Task TransferVisitAsync(int visitId);
+    Task RetryTransferAsync(int visitId);
+    Task CloseVisitAsync(int visitId);
 }

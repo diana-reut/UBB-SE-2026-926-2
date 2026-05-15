@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Common.Data.Entity.DTOs;
 using Common.Data.Models;
 using ERManagementSystem.Proxy;
 
@@ -12,11 +12,13 @@ public class TransferLogProxy : ProxyBase, ITransferLogProxy
     private const string BaseUri = "api/transfer-logs";
 
     public TransferLogProxy(HttpClient httpClient)
-        : base(httpClient) { }
+        : base(httpClient)
+    {
+    }
 
     public async Task<List<Transfer_Log>> GetAllAsync()
     {
-        return await GetAsync<List<Transfer_Log>>(BaseUri) ?? [];
+        return await GetAsync<List<Transfer_Log>>(BaseUri) ?? new List<Transfer_Log>();
     }
 
     public Task<Transfer_Log?> GetByIdAsync(int id)
@@ -36,15 +38,16 @@ public class TransferLogProxy : ProxyBase, ITransferLogProxy
 
     public Task DeleteAsync(int id)
     {
-        return DeleteAsync($"{BaseUri}/{id}");
+        return DeleteRequestAsync($"{BaseUri}/{id}");
     }
 
     public async Task<List<Transfer_Log>> GetByVisitIdAsync(int visitId)
     {
-        List<Transfer_Log> transferLogs = await GetAllAsync();
-        return transferLogs
-            .Where(transferLog => transferLog.Visit_ID == visitId)
-            .OrderByDescending(transferLog => transferLog.Transfer_Time)
-            .ToList();
+        return await GetAsync<List<Transfer_Log>>($"{BaseUri}/visit/{visitId}") ?? new List<Transfer_Log>();
+    }
+
+    public async Task<List<ERTransferEligibleVisitDto>> GetEligibleVisitsAsync()
+    {
+        return await GetAsync<List<ERTransferEligibleVisitDto>>($"{BaseUri}/eligible-visits") ?? new List<ERTransferEligibleVisitDto>();
     }
 }
