@@ -5,6 +5,7 @@ using Common.Data.Entity;
 using Common.Data.Entity.DTOs;
 using HospitalManagement.Integration.External;
 using HospitalManagement.Proxy.PatientProxy;
+using ERManagementSystem.Proxy.ExaminationProxy;
 
 
 namespace HospitalManagement.Service;
@@ -12,16 +13,16 @@ namespace HospitalManagement.Service;
 internal class ImportService : IImportService
 {
     private readonly IPatientProxy _patientService;
-    private readonly IExternalProvider _externalER;
+    private readonly IExaminationProxy _examinationProxy;
     private readonly IExternalProvider _externalAppointment;
 
     public ImportService(
         IPatientProxy patientService,
-        IExternalProvider externalER,
+        IExaminationProxy examinationProxy,
         IExternalProvider externalAppointment)
     {
         _patientService = patientService;
-        _externalER = externalER;
+        _examinationProxy = examinationProxy;
         _externalAppointment = externalAppointment;
     }
 
@@ -37,8 +38,44 @@ internal class ImportService : IImportService
 
     public async Task ImportFromERAsync(int patientId, int externalId)
     {
-        RecordDTO dto = _externalER.FetchRecordByPatientId(externalId);
-        await ProcessImportAsync(dto, patientId);
+        Patient patient = await _patientService.GetPatientDetailsAsync(patientId);
+
+        if (patient.MedicalHistory is null)
+        {
+            throw new InvalidOperationException("Patient medical history must be initialized before importing records.");
+        }
+
+        var existingErSourceIds = patient.MedicalHistory.MedicalRecords?
+            .Where(record => record.SourceType == Common.Data.Entity.Enums.SourceType.ER)
+            .Select(record => record.SourceId)
+            .ToHashSet() ?? [];
+
+        var candidateExam = (await _examinationProxy.GetPatientHistoryAsync(patient.Cnp))
+            .OrderByDescending(examination => examination.Exam_Time)
+            .FirstOrDefault(examination => !existingErSourceIds.Contains(examination.Visit_ID));
+
+        if (candidateExam is null)
+        {
+            throw new InvalidOperationException("No new ER examination is available to import for this patient.");
+        }
+
+        ERExaminationSummaryDto? summary = await _examinationProxy.GetSummaryByVisitIdAsync(candidateExam.Visit_ID);
+        if (summary is null)
+        {
+            throw new InvalidOperationException("Could not load the ER examination summary for import.");
+        }
+
+        var dto = new RecordDTO
+        {
+            ExternalRecordId = candidateExam.Visit_ID,
+            Symptoms = summary.ChiefComplaint,
+            TemporaryDiagnosis = string.IsNullOrWhiteSpace(summary.Notes) ? summary.Specialization : summary.Notes,
+            PrescribedMeds = string.Empty,
+            ConsultationDate = summary.ExamTime,
+            SourceType = Common.Data.Entity.Enums.SourceType.ER,
+        };
+
+        await ProcessImportAsync(dto, patient);
     }
 
     public async Task ImportFromAppointmentAsync(int patientId, int externalId)
@@ -50,6 +87,11 @@ internal class ImportService : IImportService
     private async Task ProcessImportAsync(RecordDTO dto, int patientId)
     {
         Patient patient = await _patientService.GetPatientDetailsAsync(patientId);
+        await ProcessImportAsync(dto, patient);
+    }
+
+    private async Task ProcessImportAsync(RecordDTO dto, Patient patient)
+    {
 
         if (patient.MedicalHistory is null)
         {
@@ -57,7 +99,7 @@ internal class ImportService : IImportService
         }
 
         var recordDto = BuildRecordFromDTO(dto);
-        int recordId = await _patientService.CreateMedicalRecordAsync(patientId, recordDto);
+        int recordId = await _patientService.CreateMedicalRecordAsync(patient.Id, recordDto);
 
         if (!string.IsNullOrWhiteSpace(dto.PrescribedMeds))
         {
