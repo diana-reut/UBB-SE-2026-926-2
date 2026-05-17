@@ -44,9 +44,6 @@ builder.Services.AddScoped<IExaminationService, ExaminationService>();
 builder.Services.AddScoped<ITransferLogRepository, TransferLogRepository>();
 builder.Services.AddScoped<ITransferLogService, TransferLogService>();
 
-// there's Transplant and Transplants, watch out!
-builder.Services.AddScoped<ITransplantsService, TransplantsService>();
-
 builder.Services.AddScoped<ITransplantRepository, TransplantRepository>();
 builder.Services.AddScoped<ITransplantService, TransplantService>();
 
@@ -100,9 +97,6 @@ builder.Services.AddSwaggerGen(options =>
         Title = "Hospital Management API",
         Version = "v1"
     });
-
-    // HEYYY there are dupplicate routes inside on of our controllers check
-    options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
 
     
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme

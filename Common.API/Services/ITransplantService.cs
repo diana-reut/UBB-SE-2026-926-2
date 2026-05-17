@@ -4,7 +4,11 @@ namespace Common.API.Services;
 
 public interface ITransplantService
 {
+    Task<List<Transplant>> GetAllAsync();
     Task<Transplant?> GetByIdAsync(int id);
+    Task<Transplant> CreateAsync(Transplant transplant);
+    Task<bool> UpdateAsync(int id, Transplant transplant);
+    Task<bool> DeleteAsync(int id);
     Task<List<Transplant>> GetByReceiverIdAsync(int receiverId);
     Task<List<Transplant>> GetByDonorIdAsync(int donorId);
 

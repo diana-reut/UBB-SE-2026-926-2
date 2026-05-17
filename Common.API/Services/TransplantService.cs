@@ -31,6 +31,21 @@ public class TransplantService : ITransplantService
         _historyRepository = historyRepository;
     }
 
+    public Task<List<Transplant>> GetAllAsync() =>
+        _transplantRepository.GetAllAsync();
+
+    public async Task<Transplant> CreateAsync(Transplant transplant)
+    {
+        await _transplantRepository.AddAsync(transplant);
+        return transplant;
+    }
+
+    public Task<bool> UpdateAsync(int id, Transplant transplant) =>
+        _transplantRepository.UpdateAsync(id, transplant);
+
+    public Task<bool> DeleteAsync(int id) =>
+        _transplantRepository.DeleteAsync(id);
+
     public Task<Transplant?> GetByIdAsync(int id)
     {
         return _transplantRepository.GetByIdAsync(id);
