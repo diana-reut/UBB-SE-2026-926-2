@@ -13,9 +13,15 @@
     </Window.SystemBackdrop>
 
     <Grid>
+        <!-- Login frame — visible on startup, hidden after authentication -->
+        <Frame x:Name="LoginFrame" />
+
+        <!-- Main app shell — hidden until the user logs in -->
         <NavigationView x:Name="AppNavigationView"
                         IsBackButtonVisible="Collapsed"
                         PaneDisplayMode="Left"
+                        Visibility="Collapsed"
+                        IsEnabled="False"
                         SelectionChanged="AppNavigationView_SelectionChanged">
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="Admin Dashboard" Tag="AdminDashboard" />

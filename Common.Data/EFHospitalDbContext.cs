@@ -31,6 +31,7 @@ public class EFHospitalDbContext : DbContext
     public DbSet<ER_Room> ERRooms => Set<ER_Room>();
     public DbSet<Examination> Examinations => Set<Examination>();
     public DbSet<Transfer_Log> TransferLogs => Set<Transfer_Log>();
+    public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -243,6 +244,16 @@ public class EFHospitalDbContext : DbContext
             entity.Property(t => t.Target_System).HasColumnName("Target_System").HasMaxLength(30);
             entity.Property(t => t.Status).HasColumnName("Status").HasMaxLength(30);
             entity.Property(t => t.FilePath).HasColumnName("FilePath").HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.ToTable("Users");
+            entity.HasKey(u => u.Id);
+            entity.Property(u => u.Username).HasMaxLength(100).IsRequired();
+            entity.Property(u => u.PasswordHash).IsRequired();
+            entity.Property(u => u.Role).HasMaxLength(50).IsRequired();
+            entity.HasIndex(u => u.Username).IsUnique();
         });
     }
 

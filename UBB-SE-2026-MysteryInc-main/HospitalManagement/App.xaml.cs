@@ -14,8 +14,10 @@ using ERManagementSystem.Proxy.TriageParametersProxy;
 using ERManagementSystem.Proxy.TriageProxy;
 using HospitalManagement.Integration.Export;
 using HospitalManagement.Integration.External;
+using HospitalManagement.Auth;
 using HospitalManagement.Proxy.AddictDetectionProxy;
 using HospitalManagement.Proxy.AllergyProxy;
+using HospitalManagement.Proxy.AuthProxy;
 using HospitalManagement.Proxy.BillingProxy;
 using HospitalManagement.Proxy.BloodCompatibilityProxy;
 using HospitalManagement.Proxy.PatientProxy;
@@ -328,6 +330,19 @@ public partial class App : Application
         _ = services.AddTransient<AdminDashboardPage>();
         _ = services.AddTransient<MedicalStaffDashboardPage>();
         _ = services.AddTransient<PharmacistDashboardPage>();
+
+        // Auth
+        _ = services.AddSingleton<SessionContext>();
+        _ = services.AddHttpClient<IAuthProxy, AuthProxy>((client) =>
+        {
+            string? uriString = AppConfiguration["ApiSettings:BaseUri"];
+            if (string.IsNullOrEmpty(uriString))
+                throw new InvalidOperationException("BaseUri is missing from appsettings.local.json");
+            client.BaseAddress = new Uri(uriString);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+        _ = services.AddTransient<LoginViewModel>();
 
         _ = services.AddERManagementSystem();
 

@@ -1,0 +1,86 @@
+<Page
+    x:Class="HospitalManagement.View.LoginView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:converters="using:HospitalManagement.Converters"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Page.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    </Page.Resources>
+
+    <Grid VerticalAlignment="Center" HorizontalAlignment="Center" Width="360">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        
+        <TextBlock
+            Grid.Row="0"
+            Text="Hospital Management"
+            Style="{StaticResource TitleTextBlockStyle}"
+            HorizontalAlignment="Center"
+            Margin="0,0,0,4"/>
+
+        <TextBlock
+            Grid.Row="1"
+            Text="Sign in to your account"
+            Style="{StaticResource BodyTextBlockStyle}"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            HorizontalAlignment="Center"
+            Margin="0,0,0,32"/>
+
+        
+        <StackPanel Grid.Row="2" Spacing="4" Margin="0,0,0,16">
+            <TextBlock Text="Username" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+            <TextBox
+                x:Name="UsernameBox"
+                PlaceholderText="Enter your username"
+                Text="{x:Bind ViewModel.Username, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="3" Spacing="4" Margin="0,0,0,16">
+            <TextBlock Text="Password" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+            <PasswordBox
+                x:Name="PasswordBox"
+                PlaceholderText="Enter your password"
+                PasswordChanged="PasswordBox_PasswordChanged"/>
+        </StackPanel>
+
+        
+        <TextBlock
+            Grid.Row="4"
+            x:Name="ErrorText"
+            Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+            FontSize="12"
+            TextWrapping="Wrap"
+            Margin="0,0,0,16"
+            Visibility="{x:Bind ViewModel.HasError, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+        
+        <ProgressBar
+            Grid.Row="5"
+            IsIndeterminate="True"
+            Margin="0,0,0,12"
+            Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+        
+        <Button
+            Grid.Row="6"
+            Content="Sign In"
+            Command="{x:Bind ViewModel.LoginCommand}"
+            HorizontalAlignment="Stretch"
+            Style="{StaticResource AccentButtonStyle}"/>
+
+    </Grid>
+</Page>

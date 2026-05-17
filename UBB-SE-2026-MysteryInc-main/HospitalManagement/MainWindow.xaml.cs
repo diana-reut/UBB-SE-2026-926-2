@@ -3,6 +3,7 @@ using ERManagementSystem.ViewModels;
 using ERManagementSystem.Views;
 using HospitalManagement.Infrastructure;
 using HospitalManagement.View;
+using HospitalManagement.ViewModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
@@ -33,6 +34,30 @@ public sealed partial class MainWindow : Window
 
         var navigationService = ((App)Application.Current).Services.GetRequiredService<NavigationService>();
         navigationService.Initialize(ContentFrame);
+
+        NavigateToLogin();
+    }
+
+    private void NavigateToLogin()
+    {
+        LoginFrame.Navigate(typeof(LoginView));
+
+        if (LoginFrame.Content is LoginView loginView)
+        {
+            loginView.ViewModel.LoginSucceeded += OnLoginSucceeded;
+        }
+    }
+
+    private void OnLoginSucceeded(object? sender, System.EventArgs e)
+    {
+        if (sender is LoginViewModel vm)
+        {
+            vm.LoginSucceeded -= OnLoginSucceeded;
+        }
+
+        LoginFrame.Visibility = Visibility.Collapsed;
+        AppNavigationView.IsEnabled = true;
+        AppNavigationView.Visibility = Visibility.Visible;
 
         ContentFrame.Navigate(typeof(AdminDashboardPage));
         AppNavigationView.SelectedItem = AppNavigationView.MenuItems[0];
