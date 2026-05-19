@@ -18,70 +18,93 @@
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
-            <div class="d-flex flex-wrap gap-2">
-                <a asp-action="Index"
-                   asp-route-searchQuery="@Model.SearchQuery"
-                   asp-route-minAge="@Model.MinAge"
-                   asp-route-maxAge="@Model.MaxAge"
-                   asp-route-sex="@Model.Sex"
-                   asp-route-archived="false"
-                   class="btn @(Model.IsActiveMode ? "btn-dark" : "btn-outline-dark")">
-                    Active Patients
-                </a>
-                <a asp-action="Index"
-                   asp-route-searchQuery="@Model.SearchQuery"
-                   asp-route-minAge="@Model.MinAge"
-                   asp-route-maxAge="@Model.MaxAge"
-                   asp-route-sex="@Model.Sex"
-                   asp-route-archived="true"
-                   class="btn @(Model.IsArchivedMode ? "btn-dark" : "btn-outline-dark")">
-                    Archived Patients
-                </a>
-                <a asp-controller="Modules"
-                   asp-action="Index"
-                   asp-route-id="statistics"
-                   class="btn btn-outline-dark">
-                    Statistics
-                </a>
-                <a asp-action="CreatePatient" class="btn btn-primary">
-                    Add New Patient
-                </a>
-                <button type="button" class="btn btn-warning admin-ghost-button">
-                    I saw a ghost!
-                </button>
-            </div>
+            @if (Model.IsArchivedMode)
+            {
+                <div class="d-flex flex-wrap gap-2 mb-0">
+                    <a asp-action="Index"
+                       asp-route-searchQuery="@Model.SearchQuery"
+                       asp-route-minAge="@Model.MinAge"
+                       asp-route-maxAge="@Model.MaxAge"
+                       asp-route-sex="@Model.Sex"
+                       asp-route-archived="false"
+                       class="btn btn-dark">
+                        Back to Active Patients
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex flex-wrap gap-2">
+                    <a asp-action="Index"
+                       asp-route-searchQuery="@Model.SearchQuery"
+                       asp-route-minAge="@Model.MinAge"
+                       asp-route-maxAge="@Model.MaxAge"
+                       asp-route-sex="@Model.Sex"
+                       asp-route-archived="false"
+                       class="btn @(Model.IsActiveMode ? "btn-dark" : "btn-outline-dark")">
+                        Active Patients
+                    </a>
+                    <a asp-action="Index"
+                       asp-route-searchQuery="@Model.SearchQuery"
+                       asp-route-minAge="@Model.MinAge"
+                       asp-route-maxAge="@Model.MaxAge"
+                       asp-route-sex="@Model.Sex"
+                       asp-route-archived="true"
+                       class="btn @(Model.IsArchivedMode ? "btn-dark" : "btn-outline-dark")">
+                        Archived Patients
+                    </a>
+                    <a asp-controller="Modules"
+                       asp-action="Index"
+                       asp-route-id="statistics"
+                       class="btn btn-outline-dark">
+                        Statistics
+                    </a>
+                    <a asp-action="CreatePatient" class="btn btn-primary">
+                        Add New Patient
+                    </a>
+                    <button type="button" class="btn btn-warning admin-ghost-button">
+                        I saw a ghost!
+                    </button>
+                </div>
+            }
 
-            <div class="admin-quick-info">
-                <div class="admin-quick-info-label">Patients</div>
-                <div class="admin-quick-info-value">@Model.Patients.Count</div>
-            </div>
+            @if (Model.IsActiveMode)
+            {
+                <div class="admin-quick-info">
+                    <div class="admin-quick-info-label">Patients</div>
+                    <div class="admin-quick-info-value">@Model.Patients.Count</div>
+                </div>
+            }
         </div>
 
-        <form method="get" class="row g-3">
-            <input type="hidden" name="archived" value="@Model.ShowArchived.ToString().ToLowerInvariant()" />
-            <div class="col-xl-4 col-lg-6">
-                <label asp-for="SearchQuery" class="form-label">Search by name or CNP</label>
-                <input asp-for="SearchQuery" class="form-control" placeholder="Search by Name or CNP..." />
-            </div>
-            <div class="col-xl-2 col-md-4 col-sm-6">
-                <label asp-for="MinAge" class="form-label">Min age</label>
-                <input asp-for="MinAge" class="form-control" type="number" min="0" />
-            </div>
-            <div class="col-xl-2 col-md-4 col-sm-6">
-                <label asp-for="MaxAge" class="form-label">Max age</label>
-                <input asp-for="MaxAge" class="form-control" type="number" min="0" />
-            </div>
-            <div class="col-xl-2 col-md-4 col-sm-6">
-                <label asp-for="Sex" class="form-label">Sex</label>
-                <select asp-for="Sex" asp-items="Html.GetEnumSelectList<Sex>()" class="form-select">
-                    <option value="">Any</option>
-                </select>
-            </div>
-            <div class="col-xl-2 col-sm-6 d-flex align-items-end gap-2">
-                <button type="submit" class="btn btn-outline-primary">Apply</button>
-                <a asp-action="Index" asp-route-archived="@Model.ShowArchived" class="btn btn-outline-secondary">Clear</a>
-            </div>
-        </form>
+        @if (Model.IsActiveMode)
+        {
+            <form method="get" class="row g-3">
+                <input type="hidden" name="archived" value="@Model.ShowArchived.ToString().ToLowerInvariant()" />
+                <div class="col-xl-4 col-lg-6">
+                    <label asp-for="SearchQuery" class="form-label">Search by name or CNP</label>
+                    <input asp-for="SearchQuery" class="form-control" placeholder="Search by Name or CNP..." />
+                </div>
+                <div class="col-xl-2 col-md-4 col-sm-6">
+                    <label asp-for="MinAge" class="form-label">Min age</label>
+                    <input asp-for="MinAge" class="form-control" type="number" min="0" />
+                </div>
+                <div class="col-xl-2 col-md-4 col-sm-6">
+                    <label asp-for="MaxAge" class="form-label">Max age</label>
+                    <input asp-for="MaxAge" class="form-control" type="number" min="0" />
+                </div>
+                <div class="col-xl-2 col-md-4 col-sm-6">
+                    <label asp-for="Sex" class="form-label">Sex</label>
+                    <select asp-for="Sex" asp-items="Html.GetEnumSelectList<Sex>()" class="form-select">
+                        <option value="">Any</option>
+                    </select>
+                </div>
+                <div class="col-xl-2 col-sm-6 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-outline-primary">Apply</button>
+                    <a asp-action="Index" asp-route-archived="@Model.ShowArchived" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        }
     </div>
 </div>
 
