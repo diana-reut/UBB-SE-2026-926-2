@@ -1,12 +1,15 @@
 using HospitalManagement.Web.Models;
 using HospitalManagement.Web.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace HospitalManagement.Web.Controllers;
 
 public class AuthenticationController : Controller
 {
-
     private readonly IAuthenticationApiClient authenticationApiClient;
 
     public AuthenticationController(IAuthenticationApiClient authenticationApiClient)
@@ -15,14 +18,21 @@ public class AuthenticationController : Controller
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public IActionResult AuthenticationView()
     {
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            return RedirectToAction("Index", "Home");
+        }
+
         ViewData["HideShell"] = true;
         return View(new AuthenticationViewModel());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [AllowAnonymous]
     public async Task<IActionResult> AuthenticationView(
         AuthenticationViewModel model,
         CancellationToken cancellationToken)
@@ -39,9 +49,19 @@ public class AuthenticationController : Controller
             Common.Data.Entity.DTOs.AuthResponseDto response =
                 await authenticationApiClient.LoginAsync(model.Username.Trim(), model.Password, cancellationToken);
 
-            HttpContext.Session.SetString(AccessTokenSessionKey, response.Token);
-            HttpContext.Session.SetString(UsernameSessionKey, response.Username);
-            HttpContext.Session.SetString(RoleSessionKey, response.Role);
+            Claim[] claims =
+            [
+                new(ClaimTypes.Name, response.Username),
+                new(ClaimTypes.Role, response.Role),
+                new("access_token", response.Token)
+            ];
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                principal);
 
             return RedirectToAction("Index", "Home");
         }
@@ -75,11 +95,10 @@ public class AuthenticationController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Logout()
+    [Authorize]
+    public async Task<IActionResult> Logout()
     {
-        HttpContext.Session.Remove(AccessTokenSessionKey);
-        HttpContext.Session.Remove(UsernameSessionKey);
-        HttpContext.Session.Remove(RoleSessionKey);
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return RedirectToAction(nameof(AuthenticationView));
     }
 }

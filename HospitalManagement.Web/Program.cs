@@ -1,6 +1,7 @@
 using Common.API.Services;
 using Common.Data.Data;
 using Common.Data.Repository;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
 using HospitalManagement.Web.Services;
@@ -9,9 +10,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession(options =>
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
 {
+    options.LoginPath = "/Authentication/AuthenticationView";
+    options.AccessDeniedPath = "/Authentication/AuthenticationView";
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
@@ -48,37 +51,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
-app.UseSession();
-
-app.Use(async (context, next) =>
-{
-    PathString path = context.Request.Path;
-    bool isAuthenticationPath = path.StartsWithSegments("/Authentication");
-    bool isStaticAsset =
-        path.StartsWithSegments("/lib")
-        || path.StartsWithSegments("/css")
-        || path.StartsWithSegments("/js")
-        || path.StartsWithSegments("/favicon.ico")
-        || path.Value?.Contains('.', StringComparison.Ordinal) == true;
-
-    string? token = context.Session.GetString("AccessToken");
-    bool isLoggedIn = !string.IsNullOrWhiteSpace(token);
-
-    if (!isLoggedIn && !isAuthenticationPath && !isStaticAsset)
-    {
-        context.Response.Redirect("/Authentication/AuthenticationView");
-        return;
-    }
-
-    if (isLoggedIn && isAuthenticationPath)
-    {
-        context.Response.Redirect("/");
-        return;
-    }
-
-    await next();
-});
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();

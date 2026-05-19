@@ -16,8 +16,8 @@
         bool isArchiveView = string.Equals(currentController, "Admin", StringComparison.OrdinalIgnoreCase)
             && string.Equals(Context.Request.Query["archived"], "true", StringComparison.OrdinalIgnoreCase);
         string? currentModule = Context.Request.Query["id"];
-        string? username = Context.Session.GetString("Username");
-        string? role = Context.Session.GetString("Role");
+        string? username = User.Identity?.Name;
+        string? role = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
     }
     @if (hideShell)
     {
