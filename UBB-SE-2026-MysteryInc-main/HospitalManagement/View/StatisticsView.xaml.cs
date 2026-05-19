@@ -9,6 +9,8 @@ internal sealed partial class StatisticsView : UserControl
 {
     private readonly StatisticsViewModel _statisticsViewModel;
 
+    public event EventHandler? BackRequested;
+
     public StatisticsView(StatisticsViewModel statisticsViewModel)
     {
         InitializeComponent();
@@ -80,5 +82,10 @@ internal sealed partial class StatisticsView : UserControl
     {
         ErrorInfoBar.Message = message;
         ErrorInfoBar.IsOpen = true;
+    }
+
+    private void BackButton_Click(object sender, RoutedEventArgs e)
+    {
+        BackRequested?.Invoke(this, EventArgs.Empty);
     }
 }

@@ -45,6 +45,7 @@ internal sealed partial class AdminDashboardPage : Page
         }
 
         statisticsView = ServiceRegistry.Services.GetRequiredService<StatisticsView>();
+        statisticsView.BackRequested += (_, _) => viewModel.IsStatisticsVisible = false;
         StatisticsContainer.Child = statisticsView;
     }
 }
