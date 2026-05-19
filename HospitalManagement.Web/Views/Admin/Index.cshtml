@@ -262,6 +262,12 @@
                         </div>
                         <button type="submit" class="btn btn-outline-dark w-100" @(Model.SelectedPatient.IsDeceased ? "disabled" : null)>Mark as Deceased</button>
                     </form>
+
+                    <button type="button"
+                            class="btn btn-outline-info w-100 mt-3"
+                            @(Model.SelectedPatient.IsDeceased ? null : "disabled")>
+                        Mark as Organ Donor
+                    </button>
                 }
             </div>
         </div>
