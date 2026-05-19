@@ -78,6 +78,9 @@ internal partial class AdminViewModel : ObservableObject
     partial void OnIsArchivedModeChanged(bool value) =>
         OnPropertyChanged(nameof(IsActiveMode));
 
+    partial void OnIsStatisticsVisibleChanged(bool value) =>
+        OnPropertyChanged(nameof(IsPatientPanelVisible));
+
     [RelayCommand]
     private static void NavigateHome()
     {
@@ -116,6 +119,7 @@ internal partial class AdminViewModel : ObservableObject
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsNotDeceased));
             OnPropertyChanged(nameof(IsDeceased));
+            OnPropertyChanged(nameof(IsPatientPanelVisible));
 
             if (_selectedPatient is not null)
             {
@@ -133,6 +137,8 @@ internal partial class AdminViewModel : ObservableObject
     public bool IsNotDeceased => SelectedPatient?.IsDeceased == false;
 
     public bool IsDeceased => SelectedPatient?.IsDeceased == true;
+
+    public bool IsPatientPanelVisible => SelectedPatient is not null && !IsStatisticsVisible;
 
     #endregion State
 

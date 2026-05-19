@@ -23,19 +23,23 @@
 
         <!-- Left Sidebar - Menu -->
         <Border Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" BorderThickness="0,0,1,0" BorderBrush="Gray">
-            <ListView x:Name="StatisticsMenu"
-                      Padding="10"
-                      Margin="0,20,0,0"
-                      SelectionChanged="StatisticsMenu_SelectionChanged">
-                <ListView.Header>
-                    <TextBlock Text="Hospital Statistics" FontSize="20" FontWeight="Bold" Margin="10,0,0,20"/>
-                </ListView.Header>
-                <x:String>Patient Distribution</x:String>
-                <x:String>Consultation Source</x:String>
-                <x:String>Top Diagnoses</x:String>
-                <x:String>Top Medications</x:String>
-                <x:String>Demographics</x:String>
-            </ListView>
+            <StackPanel Padding="10" Spacing="12">
+                <Button Content="Back to Admin"
+                        HorizontalAlignment="Left"
+                        Click="BackButton_Click"/>
+
+                <ListView x:Name="StatisticsMenu"
+                          SelectionChanged="StatisticsMenu_SelectionChanged">
+                    <ListView.Header>
+                        <TextBlock Text="Hospital Statistics" FontSize="20" FontWeight="Bold" Margin="10,0,0,20"/>
+                    </ListView.Header>
+                    <x:String>Patient Distribution</x:String>
+                    <x:String>Consultation Source</x:String>
+                    <x:String>Top Diagnoses</x:String>
+                    <x:String>Top Medications</x:String>
+                    <x:String>Demographics</x:String>
+                </ListView>
+            </StackPanel>
         </Border>
 
         <!-- Right Content Area - Charts -->
