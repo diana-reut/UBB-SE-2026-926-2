@@ -2,6 +2,13 @@
     ViewData["Title"] = "Home Page";
 }
 
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    @if (TempData["LoginMessage"] is string loginMessage)
+    {
+        <div class="alert alert-success mt-3" role="alert">@loginMessage</div>
+    }
+    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
 <div class="py-5 text-center">
     <h1 class="display-5 fw-semibold">Hospital Management MVC</h1>
     <p class="lead text-muted">Your web GUI now includes an admin patient dashboard that mirrors the original desktop interaction more closely.</p>

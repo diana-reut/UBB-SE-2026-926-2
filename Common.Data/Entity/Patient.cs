@@ -109,7 +109,7 @@ public class Patient
         return age;
     }
 
-    public bool IsDeceased => Dod.HasValue;
+    public bool IsDeceased => Dod.HasValue && Dod.Value > DateTime.MinValue;
 
     public bool Validate(out List<string> errors)
     {
