@@ -137,6 +137,20 @@ body {
   line-height: 1.1;
 }
 
+.admin-ghost-button {
+  font-weight: 700;
+  color: #1f2a37;
+  background: #ffe27a;
+  border-color: #f2d15a;
+}
+
+.admin-ghost-button:hover,
+.admin-ghost-button:focus {
+  color: #1f2a37;
+  background: #ffd95a;
+  border-color: #e6c246;
+}
+
 .table td.patient-deceased,
 .table tr.table-active td.patient-deceased {
   color: #c62828 !important;

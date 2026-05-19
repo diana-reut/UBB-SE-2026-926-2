@@ -5,13 +5,6 @@
     ViewData["Title"] = "Admin";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="mb-1">Admin Patient Dashboard</h1>
-    </div>
-    <a asp-action="CreatePatient" class="btn btn-primary">Add New Patient</a>
-</div>
-
 @if (TempData["SuccessMessage"] is string successMessage)
 {
     <div class="alert alert-success" role="alert">@successMessage</div>
@@ -50,6 +43,12 @@
                    class="btn btn-outline-dark">
                     Statistics
                 </a>
+                <a asp-action="CreatePatient" class="btn btn-primary">
+                    Add New Patient
+                </a>
+                <button type="button" class="btn btn-warning admin-ghost-button">
+                    I saw a ghost!
+                </button>
             </div>
 
             <div class="admin-quick-info">
@@ -146,37 +145,37 @@
                 else if (Model.IsActiveMode)
                 {
                     <h2 class="h4 mb-3">Patient Details</h2>
-                    <form asp-action="UpdatePatient" method="post" class="mb-4">
+                    <form asp-action="UpdatePatient" method="post" class="mb-4" autocomplete="off">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="searchQuery" value="@Model.SearchQuery" />
                         <input type="hidden" name="minAge" value="@Model.MinAge" />
                         <input type="hidden" name="maxAge" value="@Model.MaxAge" />
-                        <input type="hidden" name="sex" value="@Model.Sex" />
+                        <input type="hidden" name="filterSex" value="@Model.Sex" />
                         <input type="hidden" name="archived" value="@Model.ShowArchived.ToString().ToLowerInvariant()" />
-                        <input asp-for="SelectedPatient!.Id" type="hidden" />
-                        <input asp-for="SelectedPatient!.Cnp" type="hidden" />
-                        <input asp-for="SelectedPatient!.Dob" type="hidden" />
-                        <input asp-for="SelectedPatient!.Sex" type="hidden" />
-                        <input asp-for="SelectedPatient!.IsArchived" type="hidden" />
-                        <input asp-for="SelectedPatient!.IsDonor" type="hidden" />
-                        <input asp-for="SelectedPatient!.Transferred" type="hidden" />
-                        <input asp-for="SelectedPatient!.Dod" type="hidden" />
+                        <input type="hidden" name="Id" value="@Model.SelectedPatient!.Id" />
+                        <input type="hidden" name="Cnp" value="@Model.SelectedPatient!.Cnp" />
+                        <input type="hidden" name="Dob" value="@Model.SelectedPatient!.Dob.ToString("yyyy-MM-dd")" />
+                        <input type="hidden" name="Sex" value="@Model.SelectedPatient!.Sex" />
+                        <input type="hidden" name="IsArchived" value="@Model.SelectedPatient!.IsArchived.ToString().ToLowerInvariant()" />
+                        <input type="hidden" name="IsDonor" value="@Model.SelectedPatient!.IsDonor.ToString().ToLowerInvariant()" />
+                        <input type="hidden" name="Transferred" value="@Model.SelectedPatient!.Transferred.ToString().ToLowerInvariant()" />
+                        <input type="hidden" name="Dod" value="@(Model.SelectedPatient!.Dod?.ToString("yyyy-MM-dd") ?? string.Empty)" />
 
                         <div class="mb-3">
-                            <label asp-for="SelectedPatient!.FirstName" class="form-label"></label>
-                            <input asp-for="SelectedPatient!.FirstName" class="form-control" />
+                            <label for="FirstName" class="form-label">First name</label>
+                            <input id="FirstName" name="FirstName" value="@Model.SelectedPatient!.FirstName" class="form-control" autocomplete="off" />
                         </div>
                         <div class="mb-3">
-                            <label asp-for="SelectedPatient!.LastName" class="form-label"></label>
-                            <input asp-for="SelectedPatient!.LastName" class="form-control" />
+                            <label for="LastName" class="form-label">Last name</label>
+                            <input id="LastName" name="LastName" value="@Model.SelectedPatient!.LastName" class="form-control" autocomplete="off" />
                         </div>
                         <div class="mb-3">
-                            <label asp-for="SelectedPatient!.PhoneNo" class="form-label"></label>
-                            <input asp-for="SelectedPatient!.PhoneNo" class="form-control" />
+                            <label for="PhoneNo" class="form-label">Phone number</label>
+                            <input id="PhoneNo" name="PhoneNo" value="@Model.SelectedPatient!.PhoneNo" class="form-control" autocomplete="off" />
                         </div>
                         <div class="mb-3">
-                            <label asp-for="SelectedPatient!.EmergencyContact" class="form-label"></label>
-                            <input asp-for="SelectedPatient!.EmergencyContact" class="form-control" />
+                            <label for="EmergencyContact" class="form-label">Emergency contact</label>
+                            <input id="EmergencyContact" name="EmergencyContact" value="@Model.SelectedPatient!.EmergencyContact" class="form-control" autocomplete="off" />
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Update Patient</button>
                     </form>
@@ -187,7 +186,7 @@
                         <input type="hidden" name="searchQuery" value="@Model.SearchQuery" />
                         <input type="hidden" name="minAge" value="@Model.MinAge" />
                         <input type="hidden" name="maxAge" value="@Model.MaxAge" />
-                        <input type="hidden" name="sex" value="@Model.Sex" />
+                        <input type="hidden" name="filterSex" value="@Model.Sex" />
                         <input type="hidden" name="archived" value="@Model.ShowArchived.ToString().ToLowerInvariant()" />
                         <button type="submit" class="btn btn-outline-danger w-100">Archive Patient</button>
                     </form>
@@ -198,7 +197,7 @@
                         <input type="hidden" name="searchQuery" value="@Model.SearchQuery" />
                         <input type="hidden" name="minAge" value="@Model.MinAge" />
                         <input type="hidden" name="maxAge" value="@Model.MaxAge" />
-                        <input type="hidden" name="sex" value="@Model.Sex" />
+                        <input type="hidden" name="filterSex" value="@Model.Sex" />
                         <input type="hidden" name="archived" value="@Model.ShowArchived.ToString().ToLowerInvariant()" />
                         <div class="mb-2">
                             <label class="form-label">Date of death</label>
@@ -221,7 +220,7 @@
                         <input type="hidden" name="searchQuery" value="@Model.SearchQuery" />
                         <input type="hidden" name="minAge" value="@Model.MinAge" />
                         <input type="hidden" name="maxAge" value="@Model.MaxAge" />
-                        <input type="hidden" name="sex" value="@Model.Sex" />
+                        <input type="hidden" name="filterSex" value="@Model.Sex" />
                         <input type="hidden" name="archived" value="@Model.ShowArchived.ToString().ToLowerInvariant()" />
                         <button type="submit" class="btn btn-primary w-100" @(Model.SelectedPatient.IsDeceased ? "disabled" : null)>Restore to Active</button>
                     </form>
@@ -232,7 +231,7 @@
                         <input type="hidden" name="searchQuery" value="@Model.SearchQuery" />
                         <input type="hidden" name="minAge" value="@Model.MinAge" />
                         <input type="hidden" name="maxAge" value="@Model.MaxAge" />
-                        <input type="hidden" name="sex" value="@Model.Sex" />
+                        <input type="hidden" name="filterSex" value="@Model.Sex" />
                         <input type="hidden" name="archived" value="@Model.ShowArchived.ToString().ToLowerInvariant()" />
                         <div class="mb-2">
                             <label class="form-label">Date of death</label>

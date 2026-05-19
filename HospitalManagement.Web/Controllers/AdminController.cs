@@ -46,6 +46,15 @@ public class AdminController : Controller
             }
         }
 
+        List<PatientListItemViewModel> patientRows = visiblePatients.Select(MapPatientListItem).ToList();
+        PatientListItemViewModel? selectedPatientRow = selectedPatient is null
+            ? null
+            : patientRows.FirstOrDefault(p => p.Id == selectedPatient.Id);
+
+        EditPatientViewModel? selectedPatientModel = selectedPatient is null
+            ? null
+            : MapEditPatient(selectedPatient, selectedPatientRow);
+
         var model = new AdminPatientsIndexViewModel
         {
             SearchQuery = searchQuery,
@@ -53,9 +62,9 @@ public class AdminController : Controller
             MaxAge = maxAge,
             Sex = sex,
             ShowArchived = archived,
-            SelectedPatientId = selectedId,
-            Patients = visiblePatients.Select(MapPatientListItem).ToList(),
-            SelectedPatient = selectedPatient is null ? null : MapEditPatient(selectedPatient)
+            SelectedPatientId = selectedPatient?.Id,
+            Patients = patientRows,
+            SelectedPatient = selectedPatientModel
         };
 
         return View(model);
@@ -110,13 +119,13 @@ public class AdminController : Controller
         string? searchQuery,
         int? minAge,
         int? maxAge,
-        Sex? sex,
+        Sex? filterSex,
         bool archived)
     {
         if (!ModelState.IsValid)
         {
             TempData["ErrorMessage"] = "Please correct the selected patient form and try again.";
-            return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex, archived, selectedId = model.Id });
+            return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex = filterSex, archived, selectedId = model.Id });
         }
 
         var patient = new Patient
@@ -145,7 +154,7 @@ public class AdminController : Controller
             TempData["ErrorMessage"] = ex.Message;
         }
 
-        return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex, archived, selectedId = model.Id });
+        return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex = filterSex, archived, selectedId = model.Id });
     }
 
     [HttpPost]
@@ -155,19 +164,19 @@ public class AdminController : Controller
         string? searchQuery,
         int? minAge,
         int? maxAge,
-        Sex? sex,
+        Sex? filterSex,
         bool archived)
     {
         Patient? patient = await _patientService.GetByIdAsync(id);
         if (patient is null)
         {
             TempData["ErrorMessage"] = "Patient not found.";
-            return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex, archived });
+            return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex = filterSex, archived });
         }
 
         await _patientService.ArchivePatientAsync(patient);
         TempData["SuccessMessage"] = $"Archived {patient.FullName}.";
-        return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex, archived = true, selectedId = id });
+        return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex = filterSex, archived = true, selectedId = id });
     }
 
     [HttpPost]
@@ -177,19 +186,19 @@ public class AdminController : Controller
         string? searchQuery,
         int? minAge,
         int? maxAge,
-        Sex? sex,
+        Sex? filterSex,
         bool archived)
     {
         try
         {
             await _patientService.DearchivePatientAsync(id);
             TempData["SuccessMessage"] = "Patient restored to active records.";
-            return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex, archived = false, selectedId = id });
+            return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex = filterSex, archived = false, selectedId = id });
         }
         catch (Exception ex)
         {
             TempData["ErrorMessage"] = ex.Message;
-            return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex, archived });
+            return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex = filterSex, archived });
         }
     }
 
@@ -201,25 +210,25 @@ public class AdminController : Controller
         string? searchQuery,
         int? minAge,
         int? maxAge,
-        Sex? sex,
+        Sex? filterSex,
         bool archived)
     {
         if (!deathDate.HasValue)
         {
             TempData["ErrorMessage"] = "Please choose a date of death.";
-            return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex, archived, selectedId = id });
+            return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex = filterSex, archived, selectedId = id });
         }
 
         try
         {
             await _patientService.ArchiveAsDeceasedAsync(id, deathDate.Value);
             TempData["SuccessMessage"] = "Patient marked as deceased.";
-            return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex, archived = true, selectedId = id });
+            return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex = filterSex, archived = true, selectedId = id });
         }
         catch (Exception ex)
         {
             TempData["ErrorMessage"] = ex.Message;
-            return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex, archived, selectedId = id });
+            return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex = filterSex, archived, selectedId = id });
         }
     }
 
@@ -305,7 +314,7 @@ public class AdminController : Controller
         };
     }
 
-    private static EditPatientViewModel MapEditPatient(Patient patient)
+    private static EditPatientViewModel MapEditPatient(Patient patient, PatientListItemViewModel? patientRow)
     {
         return new EditPatientViewModel
         {
@@ -316,8 +325,8 @@ public class AdminController : Controller
             Dob = patient.Dob,
             Dod = patient.Dod,
             Sex = patient.Sex,
-            PhoneNo = FormatPhoneNumber(patient.PhoneNo),
-            EmergencyContact = FormatPhoneNumber(patient.EmergencyContact),
+            PhoneNo = CompactPhoneNumber(patient.PhoneNo),
+            EmergencyContact = CompactEmergencyContact(patient.EmergencyContact),
             IsArchived = patient.IsArchived,
             IsDonor = patient.IsDonor,
             Transferred = patient.Transferred
@@ -356,5 +365,38 @@ public class AdminController : Controller
         }
 
         return $"+40 {normalized.Substring(1, 3)} {normalized.Substring(4, 3)} {normalized.Substring(7, 3)}";
+    }
+
+    private static string CompactPhoneNumber(string phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone))
+        {
+            return phone;
+        }
+
+        string normalized = NormalizePhone(phone);
+        if (normalized.StartsWith('0') && normalized.Length == 10)
+        {
+            return $"+40{normalized[1..]}";
+        }
+
+        return normalized;
+    }
+
+    private static string CompactEmergencyContact(string contact)
+    {
+        if (string.IsNullOrWhiteSpace(contact))
+        {
+            return contact;
+        }
+
+        string[] parts = contact.Split(',', StringSplitOptions.None);
+
+        return string.Join(",",
+            parts.Select(part =>
+            {
+                string trimmed = part.Trim();
+                return trimmed.Any(char.IsDigit) ? CompactPhoneNumber(trimmed) : trimmed;
+            }));
     }
 }
