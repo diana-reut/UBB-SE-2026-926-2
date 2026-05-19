@@ -116,6 +116,12 @@ body {
   overflow-x: auto;
 }
 
+.table td.patient-deceased,
+.table tr.table-active td.patient-deceased {
+  color: #c62828 !important;
+  font-weight: 600;
+}
+
 @media (max-width: 991.98px) {
   body {
     height: auto;

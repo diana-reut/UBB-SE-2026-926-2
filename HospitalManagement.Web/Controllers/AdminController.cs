@@ -300,7 +300,8 @@ public class AdminController : Controller
             Sex = patient.Sex.ToString(),
             PhoneNo = FormatPhoneNumber(patient.PhoneNo),
             EmergencyContact = FormatPhoneNumber(patient.EmergencyContact),
-            IsArchived = patient.IsArchived
+            IsArchived = patient.IsArchived,
+            IsDeceased = patient.IsDeceased
         };
     }
 
