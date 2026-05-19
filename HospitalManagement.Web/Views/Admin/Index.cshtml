@@ -236,6 +236,22 @@
     <script>
         (() => {
             const rows = document.querySelectorAll(".patient-row");
+            const filterForm = document.querySelector("form[method='get']");
+            const searchInput = document.querySelector("input[name='SearchQuery']");
+
+            if (filterForm && searchInput) {
+                let searchTimer = null;
+                searchInput.addEventListener("input", () => {
+                    if (searchTimer) {
+                        window.clearTimeout(searchTimer);
+                    }
+
+                    searchTimer = window.setTimeout(() => {
+                        filterForm.requestSubmit();
+                    }, 350);
+                });
+            }
+
             for (const row of rows) {
                 let clickTimer = null;
 
