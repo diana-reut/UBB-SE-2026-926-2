@@ -11,10 +11,12 @@ namespace HospitalManagement.Web.Controllers;
 public class AdminController : Controller
 {
     private readonly IPatientService _patientService;
+    private readonly IAllergyService _allergyService;
 
-    public AdminController(IPatientService patientService)
+    public AdminController(IPatientService patientService, IAllergyService allergyService)
     {
         _patientService = patientService;
+        _allergyService = allergyService;
     }
 
     [HttpGet]
@@ -103,13 +105,79 @@ public class AdminController : Controller
         {
             await _patientService.CreatePatientAsync(patient);
             TempData["SuccessMessage"] = $"Patient {patient.FullName} was created successfully.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(CreateMedicalHistory), new { patientId = patient.Id });
         }
         catch (ArgumentException ex)
         {
             ModelState.AddModelError(string.Empty, ex.Message);
             return View("~/Views/Patients/Create.cshtml", model);
         }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> CreateMedicalHistory(int patientId)
+    {
+        Patient? patient = await _patientService.GetByIdAsync(patientId);
+        if (patient is null)
+        {
+            TempData["ErrorMessage"] = "Patient not found.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        CreateMedicalHistoryViewModel model = await BuildMedicalHistoryModelAsync(patient);
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateMedicalHistory(CreateMedicalHistoryViewModel model)
+    {
+        Patient? patient = await _patientService.GetByIdAsync(model.PatientId);
+        if (patient is null)
+        {
+            TempData["ErrorMessage"] = "Patient not found.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View(await BuildMedicalHistoryModelAsync(patient, model));
+        }
+
+        MedicalHistory history = new()
+        {
+            BloodType = model.BloodType,
+            Rh = model.Rh,
+            ChronicConditions = SplitConditions(model.ChronicConditionsText),
+            PatientAllergies = model.AllergyIds
+                .Distinct()
+                .Select(id => new PatientAllergy
+                {
+                    AllergyId = id,
+                    SeverityLevel = "Mild"
+                })
+                .ToList()
+        };
+
+        try
+        {
+            await _patientService.CreateMedicalHistoryAsync(model.PatientId, history);
+            TempData["SuccessMessage"] = "Patient and medical history saved successfully.";
+            return RedirectToAction(nameof(Index), new { selectedId = model.PatientId });
+        }
+        catch (ArgumentException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View(await BuildMedicalHistoryModelAsync(patient, model));
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult SkipMedicalHistory(int patientId)
+    {
+        TempData["SuccessMessage"] = "Patient added successfully.";
+        return RedirectToAction(nameof(Index), new { selectedId = patientId });
     }
 
     [HttpPost]
@@ -398,5 +466,44 @@ public class AdminController : Controller
                 string trimmed = part.Trim();
                 return trimmed.Any(char.IsDigit) ? CompactPhoneNumber(trimmed) : trimmed;
             }));
+    }
+
+    private async Task<CreateMedicalHistoryViewModel> BuildMedicalHistoryModelAsync(
+        Patient patient,
+        CreateMedicalHistoryViewModel? source = null)
+    {
+        List<AllergyOptionViewModel> allergies = (await _allergyService.GetAllergiesAsync())
+            .OrderBy(a => a.AllergyName)
+            .Select(a => new AllergyOptionViewModel
+            {
+                Id = a.Id,
+                Name = a.AllergyName
+            })
+            .ToList();
+
+        return new CreateMedicalHistoryViewModel
+        {
+            PatientId = patient.Id,
+            PatientName = patient.FullName,
+            BloodType = source?.BloodType ?? BloodType.A,
+            Rh = source?.Rh ?? Rh.Positive,
+            ChronicConditionsText = source?.ChronicConditionsText ?? string.Empty,
+            AllergyIds = source?.AllergyIds ?? [],
+            AvailableAllergies = allergies
+        };
+    }
+
+    private static List<string> SplitConditions(string? conditionsText)
+    {
+        if (string.IsNullOrWhiteSpace(conditionsText))
+        {
+            return [];
+        }
+
+        return conditionsText
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(c => c.Trim())
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .ToList();
     }
 }

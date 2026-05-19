@@ -1,0 +1,96 @@
+@model HospitalManagement.Web.Models.Admin.CreateMedicalHistoryViewModel
+@using Common.Data.Entity.Enums
+
+@{
+    ViewData["Title"] = "Add medical history";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h1 class="h3 mb-1">Add Medical History</h1>
+                        <div class="text-muted">@Model.PatientName</div>
+                    </div>
+                </div>
+
+                <form asp-action="CreateMedicalHistory" method="post">
+                    @Html.AntiForgeryToken()
+                    <input asp-for="PatientId" type="hidden" />
+                    <input asp-for="PatientName" type="hidden" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="BloodType" class="form-label"></label>
+                            <select asp-for="BloodType" asp-items="Html.GetEnumSelectList<BloodType>()" class="form-select"></select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Rh" class="form-label"></label>
+                            <select asp-for="Rh" asp-items="Html.GetEnumSelectList<Rh>()" class="form-select"></select>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="ChronicConditionsText" class="form-label"></label>
+                            <textarea asp-for="ChronicConditionsText"
+                                      class="form-control"
+                                      rows="4"
+                                      placeholder="e.g. diabetes, hypertension, asthma"></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Allergies</label>
+                            <div class="border rounded p-3 bg-light-subtle">
+                                @if (Model.AvailableAllergies.Count == 0)
+                                {
+                                    <div class="text-muted">No allergies available.</div>
+                                }
+                                else
+                                {
+                                    <div class="row g-2">
+                                        @for (int i = 0; i < Model.AvailableAllergies.Count; i++)
+                                        {
+                                            var allergy = Model.AvailableAllergies[i];
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input"
+                                                           type="checkbox"
+                                                           name="AllergyIds"
+                                                           value="@allergy.Id"
+                                                           id="allergy-@allergy.Id"
+                                                           @(Model.AllergyIds.Contains(allergy.Id) ? "checked" : null) />
+                                                    <label class="form-check-label" for="allergy-@allergy.Id">
+                                                        @allergy.Name
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                            <div class="form-text">Selected allergies will be saved with default severity, like the desktop flow’s first-pass create step.</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Save medical history</button>
+                        <button type="submit"
+                                formaction="@Url.Action("SkipMedicalHistory", "Admin")"
+                                formmethod="post"
+                                formnovalidate
+                                class="btn btn-outline-secondary">
+                            Skip
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
