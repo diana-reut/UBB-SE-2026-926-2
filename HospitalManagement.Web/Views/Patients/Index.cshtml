@@ -1,0 +1,87 @@
+@model HospitalManagement.Web.Models.Patients.PatientsIndexViewModel
+@using Common.Data.Entity.Enums
+
+@{
+    ViewData["Title"] = "Patients";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Patients</h1>
+        <p class="text-muted mb-0">MVC version of the desktop patient dashboard filters and fields.</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">Add patient</a>
+</div>
+
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" role="alert">
+        @successMessage
+    </div>
+}
+
+<form method="get" class="row g-3 mb-4">
+    <div class="col-lg-4">
+        <label asp-for="SearchQuery" class="form-label">Search by name or CNP</label>
+        <input asp-for="SearchQuery" class="form-control" placeholder="e.g. Popescu or 2850215654321" />
+    </div>
+    <div class="col-sm-6 col-lg-2">
+        <label asp-for="MinAge" class="form-label">Min age</label>
+        <input asp-for="MinAge" class="form-control" type="number" min="0" />
+    </div>
+    <div class="col-sm-6 col-lg-2">
+        <label asp-for="MaxAge" class="form-label">Max age</label>
+        <input asp-for="MaxAge" class="form-control" type="number" min="0" />
+    </div>
+    <div class="col-sm-6 col-lg-2">
+        <label asp-for="Sex" class="form-label">Sex</label>
+        <select asp-for="Sex" asp-items="Html.GetEnumSelectList<Sex>()" class="form-select">
+            <option value="">Any</option>
+        </select>
+    </div>
+    <div class="col-sm-6 col-lg-2 d-flex align-items-end gap-2">
+        <button type="submit" class="btn btn-outline-primary">Apply</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+    </div>
+</form>
+
+@if (Model.Patients.Count == 0)
+{
+    <div class="alert alert-info" role="alert">
+        No patients matched the current filter.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>First name</th>
+                    <th>Last name</th>
+                    <th>Sex</th>
+                    <th>DOB</th>
+                    <th>CNP</th>
+                    <th>Phone</th>
+                    <th>Emergency</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var patient in Model.Patients)
+            {
+                <tr>
+                    <td>@patient.FirstName</td>
+                    <td>@patient.LastName</td>
+                    <td>@patient.Sex</td>
+                    <td>@patient.Dob.ToString("yyyy-MM-dd")</td>
+                    <td>@patient.Cnp</td>
+                    <td>@patient.PhoneNo</td>
+                    <td>@patient.EmergencyContact</td>
+                    <td>@(patient.IsArchived ? "Archived" : "Active")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
