@@ -116,6 +116,27 @@ body {
   overflow-x: auto;
 }
 
+.admin-quick-info {
+  min-width: 140px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f5f8fc;
+  border: 1px solid #d9e2ee;
+}
+
+.admin-quick-info-label {
+  font-size: 0.85rem;
+  color: #5d6b80;
+  font-weight: 600;
+}
+
+.admin-quick-info-value {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #162033;
+  line-height: 1.1;
+}
+
 .table td.patient-deceased,
 .table tr.table-active td.patient-deceased {
   color: #c62828 !important;

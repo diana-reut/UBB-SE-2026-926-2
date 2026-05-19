@@ -7,6 +7,12 @@ public class ModulesController : Controller
 {
     private static readonly Dictionary<string, ModulePageViewModel> Modules = new(StringComparer.OrdinalIgnoreCase)
     {
+        ["statistics"] = new()
+        {
+            Key = "statistics",
+            Title = "Statistics",
+            Description = "This statistics section exists in the web app to mirror the original desktop admin shell, but it is not implemented yet."
+        },
         ["medical-staff"] = new()
         {
             Key = "medical-staff",
