@@ -1,8 +1,10 @@
 using HospitalManagement.Web.Models.Modules;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HospitalManagement.Web.Controllers;
 
+[Authorize]
 public class ModulesController : Controller
 {
     private static readonly Dictionary<string, ModulePageViewModel> Modules = new(StringComparer.OrdinalIgnoreCase)

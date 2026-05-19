@@ -54,7 +54,7 @@ public class PatientProxy : ProxyBase, IPatientProxy
             EmergencyContact = patient.Emergency_Contact,
             IsDonor = patient.IsDonor,
             Transferred = patient.Transferred,
-            Dod = patient.Dod ?? default,
+            Dod = patient.Dod,
             IsArchived = patient.IsArchived,
         };
 

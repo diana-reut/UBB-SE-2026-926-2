@@ -1,17 +1,17 @@
 using System.Security.Cryptography;
 using System.Text;
-using Common.Data.Data;
 using Common.Data.Entity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace Common.API.Data;
+namespace Common.Data.Data;
 
 public static class DatabaseSeeder
 {
     private static readonly (string Username, string Password, string Role)[] SeedAccounts =
     [
-        ("admin",  "Admin123!",  "Admin"),
-        ("medic",  "Medic123!",  "Medic"),
+        ("admin", "Admin123!", "Admin"),
+        ("medic", "Medic123!", "Medic"),
     ];
 
     public static async Task SeedAsync(IServiceProvider services)
@@ -33,7 +33,7 @@ public static class DatabaseSeeder
             {
                 Username = username,
                 PasswordHash = HashPassword(password),
-                Role = role
+                Role = role,
             });
         }
 
