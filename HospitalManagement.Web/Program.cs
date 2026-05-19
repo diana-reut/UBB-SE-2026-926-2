@@ -1,9 +1,4 @@
-using Common.API.Services;
-using Common.Data.Data;
-using Common.Data.Repository;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.EntityFrameworkCore;
-
 using HospitalManagement.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,17 +13,24 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
-builder.Services.AddDbContext<EFHospitalDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddScoped<IPatientRepository, PatientRepository>();
-builder.Services.AddScoped<IAllergyRepository, AllergyRepository>();
-builder.Services.AddScoped<IMedicalHistoryRepository, MedicalHistoryRepository>();
-builder.Services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
-builder.Services.AddScoped<IAllergyService, AllergyService>();
-builder.Services.AddScoped<IPatientService, PatientService>();
 
 builder.Services.AddHttpClient<IAuthenticationApiClient, AuthenticationApiClient>(client =>
+{
+    string apiBaseUri = builder.Configuration["ApiSettings:BaseUri"];
+
+    client.BaseAddress = new Uri(apiBaseUri);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+builder.Services.AddHttpClient<IPatientApiClient, PatientApiClient>(client =>
+{
+    string apiBaseUri = builder.Configuration["ApiSettings:BaseUri"];
+
+    client.BaseAddress = new Uri(apiBaseUri);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+builder.Services.AddHttpClient<IAllergyApiClient, AllergyApiClient>(client =>
 {
     string apiBaseUri = builder.Configuration["ApiSettings:BaseUri"]
         ?? "http://localhost:5059/";
