@@ -570,7 +570,7 @@ internal partial class AdminViewModel : ObservableObject
                 LastName = SelectedPatient.LastName,
                 Cnp = SelectedPatient.Cnp,
                 Dob = SelectedPatient.Dob,
-                Dod = SelectedPatient.Dod ?? default,
+                Dod = SelectedPatient.Dod,
                 Sex = SelectedPatient.Sex,
                 PhoneNo = SelectedPatient.PhoneNo
                     .Replace(" ", "", StringComparison.Ordinal)

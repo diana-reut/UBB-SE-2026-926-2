@@ -426,7 +426,7 @@ public class PatientController : ControllerBase
                 LastName = dto.LastName,
                 Cnp = dto.Cnp,
                 Dob = dto.Dob,
-                Dod = dto.Dod,
+                Dod = dto.Dod.HasValue && dto.Dod.Value > DateTime.MinValue ? dto.Dod : null,
                 Sex = dto.Sex,
                 PhoneNo = dto.PhoneNo,
                 EmergencyContact = dto.EmergencyContact,
