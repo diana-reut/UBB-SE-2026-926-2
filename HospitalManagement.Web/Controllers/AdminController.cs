@@ -92,8 +92,8 @@ public class AdminController : Controller
             Cnp = model.Cnp.Trim(),
             Dob = model.Dob,
             Sex = model.Sex,
-            PhoneNo = NormalizePhone(model.PhoneNo),
-            EmergencyContact = NormalizePhone(model.EmergencyContact),
+            PhoneNo = model.PhoneNo.Trim(),
+            EmergencyContact = model.EmergencyContact.Trim(),
             IsArchived = false,
             IsDonor = false,
             Transferred = false

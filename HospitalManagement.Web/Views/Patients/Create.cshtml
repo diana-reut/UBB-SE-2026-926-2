@@ -46,19 +46,19 @@
 
                         <div class="col-md-6">
                             <label asp-for="Cnp" class="form-label"></label>
-                            <input asp-for="Cnp" class="form-control" />
+                            <input asp-for="Cnp" class="form-control" maxlength="13" inputmode="numeric" placeholder="13 digits" />
                             <span asp-validation-for="Cnp" class="text-danger"></span>
                         </div>
 
                         <div class="col-md-6">
                             <label asp-for="PhoneNo" class="form-label"></label>
-                            <input asp-for="PhoneNo" class="form-control" />
+                            <input asp-for="PhoneNo" class="form-control" maxlength="10" inputmode="numeric" placeholder="10 digits" />
                             <span asp-validation-for="PhoneNo" class="text-danger"></span>
                         </div>
 
                         <div class="col-12">
                             <label asp-for="EmergencyContact" class="form-label"></label>
-                            <input asp-for="EmergencyContact" class="form-control" />
+                            <input asp-for="EmergencyContact" class="form-control" maxlength="10" inputmode="numeric" placeholder="10 digits" />
                             <span asp-validation-for="EmergencyContact" class="text-danger"></span>
                         </div>
                     </div>
