@@ -1,0 +1,101 @@
+@model HospitalManagement.Web.Models.Admin.PatientDetailsViewModel
+
+@{
+    ViewData["Title"] = "Patient Details";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">@Model.FirstName @Model.LastName</h1>
+        <p class="text-muted mb-0">Detailed patient view opened from the admin list double click.</p>
+    </div>
+    <a asp-action="Index" asp-route-archived="@Model.IsArchived" asp-route-selectedId="@Model.Id" class="btn btn-outline-secondary">Back to Admin</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Patient Information</h2>
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">First Name</dt>
+                    <dd class="col-sm-7">@Model.FirstName</dd>
+                    <dt class="col-sm-5">Last Name</dt>
+                    <dd class="col-sm-7">@Model.LastName</dd>
+                    <dt class="col-sm-5">DOB</dt>
+                    <dd class="col-sm-7">@Model.Dob.ToString("yyyy-MM-dd")</dd>
+                    <dt class="col-sm-5">Sex</dt>
+                    <dd class="col-sm-7">@Model.Sex</dd>
+                    <dt class="col-sm-5">CNP</dt>
+                    <dd class="col-sm-7">@Model.Cnp</dd>
+                    <dt class="col-sm-5">Phone</dt>
+                    <dd class="col-sm-7">@Model.PhoneNo</dd>
+                    <dt class="col-sm-5">Emergency</dt>
+                    <dd class="col-sm-7">@Model.EmergencyContact</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Medical History</h2>
+                <p><strong>Blood Type:</strong> @(Model.BloodType ?? "N/A")</p>
+                <p><strong>RH Factor:</strong> @(Model.Rh ?? "N/A")</p>
+                <p><strong>Chronic Conditions:</strong> @Model.ChronicConditions</p>
+                <div>
+                    <strong>Allergies:</strong>
+                    @if (Model.Allergies.Count == 0)
+                    {
+                        <div class="text-muted mt-2">No allergies recorded.</div>
+                    }
+                    else
+                    {
+                        <ul class="mt-2 mb-0">
+                        @foreach (var allergy in Model.Allergies)
+                        {
+                            <li>@allergy</li>
+                        }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Consultations</h2>
+                @if (Model.MedicalRecords.Count == 0)
+                {
+                    <div class="text-muted">No medical records available.</div>
+                }
+                else
+                {
+                    <div class="accordion" id="recordsAccordion">
+                    @for (int i = 0; i < Model.MedicalRecords.Count; i++)
+                    {
+                        var record = Model.MedicalRecords[i];
+                        string headingId = $"heading-{record.Id}";
+                        string collapseId = $"collapse-{record.Id}";
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="@headingId">
+                                <button class="accordion-button @(i == 0 ? string.Empty : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="@(i == 0 ? "true" : "false")" aria-controls="@collapseId">
+                                    @record.ConsultationDate.ToString("yyyy-MM-dd") - @record.SourceType
+                                </button>
+                            </h2>
+                            <div id="@collapseId" class="accordion-collapse collapse @(i == 0 ? "show" : string.Empty)" aria-labelledby="@headingId" data-bs-parent="#recordsAccordion">
+                                <div class="accordion-body">
+                                    <p><strong>Staff ID:</strong> @record.StaffId</p>
+                                    <p><strong>Symptoms:</strong> @record.Symptoms</p>
+                                    <p class="mb-0"><strong>Diagnosis:</strong> @record.Diagnosis</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
