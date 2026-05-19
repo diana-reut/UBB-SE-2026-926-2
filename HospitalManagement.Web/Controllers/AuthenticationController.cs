@@ -20,6 +20,7 @@ public class AuthenticationController : Controller
     [HttpGet]
     public IActionResult AuthenticationView()
     {
+        ViewData["HideShell"] = true;
         return View(new AuthenticationViewModel());
     }
 
@@ -29,6 +30,8 @@ public class AuthenticationController : Controller
         AuthenticationViewModel model,
         CancellationToken cancellationToken)
     {
+        ViewData["HideShell"] = true;
+
         if (!ModelState.IsValid)
         {
             return View(model);
@@ -43,7 +46,6 @@ public class AuthenticationController : Controller
             HttpContext.Session.SetString(UsernameSessionKey, response.Username);
             HttpContext.Session.SetString(RoleSessionKey, response.Role);
 
-            TempData["LoginMessage"] = $"Signed in as {response.Username} ({response.Role}).";
             return RedirectToAction("Index", "Home");
         }
         catch (UnauthorizedAccessException e)
@@ -72,5 +74,15 @@ public class AuthenticationController : Controller
             ModelState.AddModelError(string.Empty, e.Message);
             return View(model);
         }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Logout()
+    {
+        HttpContext.Session.Remove(AccessTokenSessionKey);
+        HttpContext.Session.Remove(UsernameSessionKey);
+        HttpContext.Session.Remove(RoleSessionKey);
+        return RedirectToAction(nameof(AuthenticationView));
     }
 }

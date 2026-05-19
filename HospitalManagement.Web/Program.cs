@@ -28,7 +28,7 @@ builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddHttpClient<IAuthenticationApiClient, AuthenticationApiClient>(client =>
 {
     string apiBaseUri = builder.Configuration["ApiSettings:BaseUri"]
-        ?? throw new InvalidOperationException("ApiSettings:BaseUri is not configured.");
+        ?? "http://localhost:5059/";
 
     client.BaseAddress = new Uri(apiBaseUri);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
@@ -49,6 +49,36 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseSession();
+
+app.Use(async (context, next) =>
+{
+    PathString path = context.Request.Path;
+    bool isAuthenticationPath = path.StartsWithSegments("/Authentication");
+    bool isStaticAsset =
+        path.StartsWithSegments("/lib")
+        || path.StartsWithSegments("/css")
+        || path.StartsWithSegments("/js")
+        || path.StartsWithSegments("/favicon.ico")
+        || path.Value?.Contains('.', StringComparison.Ordinal) == true;
+
+    string? token = context.Session.GetString("AccessToken");
+    bool isLoggedIn = !string.IsNullOrWhiteSpace(token);
+
+    if (!isLoggedIn && !isAuthenticationPath && !isStaticAsset)
+    {
+        context.Response.Redirect("/Authentication/AuthenticationView");
+        return;
+    }
+
+    if (isLoggedIn && isAuthenticationPath)
+    {
+        context.Response.Redirect("/");
+        return;
+    }
+
+    await next();
+});
+
 app.UseAuthorization();
 
 app.MapStaticAssets();
