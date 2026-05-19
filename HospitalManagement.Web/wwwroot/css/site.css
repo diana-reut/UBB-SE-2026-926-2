@@ -18,8 +18,9 @@ html {
 }
 
 body {
-  min-height: 100vh;
+  height: 100vh;
   margin: 0;
+  overflow: hidden;
   background: #f3f6fb;
   color: #162033;
 }
@@ -35,26 +36,31 @@ body {
 
 .app-shell {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
 }
 
 .app-sidebar {
-  width: 260px;
+  width: 240px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 28px 20px;
+  padding: 20px 16px;
   background: linear-gradient(180deg, #18212f 0%, #24344a 100%);
   color: #f8fbff;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  overflow-y: auto;
 }
 
 .app-brand {
   display: block;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
   color: #fff;
   text-decoration: none;
-  font-size: 1.45rem;
+  font-size: 1.15rem;
   font-weight: 700;
   line-height: 1.2;
 }
@@ -64,22 +70,24 @@ body {
 }
 
 .app-nav {
-  gap: 8px;
+  gap: 5px;
 }
 
 .app-nav-separator {
   height: 1px;
-  margin: 10px 0;
+  margin: 8px 0;
   background: rgba(216, 227, 242, 0.18);
 }
 
 .app-nav-link {
   display: block;
-  padding: 12px 14px;
-  border-radius: 12px;
+  padding: 9px 11px;
+  border-radius: 10px;
   color: #d8e3f2;
   text-decoration: none;
+  font-size: 0.9rem;
   font-weight: 600;
+  line-height: 1.25;
   transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
@@ -96,26 +104,39 @@ body {
 
 .app-sidebar-footer {
   color: #9db0c8;
-  font-size: 0.92rem;
+  font-size: 0.82rem;
 }
 
 .app-content {
   flex: 1;
+  margin-left: 240px;
   padding: 32px;
+  height: 100vh;
+  overflow-y: auto;
   overflow-x: auto;
 }
 
 @media (max-width: 991.98px) {
+  body {
+    height: auto;
+    overflow: auto;
+  }
+
   .app-shell {
     flex-direction: column;
+    height: auto;
   }
 
   .app-sidebar {
     width: 100%;
+    position: static;
     gap: 20px;
   }
 
   .app-content {
+    margin-left: 0;
+    height: auto;
+    overflow: visible;
     padding: 20px;
   }
 }
