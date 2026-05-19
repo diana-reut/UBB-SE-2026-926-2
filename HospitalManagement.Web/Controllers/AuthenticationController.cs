@@ -6,9 +6,6 @@ namespace HospitalManagement.Web.Controllers;
 
 public class AuthenticationController : Controller
 {
-    private const string AccessTokenSessionKey = "AccessToken";
-    private const string UsernameSessionKey = "Username";
-    private const string RoleSessionKey = "Role";
 
     private readonly IAuthenticationApiClient authenticationApiClient;
 
