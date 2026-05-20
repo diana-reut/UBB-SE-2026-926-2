@@ -104,4 +104,62 @@ public class MedicalStaffController : Controller
             return RedirectToAction(nameof(Dashboard));
         }
     }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportRecord(int recordId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            RecordExportDataDto exportData = await _patientApiClient.GetRecordExportDataAsync(recordId, cancellationToken);
+
+            if (exportData == null)
+                throw new Exception("exportData is null");
+
+            if (exportData.Patient == null)
+                throw new Exception("Patient is null");
+
+            if (exportData.Record == null)
+                throw new Exception("Record is null");
+
+            byte[] pdfBytes;
+            using (var stream = new MemoryStream())
+            {
+                var writer = new iText.Kernel.Pdf.PdfWriter(stream);
+                var pdf = new iText.Kernel.Pdf.PdfDocument(writer);
+                var doc = new iText.Layout.Document(pdf);
+
+                doc.Add(new iText.Layout.Element.Paragraph($"Patient: {exportData.Patient.FirstName} {exportData.Patient.LastName}").SetFontSize(16));
+                doc.Add(new iText.Layout.Element.Paragraph($"CNP: {exportData.Patient.Cnp}"));
+                doc.Add(new iText.Layout.Element.Paragraph($"Consultation Date: {exportData.Record.ConsultationDate:dd-MM-yyyy HH:mm}"));
+                doc.Add(new iText.Layout.Element.Paragraph("\n"));
+                doc.Add(new iText.Layout.Element.Paragraph("Section 1: Clinical Findings").SetFontSize(14));
+                doc.Add(new iText.Layout.Element.Paragraph($"Symptoms: {exportData.Record.Symptoms ?? "N/A"}"));
+                doc.Add(new iText.Layout.Element.Paragraph($"Diagnosis: {exportData.Record.Diagnosis ?? "N/A"}"));
+                doc.Add(new iText.Layout.Element.Paragraph("\n"));
+                doc.Add(new iText.Layout.Element.Paragraph("Section 2: Prescribed Treatment").SetFontSize(14));
+
+                if (exportData.Prescription is null || exportData.Items.Count == 0)
+                {
+                    doc.Add(new iText.Layout.Element.Paragraph("No prescription issued for this consultation."));
+                }
+                else
+                {
+                    doc.Add(new iText.Layout.Element.Paragraph($"Doctor Notes: {exportData.Prescription.DoctorNotes ?? "None"}"));
+                    doc.Add(new iText.Layout.Element.Paragraph("Medications:"));
+                    foreach (var item in exportData.Items)
+                        doc.Add(new iText.Layout.Element.Paragraph($"  - {item.MedName}: {item.Quantity}"));
+                }
+
+                doc.Close();
+                pdfBytes = stream.ToArray();
+            }
+
+            string fileName = $"MedicalRecord_{exportData.Patient.FirstName}{exportData.Patient.LastName}_{exportData.Record.ConsultationDate:yyyyMMdd}.pdf";
+            return File(pdfBytes, "application/pdf", fileName);
+        }
+        catch (Exception ex)
+        {
+            return Content(ex.ToString());
+        }
+    }
 }

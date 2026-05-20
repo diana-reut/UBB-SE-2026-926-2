@@ -19,6 +19,10 @@
     {
         <p class="text-danger fw-semibold text-center">@Model.ErrorMessage</p>
     }
+    @if (TempData["ErrorMessage"] is string error)
+    {
+        <p class="text-danger fw-semibold text-center">@error</p>
+    }
 
     @* Results table + sidebar *@
     @if (Model.HasSearched)

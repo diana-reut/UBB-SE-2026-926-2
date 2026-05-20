@@ -317,4 +317,24 @@ public class PatientApiClient : IPatientApiClient
             throw new InvalidOperationException("The patient API request timed out or was interrupted.");
         }
     }
+
+    public async Task<RecordExportDataDto> GetRecordExportDataAsync(int recordId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using HttpResponseMessage response = await ExecuteWithStartupRetryAsync(
+                ct => httpClient.GetAsync($"{BaseUri}/records/{recordId}/export-data", ct),
+                cancellationToken);
+            return await ReadAsync<RecordExportDataDto>(response, cancellationToken)
+                ?? throw new InvalidOperationException("Export data response was empty.");
+        }
+        catch (HttpRequestException)
+        {
+            throw new InvalidOperationException("Could not connect to the patient API.");
+        }
+        catch (TaskCanceledException)
+        {
+            throw new InvalidOperationException("The patient API request timed out or was interrupted.");
+        }
+    }
 }
