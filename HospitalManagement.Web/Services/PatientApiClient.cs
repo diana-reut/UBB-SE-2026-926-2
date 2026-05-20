@@ -298,4 +298,23 @@ public class PatientApiClient : IPatientApiClient
 
         throw new InvalidOperationException(message);
     }
+
+    public async Task<bool> IsHighRiskAsync(int id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using HttpResponseMessage response = await ExecuteWithStartupRetryAsync(
+                ct => httpClient.GetAsync($"{BaseUri}/{id}/high-risk", ct),
+                cancellationToken);
+            return await ReadAsync<bool>(response, cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            throw new InvalidOperationException("Could not connect to the patient API.");
+        }
+        catch (TaskCanceledException)
+        {
+            throw new InvalidOperationException("The patient API request timed out or was interrupted.");
+        }
+    }
 }
