@@ -47,7 +47,7 @@
                         data-bs-target="#fileRecords">
                     File Records ▾
                 </button>
-                <div class="collapse mt-2" id="fileRecords">
+                <div class="collapse mt-2 @(Model.SelectedRecordId.HasValue ? "show" : "")" id="fileRecords">
                     @if (!Model.MedicalRecords.Any())
                     {
                         <p class="text-muted ms-2">No records.</p>
