@@ -25,4 +25,13 @@
     <Folder Include="Repository\" />
   </ItemGroup>
 
+ 
+  <ItemGroup>
+    <Compile Include="..\UBB-SE-2026-MysteryInc-main\HospitalManagement\Service\IImportService.cs" />
+    <Compile Include="..\UBB-SE-2026-MysteryInc-main\HospitalManagement\Service\ImportService.cs" />
+    <Compile Include="..\UBB-SE-2026-MysteryInc-main\HospitalManagement\Proxy\PatientProxy\IPatientProxy.cs" />
+    <Compile Include="..\UBB-SE-2026-MysteryInc-main\HospitalManagement\Integration\External\IExternalProvider.cs" />
+    <Compile Include="..\UBB-SE-2026-House-MD-main\ERManagementSystem\Proxy\ExaminationProxy\IExaminationProxy.cs" />
+  </ItemGroup>
+
 </Project>
