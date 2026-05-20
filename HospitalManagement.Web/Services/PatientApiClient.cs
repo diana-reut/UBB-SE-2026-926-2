@@ -337,4 +337,25 @@ public class PatientApiClient : IPatientApiClient
             throw new InvalidOperationException("The patient API request timed out or was interrupted.");
         }
     }
+
+    public async Task<Prescription?> GetPrescriptionByRecordIdAsync(int recordId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using HttpResponseMessage response = await ExecuteWithStartupRetryAsync(
+                ct => httpClient.GetAsync($"{BaseUri}/records/{recordId}/prescription", ct),
+                cancellationToken);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+                return null;
+            return await ReadAsync<Prescription>(response, cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            throw new InvalidOperationException("Could not connect to the patient API.");
+        }
+        catch (TaskCanceledException)
+        {
+            throw new InvalidOperationException("The patient API request timed out or was interrupted.");
+        }
+    }
 }

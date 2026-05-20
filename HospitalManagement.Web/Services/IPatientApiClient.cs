@@ -17,4 +17,5 @@ public interface IPatientApiClient
     Task ArchiveAsDeceasedAsync(int id, ArchiveAsDeceasedDto dto, CancellationToken cancellationToken);
     Task<bool> IsHighRiskAsync(int id, CancellationToken cancellationToken);
     Task<RecordExportDataDto> GetRecordExportDataAsync(int recordId, CancellationToken cancellationToken);
+    Task<Prescription?> GetPrescriptionByRecordIdAsync(int recordId, CancellationToken cancellationToken);
 }

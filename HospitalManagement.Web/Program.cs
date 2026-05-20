@@ -39,6 +39,13 @@ builder.Services.AddHttpClient<IAllergyApiClient, AllergyApiClient>(client =>
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     client.Timeout = TimeSpan.FromSeconds(30);
 });
+builder.Services.AddHttpClient<IPrescriptionApiClient, PrescriptionApiClient>(client =>
+{
+    string apiBaseUri = builder.Configuration["ApiSettings:BaseUri"];
+    client.BaseAddress = new Uri(apiBaseUri);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 var app = builder.Build();
 

@@ -26,4 +26,5 @@ public class MedicalRecordViewModel
     public int StaffId { get; set; }
     public string Symptoms { get; set; } = "N/A";
     public string Diagnosis { get; set; } = "N/A";
+    public int? PrescriptionId { get; set; }
 }

@@ -101,7 +101,15 @@
                 </dl>
 
                 <div class="d-flex gap-2 mt-3">
-                    <button class="btn btn-primary" disabled>View Associated Prescription</button>
+                    @if (Model.SelectedRecord.PrescriptionId.HasValue)
+                    {
+                        <a href="@Url.Action("PrescriptionDetails", new { prescriptionId = Model.SelectedRecord.PrescriptionId, patientId = Model.Id })"
+                           class="btn btn-primary">View Associated Prescription</a>
+                    }
+                    else
+                    {
+                        <button class="btn btn-primary" disabled>No Prescription</button>
+                    }
                     <a href="@Url.Action("ExportRecord", new { recordId = Model.SelectedRecord.Id })"
                        class="btn btn-primary">Export to PDF</a>
                 </div>

@@ -10,12 +10,13 @@ namespace HospitalManagement.Web.Controllers;
 public class MedicalStaffController : Controller
 {
     private readonly IPatientApiClient _patientApiClient;
+    private readonly IPrescriptionApiClient _prescriptionApiClient;
 
-    public MedicalStaffController(IPatientApiClient patientApiClient)
+    public MedicalStaffController(IPatientApiClient patientApiClient, IPrescriptionApiClient prescriptionApiClient)
     {
         _patientApiClient = patientApiClient;
+        _prescriptionApiClient = prescriptionApiClient;
     }
-
     [HttpGet]
     public async Task<IActionResult> Dashboard(
         string? searchQuery,
@@ -92,9 +93,24 @@ public class MedicalStaffController : Controller
                         SourceType = r.SourceType.ToString(),
                         StaffId = r.StaffId,
                         Symptoms = r.Symptoms ?? "N/A",
-                        Diagnosis = r.Diagnosis ?? "N/A"
+                        Diagnosis = r.Diagnosis ?? "N/A",
+                        PrescriptionId = r.Prescription?.Id
                     }).ToList() ?? []
             };
+            model.SelectedRecordId = selectedRecordId;
+            foreach (var record in model.MedicalRecords)
+            {
+                try
+                {
+                    Prescription? prescription = await _patientApiClient.GetPrescriptionByRecordIdAsync(record.Id, cancellationToken);
+                    record.PrescriptionId = prescription?.Id;
+                }
+                catch
+                {
+                    record.PrescriptionId = null;
+                }
+            }
+
             model.SelectedRecordId = selectedRecordId;
             return View("~/Views/Patients/PatientProfile.cshtml", model);
         }
@@ -160,6 +176,37 @@ public class MedicalStaffController : Controller
         catch (Exception ex)
         {
             return Content(ex.ToString());
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> PrescriptionDetails(int prescriptionId, int patientId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            Prescription prescription = await _prescriptionApiClient.GetPrescriptionDetailsAsync(prescriptionId, cancellationToken);
+
+            var model = new PrescriptionDetailsViewModel
+            {
+                Id = prescription.Id,
+                PatientName = prescription.PatientName ?? string.Empty,
+                DoctorName = prescription.DoctorName ?? string.Empty,
+                DoctorNotes = prescription.DoctorNotes ?? string.Empty,
+                Date = prescription.Date,
+                ReturnPatientId = patientId,
+                Items = prescription.MedicationList?.Select(i => new PrescriptionItemViewModel
+                {
+                    MedName = i.MedName,
+                    Quantity = i.Quantity
+                }).ToList() ?? []
+            };
+
+            return View("~/Views/Patients/PrescriptionDetails.cshtml", model);
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = "Could not load prescription: " + ex.Message;
+            return RedirectToAction(nameof(PatientProfile), new { id = patientId });
         }
     }
 }
