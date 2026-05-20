@@ -1,0 +1,78 @@
+@model HospitalManagement.Web.Models.Patients.CreatePatientViewModel
+@using Common.Data.Entity.Enums
+
+@{
+    ViewData["Title"] = "Create patient";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="mb-1">Create patient</h1>
+            </div>
+            <a asp-controller="Admin" asp-action="Index" class="btn btn-outline-secondary">Back to admin</a>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <form asp-controller="Admin" asp-action="CreatePatient" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="FirstName" class="form-label"></label>
+                            <input asp-for="FirstName" class="form-control" />
+                            <span asp-validation-for="FirstName" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="LastName" class="form-label"></label>
+                            <input asp-for="LastName" class="form-control" />
+                            <span asp-validation-for="LastName" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Dob" class="form-label"></label>
+                            <input asp-for="Dob" class="form-control" />
+                            <span asp-validation-for="Dob" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Sex" class="form-label"></label>
+                            <select asp-for="Sex" asp-items="Html.GetEnumSelectList<Sex>()" class="form-select"></select>
+                            <span asp-validation-for="Sex" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Cnp" class="form-label"></label>
+                            <input asp-for="Cnp" class="form-control" maxlength="13" inputmode="numeric" placeholder="13 digits" />
+                            <span asp-validation-for="Cnp" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="PhoneNo" class="form-label"></label>
+                            <input asp-for="PhoneNo" class="form-control" maxlength="10" inputmode="numeric" placeholder="10 digits" />
+                            <span asp-validation-for="PhoneNo" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="EmergencyContact" class="form-label"></label>
+                            <input asp-for="EmergencyContact" class="form-control" maxlength="10" inputmode="numeric" placeholder="10 digits" />
+                            <span asp-validation-for="EmergencyContact" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Create patient</button>
+                        <a asp-controller="Admin" asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

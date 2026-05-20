@@ -18,7 +18,11 @@ html {
 }
 
 body {
-  margin-bottom: 60px;
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
+  background: #f3f6fb;
+  color: #162033;
 }
 
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
@@ -28,4 +32,152 @@ body {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
+}
+
+.app-shell {
+  display: flex;
+  height: 100vh;
+}
+
+.app-sidebar {
+  width: 240px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px 16px;
+  background: linear-gradient(180deg, #18212f 0%, #24344a 100%);
+  color: #f8fbff;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  overflow-y: auto;
+}
+
+.app-brand {
+  display: block;
+  margin-bottom: 20px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.app-brand:hover {
+  color: #fff;
+}
+
+.app-nav {
+  gap: 5px;
+}
+
+.app-nav-separator {
+  height: 1px;
+  margin: 8px 0;
+  background: rgba(216, 227, 242, 0.18);
+}
+
+.app-nav-link {
+  display: block;
+  padding: 9px 11px;
+  border-radius: 10px;
+  color: #d8e3f2;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.25;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.app-nav-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(2px);
+}
+
+.app-nav-link.active {
+  background: #fff;
+  color: #162033;
+}
+
+.app-sidebar-footer {
+  color: #9db0c8;
+  font-size: 0.82rem;
+}
+
+.app-content {
+  flex: 1;
+  margin-left: 240px;
+  padding: 32px;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.admin-quick-info {
+  min-width: 140px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f5f8fc;
+  border: 1px solid #d9e2ee;
+}
+
+.admin-quick-info-label {
+  font-size: 0.85rem;
+  color: #5d6b80;
+  font-weight: 600;
+}
+
+.admin-quick-info-value {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #162033;
+  line-height: 1.1;
+}
+
+.admin-ghost-button {
+  font-weight: 700;
+  color: #1f2a37;
+  background: #ffe27a;
+  border-color: #f2d15a;
+}
+
+.admin-ghost-button:hover,
+.admin-ghost-button:focus {
+  color: #1f2a37;
+  background: #ffd95a;
+  border-color: #e6c246;
+}
+
+.table td.patient-deceased,
+.table tr.table-active td.patient-deceased {
+  color: #c62828 !important;
+  font-weight: 600;
+}
+
+@media (max-width: 991.98px) {
+  body {
+    height: auto;
+    overflow: auto;
+  }
+
+  .app-shell {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .app-sidebar {
+    width: 100%;
+    position: static;
+    gap: 20px;
+  }
+
+  .app-content {
+    margin-left: 0;
+    height: auto;
+    overflow: visible;
+    padding: 20px;
+  }
 }
