@@ -1,0 +1,42 @@
+@model HospitalManagement.Web.Models.Ghost.GhostViewModel
+@{
+    ViewData["Title"] = "Ghost Sighting Monitor";
+}
+
+<h2>Ghost Sighting Monitor</h2>
+
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (Model.StatusMessage is not null)
+{
+    <div class="alert @(Model.ExorcismTriggered ? "alert-danger" : "alert-info")">
+        @Model.StatusMessage
+    </div>
+}
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Current Status</h5>
+        <p>Sightings in the last 24 hours: <strong>@Model.SightingCount</strong></p>
+        <p>
+            Exorcism status:
+            @if (Model.ExorcismTriggered)
+            {
+                <span class="badge bg-danger">Triggered</span>
+            }
+            else
+            {
+                <span class="badge bg-success">All clear</span>
+            }
+        </p>
+        <small class="text-muted">Last refreshed: @Model.LastRefreshed.ToString("yyyy-MM-dd HH:mm:ss") UTC</small>
+    </div>
+</div>
+
+<form asp-action="ReportSighting" method="post">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-warning">Report Sighting</button>
+</form>

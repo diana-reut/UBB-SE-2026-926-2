@@ -9,6 +9,9 @@ public interface IPatientApiClient
     Task<Patient?> GetByIdAsync(int id, CancellationToken cancellationToken);
     Task<Patient> GetPatientDetailsAsync(int id, CancellationToken cancellationToken);
     Task<List<string>> GetPatientAllergiesAsync(int id, CancellationToken cancellationToken);
+    Task<List<MedicalRecord>> GetMedicalRecordsAsync(int medicalHistoryId, CancellationToken cancellationToken);
+    Task<Prescription?> GetPrescriptionByRecordIdAsync(int recordId, CancellationToken cancellationToken);
+    Task<RecordExportDataDto> GetRecordExportDataAsync(int recordId, CancellationToken cancellationToken);
     Task<Patient> CreatePatientAsync(CreatePatientDto dto, CancellationToken cancellationToken);
     Task CreateMedicalHistoryAsync(int id, CreateMedicalHistoryDto dto, CancellationToken cancellationToken);
     Task UpdatePatientAsync(int id, UpdatePatientDto dto, CancellationToken cancellationToken);

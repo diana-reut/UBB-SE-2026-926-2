@@ -1,0 +1,158 @@
+@model HospitalManagement.Web.Models.PatientProfile.PatientProfileViewModel
+@{
+    ViewData["Title"] = "Patient Profile";
+}
+
+<h2>Patient Profile - @Model.FullName</h2>
+
+@if (Model.SuccessMessage is not null)
+{
+    <div class="alert alert-success">@Model.SuccessMessage</div>
+}
+@if (Model.ErrorMessage is not null)
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<div class="card mb-4">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Date of Birth</dt>
+            <dd class="col-sm-9">@Model.Dob</dd>
+
+            <dt class="col-sm-3">Blood Type</dt>
+            <dd class="col-sm-9">@(Model.BloodType ?? "Unknown") @Model.Rh</dd>
+
+            <dt class="col-sm-3">Chronic Conditions</dt>
+            <dd class="col-sm-9">@Model.ChronicConditions</dd>
+
+            <dt class="col-sm-3">Allergies</dt>
+            <dd class="col-sm-9">
+                @if (Model.Allergies.Count == 0)
+                {
+                    <span>None on record</span>
+                }
+                else
+                {
+                    @string.Join(", ", Model.Allergies)
+                }
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<h4>Medical Records</h4>
+@if (!Model.MedicalRecords.Any())
+{
+    <p class="text-muted">No records found.</p>
+}
+else
+{
+    <table class="table table-hover table-sm">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Staff ID</th>
+                <th>Symptoms</th>
+                <th>Diagnosis</th>
+                <th>Base Price</th>
+                <th>Final Price</th>
+                <th>Discount</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var record in Model.MedicalRecords)
+            {
+                <tr class="@(record.IsSelected ? "table-primary" : string.Empty)">
+                    <td>@record.ConsultationDate</td>
+                    <td>@record.SourceType</td>
+                    <td>@record.StaffId</td>
+                    <td>@record.Symptoms</td>
+                    <td>@record.Diagnosis</td>
+                    <td>@record.BasePrice.ToString("C")</td>
+                    <td>@record.FinalPrice.ToString("C")</td>
+                    <td>@(record.DiscountApplied.HasValue ? $"{record.DiscountApplied}%" : "-")</td>
+                    <td>
+                        <a asp-action="SelectRecord"
+                           asp-route-patientId="@Model.PatientId"
+                           asp-route-recordId="@record.Id"
+                           class="btn btn-sm btn-outline-primary">Select</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (Model.SelectedRecordId.HasValue)
+{
+    <div class="card mb-4">
+        <div class="card-header">Record #@Model.SelectedRecordId - Billing</div>
+        <div class="card-body">
+            <p>Base price: <strong>@Model.BasePrice.ToString("C")</strong></p>
+            <p>Final price: <strong>@Model.FinalPrice.ToString("C")</strong></p>
+            @if (Model.DiscountApplied.HasValue)
+            {
+                <p class="text-success">Discount applied: @Model.DiscountApplied%</p>
+            }
+
+            <form asp-action="ApplyDiscount" method="post" class="row g-2 mb-3">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="patientId" value="@Model.PatientId" />
+                <input type="hidden" name="recordId" value="@Model.SelectedRecordId" />
+                <div class="col-auto">
+                    <input type="number" name="discountPercent" min="0" max="100" class="form-control" placeholder="Discount %" />
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-success">Apply Discount</button>
+                </div>
+            </form>
+
+            <div class="d-flex gap-2">
+                <a asp-action="ViewPrescription"
+                   asp-route-patientId="@Model.PatientId"
+                   asp-route-recordId="@Model.SelectedRecordId"
+                   class="btn btn-outline-secondary">View Prescription</a>
+
+                <form asp-action="ExportRecord" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="patientId" value="@Model.PatientId" />
+                    <input type="hidden" name="recordId" value="@Model.SelectedRecordId" />
+                    <button type="submit" class="btn btn-outline-dark">Export Record</button>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@if (Model.Prescription is not null)
+{
+    <div class="card mb-4">
+        <div class="card-header">Prescription #@Model.Prescription.Id - @Model.Prescription.Date</div>
+        <div class="card-body">
+            @if (!string.IsNullOrWhiteSpace(Model.Prescription.DoctorNotes))
+            {
+                <p><em>@Model.Prescription.DoctorNotes</em></p>
+            }
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Medication</th>
+                        <th>Quantity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Prescription.Items)
+                    {
+                        <tr>
+                            <td>@item.MedName</td>
+                            <td>@item.Quantity</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
