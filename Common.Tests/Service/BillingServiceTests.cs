@@ -451,7 +451,6 @@ public sealed class BillingServiceTests
 
         decimal result = await service.ComputeBasePriceAsync(1, 1);
 
-        // 200 appointment + 20 + 20 + 100 + 100
         Assert.AreEqual(440m, result);
     }
 
