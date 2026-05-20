@@ -46,6 +46,24 @@ builder.Services.AddHttpClient<IPrescriptionApiClient, PrescriptionApiClient>(cl
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     client.Timeout = TimeSpan.FromSeconds(30);
 });
+builder.Services.AddHttpClient<IBillingApiClient, BillingApiClient>(client =>
+{
+    string apiBaseUri = builder.Configuration["ApiSettings:BaseUri"];
+    client.BaseAddress = new Uri(apiBaseUri);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Session is used to remember per-record discount results across requests
+// (the WinUI version keeps it in-memory on the ViewModel; on the web we use
+// session storage keyed by record id).
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.IdleTimeout = TimeSpan.FromHours(2);
+});
 
 var app = builder.Build();
 
@@ -59,6 +77,8 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+
+app.UseSession();
 
 app.UseAuthentication();
 app.UseAuthorization();
