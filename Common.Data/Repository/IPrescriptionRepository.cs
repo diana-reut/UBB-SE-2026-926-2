@@ -18,4 +18,6 @@ public interface IPrescriptionRepository
     Task<List<PrescriptionItem>> GetItemsAsync(int prescriptionId);
     Task<List<Prescription>> GetTopNAsync(int n, int page);
     Task UpdateAsync(Prescription prescription);
+    Task MarkPoliceNotifiedAsync(int patientId);
+    Task<List<int>> GetPoliceNotifiedPatientIdsAsync(IEnumerable<int> patientIds);
 }
