@@ -13,8 +13,17 @@ public class PatientApiClient : HospitalApiClientBase, IPatientApiClient
     {
     }
 
-    public Task<Patient?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
-        GetAsync<Patient>($"{BaseUri}/{id}", cancellationToken);
+    public async Task<Patient?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await GetAsync<Patient>($"{BaseUri}/{id}", cancellationToken);
+        }
+        catch (KeyNotFoundException)
+        {
+            return null;
+        }
+    }
 
     public async Task<Patient> GetPatientDetailsAsync(int id, CancellationToken cancellationToken = default) =>
         await GetAsync<Patient>($"{BaseUri}/{id}/details", cancellationToken)

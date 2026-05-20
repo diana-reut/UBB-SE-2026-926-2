@@ -1,5 +1,9 @@
+using System.Security.Claims;
 using HospitalManagement.Web.Models;
 using HospitalManagement.Web.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HospitalManagement.Web.Controllers;
@@ -14,17 +18,27 @@ public class AuthenticationController : Controller
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public IActionResult AuthenticationView()
     {
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            return RedirectToAction("Index", "Home");
+        }
+
+        ViewData["HideShell"] = true;
         return View(new AuthenticationViewModel());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [AllowAnonymous]
     public async Task<IActionResult> AuthenticationView(
         AuthenticationViewModel model,
         CancellationToken cancellationToken)
     {
+        ViewData["HideShell"] = true;
+
         if (!ModelState.IsValid)
         {
             return View(model);
@@ -39,7 +53,21 @@ public class AuthenticationController : Controller
             HttpContext.Session.SetString(WebSessionKeys.Username, response.Username);
             HttpContext.Session.SetString(WebSessionKeys.Role, response.Role);
 
-            TempData["LoginMessage"] = $"Signed in as {response.Username} ({response.Role}).";
+            Claim[] claims =
+            [
+                new(ClaimTypes.Name, response.Username),
+                new(ClaimTypes.Role, response.Role),
+                new("access_token", response.Token)
+            ];
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                principal);
+
+            TempData["LoginMessage"] = $"Signed in as {response.Username}.";
             return RedirectToAction("Index", "Home");
         }
         catch (UnauthorizedAccessException e)
@@ -68,5 +96,17 @@ public class AuthenticationController : Controller
             ModelState.AddModelError(string.Empty, e.Message);
             return View(model);
         }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize]
+    public async Task<IActionResult> Logout()
+    {
+        HttpContext.Session.Remove(WebSessionKeys.AccessToken);
+        HttpContext.Session.Remove(WebSessionKeys.Username);
+        HttpContext.Session.Remove(WebSessionKeys.Role);
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        return RedirectToAction(nameof(AuthenticationView));
     }
 }

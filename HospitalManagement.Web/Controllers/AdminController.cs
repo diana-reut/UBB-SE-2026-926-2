@@ -4,10 +4,12 @@ using Common.Data.Entity.Enums;
 using HospitalManagement.Web.Models.Admin;
 using HospitalManagement.Web.Models.Patients;
 using HospitalManagement.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HospitalManagement.Web.Controllers;
 
+[Authorize]
 public class AdminController : Controller
 {
     private readonly IPatientApiClient patientApiClient;

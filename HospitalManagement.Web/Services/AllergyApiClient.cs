@@ -11,4 +11,7 @@ public class AllergyApiClient : HospitalApiClientBase, IAllergyApiClient
 
     public async Task<List<Allergy>> GetAllergiesAsync(CancellationToken cancellationToken = default) =>
         await GetAsync<List<Allergy>>("api/allergies", cancellationToken) ?? [];
+
+    public Task<List<Allergy>> GetAllAsync(CancellationToken cancellationToken = default) =>
+        GetAllergiesAsync(cancellationToken);
 }

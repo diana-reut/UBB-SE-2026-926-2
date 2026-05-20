@@ -11,6 +11,7 @@
 </head>
 <body>
     @{
+        bool hideShell = ViewData["HideShell"] as bool? ?? false;
         string? currentController = ViewContext.RouteData.Values["controller"]?.ToString();
         string? currentAction = ViewContext.RouteData.Values["action"]?.ToString();
         bool isArchiveView = string.Equals(currentController, "Admin", StringComparison.OrdinalIgnoreCase)
@@ -18,93 +19,115 @@
         bool isAuthenticationView = string.Equals(currentController, "Authentication", StringComparison.OrdinalIgnoreCase)
             && string.Equals(currentAction, "AuthenticationView", StringComparison.OrdinalIgnoreCase);
         string? currentModule = Context.Request.Query["id"];
+        string? username = User.Identity?.Name;
+        string? role = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
     }
-    <div class="app-shell">
-        <aside class="app-sidebar">
-            <div>
-                <a class="app-brand" asp-area="" asp-controller="Home" asp-action="Index">HospitalManagement</a>
-                <nav class="nav flex-column app-nav">
-                    <a class="app-nav-link @(string.Equals(currentController, "Admin", StringComparison.OrdinalIgnoreCase) && !isArchiveView ? "active" : string.Empty)"
-                       asp-area=""
-                       asp-controller="Admin"
-                       asp-action="Index">
-                        Admin Dashboard
-                    </a>
-                    <a class="app-nav-link @(isAuthenticationView ? "active" : string.Empty)"
-                       asp-area=""
-                       asp-controller="Authentication"
-                       asp-action="AuthenticationView">
-                        Sign In
-                    </a>
-                    <a class="app-nav-link @(string.Equals(currentController, "Modules", StringComparison.OrdinalIgnoreCase) && string.Equals(currentModule, "medical-staff", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
-                       asp-area=""
-                       asp-controller="Modules"
-                       asp-action="Index"
-                       asp-route-id="medical-staff">
-                        Medical Staff
-                    </a>
-                    <a class="app-nav-link @(string.Equals(currentController, "Modules", StringComparison.OrdinalIgnoreCase) && string.Equals(currentModule, "pharmacy", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
-                       asp-area=""
-                       asp-controller="Modules"
-                       asp-action="Index"
-                       asp-route-id="pharmacy">
-                        Pharmacy
-                    </a>
-                    <div class="app-nav-separator"></div>
-                    <a class="app-nav-link @(string.Equals(currentController, "Registration", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
-                       asp-area=""
-                       asp-controller="Registration"
-                       asp-action="Index">
-                        Patient Registration
-                    </a>
-                    <a class="app-nav-link @(string.Equals(currentController, "Queue", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
-                       asp-area=""
-                       asp-controller="Queue"
-                       asp-action="Index">
-                        Queue
-                    </a>
-                    <a class="app-nav-link @(string.Equals(currentController, "Triage", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
-                       asp-area=""
-                       asp-controller="Triage"
-                       asp-action="Index">
-                        Triage
-                    </a>
-                    <a class="app-nav-link @(string.Equals(currentController, "RoomAssignment", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
-                       asp-area=""
-                       asp-controller="RoomAssignment"
-                       asp-action="Index">
-                        Room Assignment
-                    </a>
-                    <a class="app-nav-link @(string.Equals(currentController, "Examination", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
-                       asp-area=""
-                       asp-controller="Examination"
-                       asp-action="Index">
-                        Examination
-                    </a>
-                    <a class="app-nav-link @(string.Equals(currentController, "Transfer", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
-                       asp-area=""
-                       asp-controller="Transfer"
-                       asp-action="Index">
-                        Transfer Log
-                    </a>
-                    <a class="app-nav-link @(string.Equals(currentController, "RoomManagement", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
-                       asp-area=""
-                       asp-controller="RoomManagement"
-                       asp-action="Index">
-                        Room Management
-                    </a>
-                </nav>
-            </div>
-
-            <div class="app-sidebar-footer">
-                <span>926/2</span>
-            </div>
-        </aside>
-
-        <main role="main" class="app-content">
+    @if (hideShell)
+    {
+        <main role="main" class="container py-5">
             @RenderBody()
         </main>
-    </div>
+    }
+    else
+    {
+        <div class="app-shell">
+            <aside class="app-sidebar">
+                <div>
+                    <a class="app-brand" asp-area="" asp-controller="Home" asp-action="Index">HospitalManagement</a>
+                    <nav class="nav flex-column app-nav">
+                        <a class="app-nav-link @(string.Equals(currentController, "Admin", StringComparison.OrdinalIgnoreCase) && !isArchiveView ? "active" : string.Empty)"
+                           asp-area=""
+                           asp-controller="Admin"
+                           asp-action="Index">
+                            Admin Dashboard
+                        </a>
+                        <a class="app-nav-link @(isAuthenticationView ? "active" : string.Empty)"
+                           asp-area=""
+                           asp-controller="Authentication"
+                           asp-action="AuthenticationView">
+                            Sign In
+                        </a>
+                        <a class="app-nav-link @(string.Equals(currentController, "Modules", StringComparison.OrdinalIgnoreCase) && string.Equals(currentModule, "medical-staff", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                           asp-area=""
+                           asp-controller="Modules"
+                           asp-action="Index"
+                           asp-route-id="medical-staff">
+                            Medical Staff
+                        </a>
+                        <a class="app-nav-link @(string.Equals(currentController, "Modules", StringComparison.OrdinalIgnoreCase) && string.Equals(currentModule, "pharmacy", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                           asp-area=""
+                           asp-controller="Modules"
+                           asp-action="Index"
+                           asp-route-id="pharmacy">
+                            Pharmacy
+                        </a>
+                        <div class="app-nav-separator"></div>
+                        <a class="app-nav-link @(string.Equals(currentController, "Registration", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                           asp-area=""
+                           asp-controller="Registration"
+                           asp-action="Index">
+                            Patient Registration
+                        </a>
+                        <a class="app-nav-link @(string.Equals(currentController, "Queue", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                           asp-area=""
+                           asp-controller="Queue"
+                           asp-action="Index">
+                            Queue
+                        </a>
+                        <a class="app-nav-link @(string.Equals(currentController, "Triage", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                           asp-area=""
+                           asp-controller="Triage"
+                           asp-action="Index">
+                            Triage
+                        </a>
+                        <a class="app-nav-link @(string.Equals(currentController, "RoomAssignment", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                           asp-area=""
+                           asp-controller="RoomAssignment"
+                           asp-action="Index">
+                            Room Assignment
+                        </a>
+                        <a class="app-nav-link @(string.Equals(currentController, "Examination", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                           asp-area=""
+                           asp-controller="Examination"
+                           asp-action="Index">
+                            Examination
+                        </a>
+                        <a class="app-nav-link @(string.Equals(currentController, "Transfer", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                           asp-area=""
+                           asp-controller="Transfer"
+                           asp-action="Index">
+                            Transfer Log
+                        </a>
+                        <a class="app-nav-link @(string.Equals(currentController, "RoomManagement", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                           asp-area=""
+                           asp-controller="RoomManagement"
+                           asp-action="Index">
+                            Room Management
+                        </a>
+                    </nav>
+                </div>
+
+                <div class="app-sidebar-footer">
+                    @if (!string.IsNullOrWhiteSpace(username))
+                    {
+                        <div class="mb-2">@username (@role)</div>
+                        <form asp-controller="Authentication" asp-action="Logout" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-outline-light w-100">Sign out</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <span>926/2</span>
+                    }
+                </div>
+            </aside>
+
+            <main role="main" class="app-content">
+                @RenderBody()
+            </main>
+        </div>
+    }
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
