@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using HospitalManagement.Web.Services;
+using Microsoft.AspNetCore.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +40,25 @@ builder.Services.AddHttpClient<IAllergyApiClient, AllergyApiClient>(client =>
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     client.Timeout = TimeSpan.FromSeconds(30);
 });
+builder.Services.AddHttpClient<IPrescriptionApiClient, PrescriptionApiClient>(client =>
+{
+    string apiBaseUri = builder.Configuration["ApiSettings:BaseUri"];
+
+    client.BaseAddress = new Uri(apiBaseUri);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddTransient<BearerTokenHandler>();
+builder.Services.AddHttpClient<IAddictDetectionApiClient, AddictDetectionApiClient>(client =>
+{
+    string apiBaseUri = builder.Configuration["ApiSettings:BaseUri"]
+        ?? "http://localhost:5059/";
+
+    client.BaseAddress = new Uri(apiBaseUri);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+}).AddHttpMessageHandler<BearerTokenHandler>();
 
 var app = builder.Build();
 

@@ -128,28 +128,77 @@ public class PrescriptionRepository : IPrescriptionRepository
     public async Task<List<Patient>> GetAddictCandidatePatientsAsync()
     {
         DateTime thirtyDaysAgo = DateTime.Now.AddDays(-30);
-        DateTime now = DateTime.Now;
 
-        List<int> candidatePatientIds = await _context.Prescriptions
-            .Where(p => p.Date >= thirtyDaysAgo && p.Date <= now)
-            .Where(p => !p.MedicalRecord.History.Patient.IsArchived)
-            .SelectMany(
-                p => p.MedicationList,
-                (prescription, medication) => new
-                {
-                    PatientId = prescription.MedicalRecord.History.PatientId,
-                    DoctorId = prescription.MedicalRecord.StaffId,
-                    MedName = medication.MedName,
-                })
-            .GroupBy(x => new { x.PatientId, x.MedName })
-            .Where(g => g.Select(x => x.DoctorId).Distinct().Count() >= 3) // Patients with the same medication prescribed by 3 or more different doctors
-            .Select(g => g.Key.PatientId)
-            .Distinct()
-            .ToListAsync();
+        var candidateIds = new List<int>();
+        var conn = _context.Database.GetDbConnection();
+        bool wasOpen = conn.State == System.Data.ConnectionState.Open;
+        if (!wasOpen)
+            await conn.OpenAsync();
+
+        try
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                SELECT DISTINCT mh.PatientID
+                FROM PrescriptionItems pi
+                INNER JOIN Prescription pr ON pi.PrescriptionID = pr.PrescriptionID
+                INNER JOIN MedicalRecord mr ON pr.RecordID = mr.RecordID
+                INNER JOIN MedicalHistory mh ON mr.HistoryID = mh.HistoryID
+                INNER JOIN Patient p ON mh.PatientID = p.PatientID
+                WHERE pr.Date >= @thirtyDaysAgo
+                  AND p.Archived = 0
+                GROUP BY mh.PatientID, pi.MedName
+                HAVING COUNT(DISTINCT mr.StaffID) >= 3";
+
+            var param = cmd.CreateParameter();
+            param.ParameterName = "@thirtyDaysAgo";
+            param.Value = thirtyDaysAgo;
+            cmd.Parameters.Add(param);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+                candidateIds.Add(reader.GetInt32(0));
+        }
+        finally
+        {
+            if (!wasOpen)
+                await conn.CloseAsync();
+        }
+
+        if (candidateIds.Count == 0)
+            return [];
 
         return await _context.Patients
-            .Where(p => candidatePatientIds.Contains(p.Id))
+            .Where(p => candidateIds.Contains(p.Id))
             .AsNoTracking()
+            .ToListAsync();
+    }
+
+    public async Task MarkPoliceNotifiedAsync(int patientId)
+    {
+        DateTime thirtyDaysAgo = DateTime.Now.AddDays(-30);
+
+        List<MedicalRecord> records = await _context.Prescriptions
+            .Where(p => p.MedicalRecord.History.PatientId == patientId && p.Date >= thirtyDaysAgo)
+            .Select(p => p.MedicalRecord)
+            .ToListAsync();
+
+        foreach (MedicalRecord record in records)
+            record.PoliceNotified = true;
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<List<int>> GetPoliceNotifiedPatientIdsAsync(IEnumerable<int> patientIds)
+    {
+        DateTime thirtyDaysAgo = DateTime.Now.AddDays(-30);
+
+        return await _context.Prescriptions
+            .Where(p => patientIds.Contains(p.MedicalRecord.History.PatientId)
+                        && p.Date >= thirtyDaysAgo
+                        && p.MedicalRecord.PoliceNotified)
+            .Select(p => p.MedicalRecord.History.PatientId)
+            .Distinct()
             .ToListAsync();
     }
 

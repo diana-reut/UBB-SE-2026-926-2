@@ -1,0 +1,118 @@
+@model HospitalManagement.Web.Models.Prescription.PrescriptionIndexViewModel
+
+@{
+    ViewData["Title"] = "Prescriptions";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Prescriptions</h1>
+        <p class="text-muted mb-0">Search and browse patient prescriptions.</p>
+    </div>
+    <a asp-action="Addicts" class="btn btn-outline-warning">Addict Candidates</a>
+</div>
+
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+
+<form method="get" class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-2">
+        <label asp-for="SearchId" class="form-label">Prescription ID</label>
+        <input asp-for="SearchId" class="form-control" placeholder="e.g. 42" />
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <label asp-for="SearchName" class="form-label">Patient / Doctor name</label>
+        <input asp-for="SearchName" class="form-control" placeholder="e.g. Popescu" />
+    </div>
+    <div class="col-sm-6 col-lg-2">
+        <label asp-for="SearchMedication" class="form-label">Medication</label>
+        <input asp-for="SearchMedication" class="form-control" placeholder="e.g. Aspirin" />
+    </div>
+    <div class="col-sm-6 col-lg-2">
+        <label asp-for="DateFrom" class="form-label">Date from</label>
+        <input asp-for="DateFrom" class="form-control" type="date" />
+    </div>
+    <div class="col-sm-6 col-lg-2">
+        <label asp-for="DateTo" class="form-label">Date to</label>
+        <input asp-for="DateTo" class="form-control" type="date" />
+    </div>
+    <div class="col-sm-6 col-lg-1 d-flex align-items-end gap-2">
+        <button type="submit" class="btn btn-outline-primary">Apply</button>
+    </div>
+    <div class="col-12">
+        <a asp-action="Prescriptions" class="btn btn-link p-0">Reset filters</a>
+    </div>
+</form>
+
+@if (Model.InfoMessage is not null)
+{
+    <div class="alert alert-info" role="alert">@Model.InfoMessage</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Patient</th>
+                    <th>Doctor</th>
+                    <th>Date</th>
+                    <th>Medications</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var rx in Model.Prescriptions)
+                {
+                    <tr>
+                        <td>@rx.Id</td>
+                        <td>@rx.PatientName</td>
+                        <td>@rx.DoctorName</td>
+                        <td>@rx.Date.ToString("yyyy-MM-dd")</td>
+                        <td>@rx.MedicationCount</td>
+                        <td>
+                            <a asp-action="PrescriptionDetail" asp-route-id="@rx.Id" class="btn btn-sm btn-outline-secondary">Details</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <nav aria-label="Prescription pages">
+        <ul class="pagination">
+            @if (Model.CurrentPage > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link"
+                       asp-action="Prescriptions"
+                       asp-route-searchId="@Model.SearchId"
+                       asp-route-searchName="@Model.SearchName"
+                       asp-route-searchMedication="@Model.SearchMedication"
+                       asp-route-dateFrom="@Model.DateFrom?.ToString("yyyy-MM-dd")"
+                       asp-route-dateTo="@Model.DateTo?.ToString("yyyy-MM-dd")"
+                       asp-route-page="@(Model.CurrentPage - 1)">Previous</a>
+                </li>
+            }
+            <li class="page-item disabled">
+                <span class="page-link">Page @Model.CurrentPage</span>
+            </li>
+            @if (Model.HasNextPage)
+            {
+                <li class="page-item">
+                    <a class="page-link"
+                       asp-action="Prescriptions"
+                       asp-route-searchId="@Model.SearchId"
+                       asp-route-searchName="@Model.SearchName"
+                       asp-route-searchMedication="@Model.SearchMedication"
+                       asp-route-dateFrom="@Model.DateFrom?.ToString("yyyy-MM-dd")"
+                       asp-route-dateTo="@Model.DateTo?.ToString("yyyy-MM-dd")"
+                       asp-route-page="@(Model.CurrentPage + 1)">Next</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}
