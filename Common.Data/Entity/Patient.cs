@@ -111,6 +111,9 @@ public class Patient
 
     public bool IsDeceased => Dod.HasValue && Dod.Value > DateTime.MinValue;
 
+    [NotMapped]
+    public bool IsPoliceNotified { get; set; }
+
     public bool Validate(out List<string> errors)
     {
         errors = new List<string>();
