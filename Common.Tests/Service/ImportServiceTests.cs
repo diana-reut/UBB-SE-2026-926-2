@@ -337,4 +337,75 @@ public sealed class ImportServiceTests
 
         _patientProxy.Verify(p => p.CreatePrescriptionForRecordAsync(77, It.IsAny<CreatePrescriptionDto>()), Times.Once);
     }
+
+
+    [TestMethod]
+    public async Task ImportFromERWhenPatientHasNoMedicalHistoryThrowsInvalidOperationException()
+    {
+        _patientProxy.Setup(p => p.GetPatientDetailsAsync(1))
+            .ReturnsAsync(MakePatient(history: null));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => Task.Run(() => _sut.ImportFromER(1, 0)));
+    }
+
+    [TestMethod]
+    public async Task ImportFromAppointmentWhenPatientHasNoMedicalHistoryThrowsInvalidOperationException()
+    {
+        var dto = new RecordDTO { SourceType = SourceType.App, ConsultationDate = DateTime.Now };
+        _externalProvider.Setup(e => e.FetchRecordByPatientId(1)).Returns(dto);
+        _patientProxy.Setup(p => p.GetPatientDetailsAsync(1))
+            .ReturnsAsync(MakePatient(history: null));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => Task.Run(() => _sut.ImportFromAppointment(1, 1)));
+    }
+
+
+    [TestMethod]
+    public async Task ImportFromERAsyncWhenMedicalRecordsIsNullTreatsAsNoExistingImports()
+    {
+        var patient = MakePatient(history: new MedicalHistory { MedicalRecords = null });
+        _patientProxy.Setup(p => p.GetPatientDetailsAsync(1)).ReturnsAsync(patient);
+        _examinationProxy.Setup(p => p.GetPatientHistoryAsync(patient.Cnp))
+            .ReturnsAsync([MakeExam(visitId: 1)]);
+        _examinationProxy.Setup(p => p.GetSummaryByVisitIdAsync(1)).ReturnsAsync(MakeSummary());
+        _patientProxy.Setup(p => p.CreateMedicalRecordAsync(1, It.IsAny<CreateMedicalRecordDto>()))
+            .ReturnsAsync(1);
+
+        await _sut.ImportFromERAsync(1, 0);
+
+        _patientProxy.Verify(p => p.CreateMedicalRecordAsync(1, It.IsAny<CreateMedicalRecordDto>()), Times.Once);
+    }
+
+    [TestMethod]
+    public void ImportFromERHappyPathCreatesMedicalRecord()
+    {
+        var patient = MakePatient(history: MakeHistory());
+        _patientProxy.Setup(p => p.GetPatientDetailsAsync(1)).ReturnsAsync(patient);
+        _examinationProxy.Setup(p => p.GetPatientHistoryAsync(patient.Cnp))
+            .ReturnsAsync([MakeExam(visitId: 1)]);
+        _examinationProxy.Setup(p => p.GetSummaryByVisitIdAsync(1)).ReturnsAsync(MakeSummary());
+        _patientProxy.Setup(p => p.CreateMedicalRecordAsync(1, It.IsAny<CreateMedicalRecordDto>()))
+            .ReturnsAsync(1);
+
+        _sut.ImportFromER(1, 0);
+
+        _patientProxy.Verify(p => p.CreateMedicalRecordAsync(1, It.IsAny<CreateMedicalRecordDto>()), Times.Once);
+    }
+
+    [TestMethod]
+    public void ImportFromAppointmentHappyPathCreatesMedicalRecord()
+    {
+        var dto = new RecordDTO { PrescribedMeds = "", ConsultationDate = DateTime.Now, SourceType = SourceType.App };
+        var patient = MakePatient(history: MakeHistory());
+        _externalProvider.Setup(e => e.FetchRecordByPatientId(1)).Returns(dto);
+        _patientProxy.Setup(p => p.GetPatientDetailsAsync(1)).ReturnsAsync(patient);
+        _patientProxy.Setup(p => p.CreateMedicalRecordAsync(1, It.IsAny<CreateMedicalRecordDto>()))
+            .ReturnsAsync(1);
+
+        _sut.ImportFromAppointment(1, 1);
+
+        _patientProxy.Verify(p => p.CreateMedicalRecordAsync(1, It.IsAny<CreateMedicalRecordDto>()), Times.Once);
+    }
 }
