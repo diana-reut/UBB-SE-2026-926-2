@@ -387,6 +387,8 @@ public sealed class BillingServiceTests
     }
 
 
+
+
     [TestMethod]
     public async Task ApplyDiscountAsync_WithZeroPercentDiscount_ReturnsOriginalPrice()
     {
@@ -490,45 +492,6 @@ public sealed class BillingServiceTests
     }
 
     [TestMethod]
-    public async Task ComputeBasePriceAsync_UsesPatientIdWhenFetchingHistoryAndTransplants()
-    {
-        BillingService service = CreateService();
-
-        _recordRepo.Setup(x => x.GetByIdAsync(99))
-            .ReturnsAsync(new MedicalRecord
-            {
-                Id = 99,
-                SourceType = SourceType.App
-            });
-
-        _prescriptionRepo.Setup(x => x.GetByRecordIdAsync(99))
-            .ReturnsAsync((Prescription?)null);
-
-        _historyRepo.Setup(x => x.GetByPatientIdAsync(42))
-            .ReturnsAsync(new MedicalHistory
-            {
-                Id = 10,
-                PatientId = 42
-            });
-
-        _historyRepo.Setup(x => x.GetChronicConditionsAsync(10))
-            .ReturnsAsync(new List<string>());
-
-        _historyRepo.Setup(x => x.GetAllergiesByHistoryIdAsync(10))
-            .ReturnsAsync(new List<(Allergy Allergy, string SeverityLevel)>());
-
-        _transplantRepo.Setup(x => x.GetByReceiverIdAsync(42))
-            .ReturnsAsync(new List<Transplant>());
-
-        decimal result = await service.ComputeBasePriceAsync(42, 99);
-
-        Assert.AreEqual(200m, result);
-
-        _historyRepo.Verify(x => x.GetByPatientIdAsync(42), Times.Once);
-        _transplantRepo.Verify(x => x.GetByReceiverIdAsync(42), Times.Once);
-    }
-
-    [TestMethod]
     public async Task ComputeBasePriceAsync_UsesRecordIdWhenFetchingRecordAndPrescription()
     {
         BillingService service = CreateService();
@@ -616,4 +579,405 @@ public sealed class BillingServiceTests
 
         Assert.AreEqual(440m, result);
     }
+
+    [TestMethod]
+    public async Task ComputeBasePriceAsync_WhenRecordIsMissingButOtherBillingDataExists_ReturnsZero()
+    {
+        BillingService service = CreateService();
+
+        _recordRepo.Setup(x => x.GetByIdAsync(1))
+            .ReturnsAsync((MedicalRecord?)null);
+
+        _prescriptionRepo.Setup(x => x.GetByRecordIdAsync(1))
+            .ReturnsAsync(new Prescription { Id = 5 });
+
+        _prescriptionRepo.Setup(x => x.GetItemsAsync(5))
+            .ReturnsAsync(new List<PrescriptionItem>
+            {
+            new PrescriptionItem()
+            });
+
+        _historyRepo.Setup(x => x.GetByPatientIdAsync(1))
+            .ReturnsAsync(new MedicalHistory { Id = 10, PatientId = 1 });
+
+        _historyRepo.Setup(x => x.GetChronicConditionsAsync(10))
+            .ReturnsAsync(new List<string> { "Asthma" });
+
+        _historyRepo.Setup(x => x.GetAllergiesByHistoryIdAsync(10))
+            .ReturnsAsync(new List<(Allergy Allergy, string SeverityLevel)>
+            {
+            (new Allergy(), "severe")
+            });
+
+        _transplantRepo.Setup(x => x.GetByReceiverIdAsync(1))
+            .ReturnsAsync(new List<Transplant>
+            {
+            new Transplant()
+            });
+
+        decimal result = await service.ComputeBasePriceAsync(1, 1);
+
+        Assert.AreEqual(0m, result);
+    }
+
+    [TestMethod]
+    public async Task ComputeBasePriceAsync_WhenHistoryIsMissingButPrescriptionExists_ReturnsZero()
+    {
+        BillingService service = CreateService();
+
+        _recordRepo.Setup(x => x.GetByIdAsync(1))
+            .ReturnsAsync(new MedicalRecord
+            {
+                Id = 1,
+                SourceType = SourceType.App
+            });
+
+        _prescriptionRepo.Setup(x => x.GetByRecordIdAsync(1))
+            .ReturnsAsync(new Prescription { Id = 5 });
+
+        _prescriptionRepo.Setup(x => x.GetItemsAsync(5))
+            .ReturnsAsync(new List<PrescriptionItem>
+            {
+            new PrescriptionItem()
+            });
+
+        _historyRepo.Setup(x => x.GetByPatientIdAsync(1))
+            .ReturnsAsync((MedicalHistory?)null);
+
+        _transplantRepo.Setup(x => x.GetByReceiverIdAsync(1))
+            .ReturnsAsync(new List<Transplant>());
+
+        decimal result = await service.ComputeBasePriceAsync(1, 1);
+
+        Assert.AreEqual(0m, result);
+    }
+
+    [TestMethod]
+    public async Task ComputeBasePriceAsync_WithUnsupportedSourceTypeStillAddsOtherCharges_ReturnsOtherCharges()
+    {
+        BillingService service = CreateService();
+
+        SetupValidPatient((SourceType)999);
+
+        _prescriptionRepo.Setup(x => x.GetByRecordIdAsync(1))
+            .ReturnsAsync(new Prescription { Id = 5 });
+
+        _prescriptionRepo.Setup(x => x.GetItemsAsync(5))
+            .ReturnsAsync(new List<PrescriptionItem>
+            {
+            new PrescriptionItem()
+            });
+
+        _historyRepo.Setup(x => x.GetChronicConditionsAsync(10))
+            .ReturnsAsync(new List<string>
+            {
+            "Asthma"
+            });
+
+        _historyRepo.Setup(x => x.GetAllergiesByHistoryIdAsync(10))
+            .ReturnsAsync(new List<(Allergy Allergy, string SeverityLevel)>
+            {
+            (new Allergy(), "mild")
+            });
+
+        _transplantRepo.Setup(x => x.GetByReceiverIdAsync(1))
+            .ReturnsAsync(new List<Transplant>
+            {
+            new Transplant()
+            });
+
+        decimal result = await service.ComputeBasePriceAsync(1, 1);
+
+        Assert.AreEqual(2170m, result);
+    }
+
+    [TestMethod]
+    public async Task ComputeBasePriceAsync_WithNullAllergySeverity_DoesNotAddAllergyPrice()
+    {
+        BillingService service = CreateService();
+
+        SetupValidPatient(SourceType.App);
+
+        _historyRepo.Setup(x => x.GetAllergiesByHistoryIdAsync(10))
+            .ReturnsAsync(new List<(Allergy Allergy, string SeverityLevel)>
+            {
+            (new Allergy(), null!)
+            });
+
+        decimal result = await service.ComputeBasePriceAsync(1, 1);
+
+        Assert.AreEqual(200m, result);
+    }
+
+    [TestMethod]
+    public async Task ComputeBasePriceAsync_WithEmptyAllergySeverity_DoesNotAddAllergyPrice()
+    {
+        BillingService service = CreateService();
+
+        SetupValidPatient(SourceType.App);
+
+        _historyRepo.Setup(x => x.GetAllergiesByHistoryIdAsync(10))
+            .ReturnsAsync(new List<(Allergy Allergy, string SeverityLevel)>
+            {
+            (new Allergy(), string.Empty)
+            });
+
+        decimal result = await service.ComputeBasePriceAsync(1, 1);
+
+        Assert.AreEqual(200m, result);
+    }
+
+    [TestMethod]
+    public async Task ComputeBasePriceAsync_WithWhitespaceAllergySeverity_DoesNotAddAllergyPrice()
+    {
+        BillingService service = CreateService();
+
+        SetupValidPatient(SourceType.App);
+
+        _historyRepo.Setup(x => x.GetAllergiesByHistoryIdAsync(10))
+            .ReturnsAsync(new List<(Allergy Allergy, string SeverityLevel)>
+            {
+            (new Allergy(), " severe ")
+            });
+
+        decimal result = await service.ComputeBasePriceAsync(1, 1);
+
+        Assert.AreEqual(200m, result);
+    }
+
+    [TestMethod]
+    public async Task ApplyDiscountAsync_WithZeroBasePrice_ReturnsZero()
+    {
+        BillingService service = CreateService();
+
+        decimal result = await service.ApplyDiscountAsync(0m, 50);
+
+        Assert.AreEqual(0m, result);
+    }
+
+    [TestMethod]
+public async Task ApplyDiscountAsync_WithThirtyThreePercentDiscount_ReturnsExpectedDecimalPrice()
+{
+    BillingService service = CreateService();
+
+    decimal result = await service.ApplyDiscountAsync(100m, 33);
+
+    Assert.AreEqual(67m, result);
+}
+
+    [TestMethod]
+    public async Task ComputeBasePriceAsync_WhenRecordIsMissing_DoesNotFetchHistoryDetails()
+    {
+        BillingService service = CreateService();
+
+        _recordRepo.Setup(x => x.GetByIdAsync(1))
+            .ReturnsAsync((MedicalRecord?)null);
+
+        decimal result = await service.ComputeBasePriceAsync(1, 1);
+
+        _historyRepo.Verify(x => x.GetChronicConditionsAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [TestMethod]
+    public async Task ComputeBasePriceAsync_WhenRecordIsMissing_DoesNotFetchAllergies()
+    {
+        BillingService service = CreateService();
+
+        _recordRepo.Setup(x => x.GetByIdAsync(1))
+            .ReturnsAsync((MedicalRecord?)null);
+
+        decimal result = await service.ComputeBasePriceAsync(1, 1);
+
+        _historyRepo.Verify(x => x.GetAllergiesByHistoryIdAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [TestMethod]
+    public async Task ComputeBasePriceAsync_WhenHistoryIsMissing_DoesNotFetchChronicConditions()
+    {
+        BillingService service = CreateService();
+
+        _recordRepo.Setup(x => x.GetByIdAsync(1))
+            .ReturnsAsync(new MedicalRecord
+            {
+                Id = 1,
+                SourceType = SourceType.App
+            });
+
+        _prescriptionRepo.Setup(x => x.GetByRecordIdAsync(1))
+            .ReturnsAsync((Prescription?)null);
+
+        _historyRepo.Setup(x => x.GetByPatientIdAsync(1))
+            .ReturnsAsync((MedicalHistory?)null);
+
+        decimal result = await service.ComputeBasePriceAsync(1, 1);
+
+        _historyRepo.Verify(x => x.GetChronicConditionsAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [TestMethod]
+    public async Task ComputeBasePriceAsync_WhenHistoryIsMissing_DoesNotFetchAllergies()
+    {
+        BillingService service = CreateService();
+
+        _recordRepo.Setup(x => x.GetByIdAsync(1))
+            .ReturnsAsync(new MedicalRecord
+            {
+                Id = 1,
+                SourceType = SourceType.App
+            });
+
+        _prescriptionRepo.Setup(x => x.GetByRecordIdAsync(1))
+            .ReturnsAsync((Prescription?)null);
+
+        _historyRepo.Setup(x => x.GetByPatientIdAsync(1))
+            .ReturnsAsync((MedicalHistory?)null);
+
+        decimal result = await service.ComputeBasePriceAsync(1, 1);
+
+        _historyRepo.Verify(x => x.GetAllergiesByHistoryIdAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    
+    [TestMethod]
+    public async Task ComputeBasePriceAsync_WhenPrescriptionIsMissing_DoesNotFetchItems()
+    {
+        BillingService service = CreateService();
+
+        SetupValidPatient(SourceType.App);
+
+        _prescriptionRepo.Setup(x => x.GetByRecordIdAsync(1))
+            .ReturnsAsync((Prescription?)null);
+
+        decimal result = await service.ComputeBasePriceAsync(1, 1);
+
+        _prescriptionRepo.Verify(x => x.GetItemsAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [TestMethod]
+    public async Task ComputeBasePriceAsync_WhenPrescriptionExists_FetchesItemsUsingPrescriptionId()
+    {
+        BillingService service = CreateService();
+
+        SetupValidPatient(SourceType.App);
+
+        _prescriptionRepo.Setup(x => x.GetByRecordIdAsync(1))
+            .ReturnsAsync(new Prescription { Id = 77 });
+
+        _prescriptionRepo.Setup(x => x.GetItemsAsync(77))
+            .ReturnsAsync(new List<PrescriptionItem>());
+
+        decimal result = await service.ComputeBasePriceAsync(1, 1);
+
+        _prescriptionRepo.Verify(x => x.GetItemsAsync(77), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task ComputeBasePriceAsync_UsesPatientIdWhenFetchingHistory()
+    {
+        BillingService service = CreateService();
+
+        _recordRepo.Setup(x => x.GetByIdAsync(1))
+            .ReturnsAsync(new MedicalRecord
+            {
+                Id = 1,
+                SourceType = SourceType.App
+            });
+
+        _prescriptionRepo.Setup(x => x.GetByRecordIdAsync(1))
+            .ReturnsAsync((Prescription?)null);
+
+        _historyRepo.Setup(x => x.GetByPatientIdAsync(99))
+            .ReturnsAsync(new MedicalHistory
+            {
+                Id = 10,
+                PatientId = 99
+            });
+
+        _historyRepo.Setup(x => x.GetChronicConditionsAsync(10))
+            .ReturnsAsync(new List<string>());
+
+        _historyRepo.Setup(x => x.GetAllergiesByHistoryIdAsync(10))
+            .ReturnsAsync(new List<(Allergy Allergy, string SeverityLevel)>());
+
+        _transplantRepo.Setup(x => x.GetByReceiverIdAsync(99))
+            .ReturnsAsync(new List<Transplant>());
+
+        decimal result = await service.ComputeBasePriceAsync(99, 1);
+
+        Assert.AreEqual(200m, result);
+    }
+
+    [TestMethod]
+    public async Task ComputeBasePriceAsync_UsesHistoryIdWhenFetchingConditions()
+    {
+        BillingService service = CreateService();
+
+        _recordRepo.Setup(x => x.GetByIdAsync(1))
+            .ReturnsAsync(new MedicalRecord
+            {
+                Id = 1,
+                SourceType = SourceType.App
+            });
+
+        _prescriptionRepo.Setup(x => x.GetByRecordIdAsync(1))
+            .ReturnsAsync((Prescription?)null);
+
+        _historyRepo.Setup(x => x.GetByPatientIdAsync(1))
+            .ReturnsAsync(new MedicalHistory
+            {
+                Id = 88,
+                PatientId = 1
+            });
+
+        _historyRepo.Setup(x => x.GetChronicConditionsAsync(88))
+            .ReturnsAsync(new List<string>());
+
+        _historyRepo.Setup(x => x.GetAllergiesByHistoryIdAsync(88))
+            .ReturnsAsync(new List<(Allergy Allergy, string SeverityLevel)>());
+
+        _transplantRepo.Setup(x => x.GetByReceiverIdAsync(1))
+            .ReturnsAsync(new List<Transplant>());
+
+        decimal result = await service.ComputeBasePriceAsync(1, 1);
+
+        _historyRepo.Verify(x => x.GetChronicConditionsAsync(88), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task ComputeBasePriceAsync_UsesHistoryIdWhenFetchingAllergies()
+    {
+        BillingService service = CreateService();
+
+        _recordRepo.Setup(x => x.GetByIdAsync(1))
+            .ReturnsAsync(new MedicalRecord
+            {
+                Id = 1,
+                SourceType = SourceType.App
+            });
+
+        _prescriptionRepo.Setup(x => x.GetByRecordIdAsync(1))
+            .ReturnsAsync((Prescription?)null);
+
+        _historyRepo.Setup(x => x.GetByPatientIdAsync(1))
+            .ReturnsAsync(new MedicalHistory
+            {
+                Id = 88,
+                PatientId = 1
+            });
+
+        _historyRepo.Setup(x => x.GetChronicConditionsAsync(88))
+            .ReturnsAsync(new List<string>());
+
+        _historyRepo.Setup(x => x.GetAllergiesByHistoryIdAsync(88))
+            .ReturnsAsync(new List<(Allergy Allergy, string SeverityLevel)>());
+
+        _transplantRepo.Setup(x => x.GetByReceiverIdAsync(1))
+            .ReturnsAsync(new List<Transplant>());
+
+        decimal result = await service.ComputeBasePriceAsync(1, 1);
+
+        _historyRepo.Verify(x => x.GetAllergiesByHistoryIdAsync(88), Times.Once);
+    }
+
+
 }
