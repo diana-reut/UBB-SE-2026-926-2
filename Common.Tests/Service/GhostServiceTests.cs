@@ -42,7 +42,7 @@ public sealed class GhostServiceTests
     }
 
     [TestMethod]
-    public void SawAGhost_WhenCalledThreeTimes_DoesNotFireExorcismEvent()
+    public void SawAGhostWhenCalledThreeTimesDoesNotFireExorcismEvent()
     {
         int eventCount = 0;
         _sut.ExorcismTriggered += (_, _) => eventCount++;
