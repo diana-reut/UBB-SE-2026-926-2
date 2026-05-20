@@ -67,6 +67,7 @@ public class EFHospitalDbContext : DbContext
             entity.Ignore(p => p.Phone);
             entity.Ignore(p => p.Emergency_Contact);
             entity.Ignore(p => p.IsDeceased);
+            entity.Ignore(p => p.IsPoliceNotified);
             entity.HasIndex(p => p.Cnp).IsUnique();
         });
 

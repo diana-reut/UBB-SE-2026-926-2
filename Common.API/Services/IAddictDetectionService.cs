@@ -12,4 +12,5 @@ public interface IAddictDetectionService
 
     Task<string> GetChronicConditionsAsync(int patientId);
 
+    Task MarkPoliceNotifiedAsync(int patientId);
 }
