@@ -69,7 +69,7 @@
             {
                 <div class="card p-3" style="min-width:260px;">
                     <h6 class="fw-semibold mb-3">Patient Actions</h6>
-                    <a href="@Url.Action("PatientProfile", new { id = Model.SelectedPatient.Id })"
+                    <a href="@Url.Action("Index", "PatientProfile", new { id = Model.SelectedPatient.Id })"
                        class="btn btn-primary w-100 mb-2">View Profile</a>
                     <button class="btn btn-primary w-100 mb-2" disabled>Compatible Blood Donors</button>
                     <button class="btn btn-primary w-100" disabled>Request Organ Transplant</button>

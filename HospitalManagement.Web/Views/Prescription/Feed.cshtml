@@ -1,0 +1,140 @@
+﻿@model HospitalManagement.Web.Models.Prescription.PrescriptionFeedViewModel
+
+@{
+    ViewData["Title"] = "Prescriptions Feed";
+}
+
+<div style="background:#F4F6F8; min-height:100vh; padding:20px;">
+
+    @* Header *@
+    <div class="mb-4">
+        <div style="font-size:13px;font-weight:700;color:#4A90A4;letter-spacing:3px;">PRESCRIPTIONS FEED</div>
+        <div style="font-size:26px;font-weight:700;color:#1E2A38;">Chronological Overview</div>
+    </div>
+
+    @* Back button if coming from patient profile *@
+    @if (Model.ReturnPatientId.HasValue)
+    {
+        <a asp-action="Index" asp-controller="PatientProfile" asp-route-id="@Model.ReturnPatientId"
+           class="btn btn-outline-secondary mb-3">← Back to Patient</a>
+    }
+
+    @* Filter bar *@
+    <form method="get" asp-action="Feed">
+        @if (Model.ReturnPatientId.HasValue)
+        {
+            <input type="hidden" name="returnPatientId" value="@Model.ReturnPatientId" />
+        }
+        <div style="background:#1E2A38;border-radius:8px;padding:16px 20px;margin-bottom:16px;display:inline-block;width:100%;">
+            <div style="font-weight:600;font-size:14px;color:white;margin-bottom:8px;">Filter Options</div>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <input asp-for="SearchIdText" class="form-control" style="width:80px;" placeholder="ID..." />
+                <input asp-for="SearchName" class="form-control" style="width:160px;" placeholder="Patient Name" />
+                <input asp-for="SearchMedication" class="form-control" style="width:150px;" placeholder="Medication Name" />
+                <input asp-for="DateFrom" type="date" class="form-control" style="width:150px;" />
+                <span style="color:#A1A1AA;font-weight:700;">-</span>
+                <input asp-for="DateTo" type="date" class="form-control" style="width:150px;" />
+                <button type="submit" class="btn" style="background:#5EC499;color:white;font-weight:600;width:90px;">Search</button>
+                @if (!string.IsNullOrEmpty(Model.InfoMessage))
+                {
+                    <span style="color:#FFE779;font-weight:600;">@Model.InfoMessage</span>
+                }
+            </div>
+        </div>
+    </form>
+
+    @* Cards grid *@
+    <div class="d-flex flex-wrap gap-3 justify-content-center mb-4">
+        @foreach (var p in Model.Prescriptions)
+        {
+            <div style="background:white;border:1px solid #E5E7EB;border-radius:10px;width:280px;min-height:135px;padding:10px;position:relative;">
+
+                @* ID badge — clicking expands medications *@
+                <div class="d-flex justify-content-center mb-2">
+                    <button class="btn btn-sm"
+                            style="background:#F0F9F6;border:1px solid #5EC499;border-radius:20px;padding:2px 12px;"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#meds-@p.Id">
+                        📋 <strong style="color:#2A6478;">@p.Id</strong>
+                    </button>
+                </div>
+
+                @* Medication collapse *@
+                <div class="collapse" id="meds-@p.Id">
+                    <div style="border:1px solid #E5E7EB;border-radius:8px;padding:10px;margin-bottom:8px;background:white;">
+                        <div style="font-weight:700;font-size:13px;color:#1E2A38;margin-bottom:8px;">Medication Details</div>
+                        @foreach (var item in p.Items)
+                        {
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span style="font-size:12px;font-weight:600;color:#1E2A38;">💊 @item.MedName</span>
+                                <span style="font-size:10px;font-weight:600;color:#4B5563;background:#F4F6F8;border:1px solid #E5E7EB;border-radius:4px;padding:1px 6px;">@item.Quantity</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @* Patient / Doctor / Notes *@
+                <div style="font-size:11px;">
+                    <div><strong style="color:#1E2A38;">Patient: </strong><span style="color:#4B5563;">@p.PatientName</span></div>
+                    <div><strong style="color:#1E2A38;">Doctor: </strong><span style="color:#4B5563;">@p.DoctorName</span></div>
+                    <div style="margin-top:2px;"><strong style="font-size:10px;color:#1E2A38;">Instructions:</strong></div>
+                    <div style="font-size:10px;color:#4B5563;overflow:hidden;max-height:2.4em;">@p.DoctorNotes</div>
+                </div>
+
+                @* Date badge *@
+                <div style="position:absolute;bottom:8px;right:8px;background:#F4F6F8;border-radius:4px;padding:2px 6px;font-size:10px;color:#6B7280;font-weight:600;">
+                    📅 @p.Date.ToShortDateString()
+                </div>
+            </div>
+        }
+    </div>
+
+    @* Pagination *@
+    <div style="position:fixed;bottom:24px;left:220px;right:0;" class="d-flex justify-content-center align-items-center gap-4">
+        @if (Model.CurrentPage > 1)
+        {
+            <a asp-action="Feed"
+               asp-route-searchIdText="@Model.SearchIdText"
+               asp-route-searchName="@Model.SearchName"
+               asp-route-searchMedication="@Model.SearchMedication"
+               asp-route-dateFrom="@Model.DateFrom?.ToString("yyyy-MM-dd")"
+               asp-route-dateTo="@Model.DateTo?.ToString("yyyy-MM-dd")"
+               asp-route-page="@(Model.CurrentPage - 1)"
+               asp-route-returnPatientId="@Model.ReturnPatientId"
+               class="btn"
+               style="background:#00a896;color:white;border-radius:20px;width:110px;font-weight:600;">
+                ← Previous
+            </a>
+        }
+        else
+        {
+            <button class="btn" style="background:#00a896;color:white;border-radius:20px;width:110px;font-weight:600;" disabled>← Previous</button>
+        }
+
+        <div style="background:#1E2A38;border-radius:20px;padding:0 20px;height:40px;display:flex;align-items:center;">
+            <span style="color:white;font-weight:700;font-size:14px;">PAGE @Model.CurrentPage</span>
+        </div>
+
+        @if (Model.Prescriptions.Count == 9)
+        {
+            <a asp-action="Feed"
+               asp-route-searchIdText="@Model.SearchIdText"
+               asp-route-searchName="@Model.SearchName"
+               asp-route-searchMedication="@Model.SearchMedication"
+               asp-route-dateFrom="@Model.DateFrom?.ToString("yyyy-MM-dd")"
+               asp-route-dateTo="@Model.DateTo?.ToString("yyyy-MM-dd")"
+               asp-route-page="@(Model.CurrentPage + 1)"
+               asp-route-returnPatientId="@Model.ReturnPatientId"
+               class="btn"
+               style="background:#00a896;color:white;border-radius:20px;width:110px;font-weight:600;">
+                Next →
+            </a>
+        }
+        else
+        {
+            <button class="btn" style="background:#00a896;color:white;border-radius:20px;width:110px;font-weight:600;" disabled>Next →</button>
+        }
+    </div>
+
+</div>

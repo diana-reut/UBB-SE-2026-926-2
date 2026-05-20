@@ -5,7 +5,7 @@
 }
 
 <div class="d-flex align-items-center gap-3 mb-4">
-    <a asp-action="PatientProfile" asp-route-id="@Model.ReturnPatientId" class="btn btn-outline-secondary">← Back</a>
+    <a asp-action="Index" asp-controller="PatientProfile" asp-route-id="@Model.ReturnPatientId" class="btn btn-outline-secondary">← Back</a>
     <h2 class="mb-0">Prescription #@Model.Id</h2>
 </div>
 
