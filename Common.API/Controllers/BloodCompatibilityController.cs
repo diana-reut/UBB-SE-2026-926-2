@@ -1,13 +1,15 @@
-using System.Net;
 using Common.API.Services;
 using Common.Data.Entity;
 using Common.Data.Entity.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace Common.API.Controllers;
 
 [ApiController]
 [Route("api/bloodcompatibilities")]
+[Authorize]
 public class BloodCompatibilityController : ControllerBase
 {
     private readonly IBloodCompatibilityService _service;
