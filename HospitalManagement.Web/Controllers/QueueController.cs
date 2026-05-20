@@ -24,24 +24,35 @@ public class QueueController : Controller
                 cancellationToken);
             List<Triage> triages = await erApiClient.GetTriagesAsync(cancellationToken);
             List<Triage_Parameters> triageParameters = await erApiClient.GetTriageParametersAsync(cancellationToken);
+            HashSet<int> triageIdsWithParameters = triageParameters
+                .Select(parameters => parameters.Triage_ID)
+                .ToHashSet();
 
             var model = new QueueViewModel
             {
                 ActiveVisits = waitingVisits
-                    .Join(
-                        triages.Where(triage => triageParameters.Any(parameters => parameters.Triage_ID == triage.Triage_ID)),
-                        visit => visit.Visit_ID,
-                        triage => triage.Visit_ID,
-                        (visit, triage) => new QueueItemViewModel
+                    .Select(visit =>
+                    {
+                        Triage? triage = triages.FirstOrDefault(item => item.Visit_ID == visit.Visit_ID);
+                        bool hasTriageData = triage is not null && triageIdsWithParameters.Contains(triage.Triage_ID);
+
+                        return new QueueItemViewModel
                         {
                             VisitId = visit.Visit_ID,
                             PatientId = visit.Patient_ID,
-                            TriageLevel = triage.Triage_Level,
-                            Specialization = triage.Specialization,
+                            TriageLevel = triage?.Triage_Level,
+                            Specialization = triage?.Specialization,
                             ArrivalTime = visit.Arrival_date_time,
-                            Status = visit.Status
-                        })
-                    .OrderBy(item => item.TriageLevel)
+                            Status = visit.Status,
+                            HasTriageData = hasTriageData,
+                            WarningMessage = hasTriageData
+                                ? null
+                                : triage is null
+                                    ? "Triage record is missing."
+                                    : "Triage parameters are missing."
+                        };
+                    })
+                    .OrderBy(item => item.TriageLevel ?? int.MaxValue)
                     .ThenBy(item => item.ArrivalTime)
                     .ToList()
             };

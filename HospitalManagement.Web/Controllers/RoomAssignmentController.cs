@@ -97,6 +97,9 @@ public class RoomAssignmentController : Controller
             cancellationToken);
         List<Triage> triages = await erApiClient.GetTriagesAsync(cancellationToken);
         List<Triage_Parameters> triageParameters = await erApiClient.GetTriageParametersAsync(cancellationToken);
+        HashSet<int> triageIdsWithParameters = triageParameters
+            .Select(parameters => parameters.Triage_ID)
+            .ToHashSet();
         List<ER_Room> availableRooms = await erApiClient.GetRoomsByStatusAsync(
             ER_Room.RoomStatus.Available,
             cancellationToken);
@@ -106,21 +109,29 @@ public class RoomAssignmentController : Controller
             SelectedVisitId = selectedVisitId,
             SelectedRoomId = selectedRoomId,
             WaitingVisits = waitingVisits
-                .Join(
-                    triages.Where(triage => triageParameters.Any(parameters => parameters.Triage_ID == triage.Triage_ID)),
-                    visit => visit.Visit_ID,
-                    triage => triage.Visit_ID,
-                    (visit, triage) => new RoomAssignmentVisitViewModel
+                .Select(visit =>
+                {
+                    Triage? triage = triages.FirstOrDefault(item => item.Visit_ID == visit.Visit_ID);
+                    bool hasTriageData = triage is not null && triageIdsWithParameters.Contains(triage.Triage_ID);
+
+                    return new RoomAssignmentVisitViewModel
                     {
                         VisitId = visit.Visit_ID,
                         PatientId = visit.Patient_ID,
                         ArrivalTime = visit.Arrival_date_time,
                         ChiefComplaint = visit.Chief_Complaint,
                         Status = visit.Status,
-                        TriageLevel = triage.Triage_Level,
-                        Specialization = triage.Specialization
-                    })
-                .OrderBy(item => item.TriageLevel)
+                        TriageLevel = triage?.Triage_Level,
+                        Specialization = triage?.Specialization,
+                        HasTriageData = hasTriageData,
+                        WarningMessage = hasTriageData
+                            ? null
+                            : triage is null
+                                ? "Triage record is missing."
+                                : "Triage parameters are missing."
+                    };
+                })
+                .OrderBy(item => item.TriageLevel ?? int.MaxValue)
                 .ThenBy(item => item.ArrivalTime)
                 .ToList(),
             AvailableRooms = availableRooms
@@ -158,6 +169,7 @@ public class RoomAssignmentController : Controller
         };
 
         Triage? selectedTriage = triages.FirstOrDefault(triage => triage.Visit_ID == selectedVisit.Visit_ID);
+        bool selectedVisitHasParameters = selectedTriage is not null && triageIdsWithParameters.Contains(selectedTriage.Triage_ID);
         if (selectedTriage is not null)
         {
             model.SelectedTriage = new RoomAssignmentTriageViewModel
@@ -166,6 +178,13 @@ public class RoomAssignmentController : Controller
                 Specialization = selectedTriage.Specialization,
                 NurseId = selectedTriage.Nurse_ID
             };
+        }
+
+        if (!selectedVisitHasParameters)
+        {
+            model.ErrorMessage = selectedTriage is null
+                ? "The selected visit cannot be assigned to a room because its triage record is missing."
+                : "The selected visit cannot be assigned to a room because its triage parameters are missing.";
         }
 
         return model;

@@ -45,6 +45,7 @@
                                     <th>Patient</th>
                                     <th>Complaint</th>
                                     <th>Priority</th>
+                                    <th>Notes</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -56,7 +57,22 @@
                                     <td>@visit.VisitId</td>
                                     <td>@visit.PatientId</td>
                                     <td>@visit.ChiefComplaint</td>
-                                    <td>Level @visit.TriageLevel, @visit.Specialization</td>
+                                    <td>
+                                        @if (visit.TriageLevel.HasValue)
+                                        {
+                                            <span>Level @visit.TriageLevel, @visit.Specialization</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-warning">Missing triage data</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!visit.HasTriageData)
+                                        {
+                                            <span class="text-warning">@visit.WarningMessage</span>
+                                        }
+                                    </td>
                                     <td class="text-end">
                                         <a asp-action="Index" asp-route-selectedVisitId="@visit.VisitId" class="btn btn-sm btn-outline-primary">Select</a>
                                     </td>
@@ -116,7 +132,17 @@
                     <p class="mb-1"><strong>Visit:</strong> @selectedVisit.VisitId</p>
                     <p class="mb-1"><strong>Patient:</strong> @(Model.SelectedPatient?.Name ?? selectedVisit.PatientId)</p>
                     <p class="mb-1"><strong>Phone:</strong> @(Model.SelectedPatient?.Phone ?? "N/A")</p>
-                    <p class="mb-3"><strong>Triage:</strong> Level @Model.SelectedTriage?.TriageLevel, @Model.SelectedTriage?.Specialization</p>
+                    <p class="mb-3">
+                        <strong>Triage:</strong>
+                        @if (selectedVisit.HasTriageData)
+                        {
+                            <span>Level @Model.SelectedTriage?.TriageLevel, @Model.SelectedTriage?.Specialization</span>
+                        }
+                        else
+                        {
+                            <span class="text-warning">@selectedVisit.WarningMessage</span>
+                        }
+                    </p>
 
                     <form asp-action="Assign" method="post">
                         @Html.AntiForgeryToken()
@@ -131,7 +157,7 @@
                                 }
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-success w-100">Assign Selected Room</button>
+                        <button type="submit" class="btn btn-success w-100" disabled="@(!selectedVisit.HasTriageData)">Assign Selected Room</button>
                     </form>
                 }
             </div>

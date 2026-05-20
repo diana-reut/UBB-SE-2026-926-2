@@ -602,6 +602,15 @@ namespace Common.Data.Migrations
                     b.ToTable("Triage_Parameters", (string)null);
                 });
 
+            modelBuilder.Entity("Common.Data.Models.Triage_Parameters", b =>
+                {
+                    b.HasOne("Common.Data.Models.Triage", null)
+                        .WithOne()
+                        .HasForeignKey("Common.Data.Models.Triage_Parameters", "TriageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Common.Data.Entity.MedicalHistory", b =>
                 {
                     b.HasOne("Common.Data.Entity.Patient", "Patient")

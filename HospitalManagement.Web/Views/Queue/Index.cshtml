@@ -41,6 +41,7 @@
                             <th>Specialization</th>
                             <th>Arrival</th>
                             <th>Status</th>
+                            <th>Notes</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -49,10 +50,25 @@
                         <tr>
                             <td>@visit.VisitId</td>
                             <td>@visit.PatientId</td>
-                            <td><span class="badge text-bg-danger">@visit.TriageLevel</span></td>
-                            <td>@visit.Specialization</td>
+                            <td>
+                                @if (visit.TriageLevel.HasValue)
+                                {
+                                    <span class="badge text-bg-danger">@visit.TriageLevel</span>
+                                }
+                                else
+                                {
+                                    <span class="badge text-bg-warning text-dark">Missing</span>
+                                }
+                            </td>
+                            <td>@(visit.Specialization ?? "Missing")</td>
                             <td>@visit.ArrivalTime.ToString("yyyy-MM-dd HH:mm")</td>
                             <td>@visit.Status</td>
+                            <td>
+                                @if (!visit.HasTriageData)
+                                {
+                                    <span class="text-warning">@visit.WarningMessage</span>
+                                }
+                            </td>
                         </tr>
                     }
                     </tbody>

@@ -98,18 +98,25 @@ public abstract class HospitalApiClientBase
         }
 
         string errorMessage = await ReadErrorMessageAsync(response, cancellationToken);
-        string messageWithStatus = $"HTTP {(int)response.StatusCode} ({response.StatusCode}): {errorMessage}";
         if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
-            throw new UnauthorizedAccessException(messageWithStatus);
+            throw new UnauthorizedAccessException("Please sign in again to continue.");
         }
 
         if (response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.Conflict)
         {
-            throw new ArgumentException(messageWithStatus);
+            throw new ArgumentException(errorMessage);
         }
 
-        throw new InvalidOperationException(messageWithStatus);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            throw new KeyNotFoundException(errorMessage);
+        }
+
+        throw new InvalidOperationException(
+            response.StatusCode is HttpStatusCode.InternalServerError or HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable
+                ? "The server could not complete the request. Please try again."
+                : errorMessage);
     }
 
     private static async Task<string> ReadErrorMessageAsync(
@@ -132,6 +139,11 @@ public abstract class HospitalApiClientBase
             using JsonDocument document = JsonDocument.Parse(responseBody);
             JsonElement root = document.RootElement;
 
+            if (root.ValueKind == JsonValueKind.Array)
+            {
+                return string.Join(Environment.NewLine, root.EnumerateArray().Select(item => item.ToString()));
+            }
+
             if (root.TryGetProperty("detail", out JsonElement detail))
             {
                 return detail.GetString() ?? "Request failed.";
@@ -139,7 +151,7 @@ public abstract class HospitalApiClientBase
 
             if (root.TryGetProperty("errors", out JsonElement errors))
             {
-                return errors.ToString();
+                return FlattenValidationErrors(errors);
             }
 
             if (root.TryGetProperty("title", out JsonElement title))
@@ -153,5 +165,33 @@ public abstract class HospitalApiClientBase
         }
 
         return responseBody;
+    }
+
+    private static string FlattenValidationErrors(JsonElement errors)
+    {
+        if (errors.ValueKind != JsonValueKind.Object)
+        {
+            return errors.ToString();
+        }
+
+        List<string> messages = [];
+        foreach (JsonProperty property in errors.EnumerateObject())
+        {
+            if (property.Value.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            foreach (JsonElement item in property.Value.EnumerateArray())
+            {
+                string? message = item.GetString();
+                if (!string.IsNullOrWhiteSpace(message))
+                {
+                    messages.Add(message);
+                }
+            }
+        }
+
+        return messages.Count > 0 ? string.Join(Environment.NewLine, messages) : "Request failed.";
     }
 }

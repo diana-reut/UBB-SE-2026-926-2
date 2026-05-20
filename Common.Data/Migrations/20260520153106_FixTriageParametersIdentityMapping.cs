@@ -10,48 +10,63 @@ namespace Common.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterColumn<int>(
-                name: "Triage_ID",
-                table: "Triage_Parameters",
-                type: "int",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "int")
-                .Annotation("SqlServer:Identity", "1, 1");
+            migrationBuilder.Sql(
+                """
+                CREATE TABLE [Triage_Parameters_New] (
+                    [Triage_ID] int NOT NULL IDENTITY,
+                    [TriageId] int NOT NULL,
+                    [Consciousness] int NOT NULL,
+                    [Breathing] int NOT NULL,
+                    [Bleeding] int NOT NULL,
+                    [Injury_Type] int NOT NULL,
+                    [Pain_Level] int NOT NULL,
+                    CONSTRAINT [PK_Triage_Parameters_New] PRIMARY KEY ([Triage_ID])
+                );
 
-            migrationBuilder.AddColumn<int>(
-                name: "TriageId",
-                table: "Triage_Parameters",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
+                INSERT INTO [Triage_Parameters_New] ([TriageId], [Consciousness], [Breathing], [Bleeding], [Injury_Type], [Pain_Level])
+                SELECT [Triage_ID], [Consciousness], [Breathing], [Bleeding], [Injury_Type], [Pain_Level]
+                FROM [Triage_Parameters];
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Triage_Parameters_TriageId",
-                table: "Triage_Parameters",
-                column: "TriageId",
-                unique: true);
+                DROP TABLE [Triage_Parameters];
+
+                EXEC sp_rename N'[Triage_Parameters_New]', N'Triage_Parameters';
+
+                EXEC sp_rename N'[PK_Triage_Parameters_New]', N'PK_Triage_Parameters', N'OBJECT';
+
+                CREATE UNIQUE INDEX [IX_Triage_Parameters_TriageId]
+                ON [Triage_Parameters] ([TriageId]);
+
+                ALTER TABLE [Triage_Parameters]
+                ADD CONSTRAINT [FK_Triage_Parameters_Triage_TriageId]
+                FOREIGN KEY ([TriageId]) REFERENCES [Triage] ([Triage_ID]) ON DELETE CASCADE;
+                """);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_Triage_Parameters_TriageId",
-                table: "Triage_Parameters");
+            migrationBuilder.Sql(
+                """
+                CREATE TABLE [Triage_Parameters_Old] (
+                    [Triage_ID] int NOT NULL,
+                    [Consciousness] int NOT NULL,
+                    [Breathing] int NOT NULL,
+                    [Bleeding] int NOT NULL,
+                    [Injury_Type] int NOT NULL,
+                    [Pain_Level] int NOT NULL,
+                    CONSTRAINT [PK_Triage_Parameters_Old] PRIMARY KEY ([Triage_ID])
+                );
 
-            migrationBuilder.DropColumn(
-                name: "TriageId",
-                table: "Triage_Parameters");
+                INSERT INTO [Triage_Parameters_Old] ([Triage_ID], [Consciousness], [Breathing], [Bleeding], [Injury_Type], [Pain_Level])
+                SELECT [TriageId], [Consciousness], [Breathing], [Bleeding], [Injury_Type], [Pain_Level]
+                FROM [Triage_Parameters];
 
-            migrationBuilder.AlterColumn<int>(
-                name: "Triage_ID",
-                table: "Triage_Parameters",
-                type: "int",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "int")
-                .OldAnnotation("SqlServer:Identity", "1, 1");
+                DROP TABLE [Triage_Parameters];
+
+                EXEC sp_rename N'[Triage_Parameters_Old]', N'Triage_Parameters';
+
+                EXEC sp_rename N'[PK_Triage_Parameters_Old]', N'PK_Triage_Parameters', N'OBJECT';
+                """);
         }
     }
 }

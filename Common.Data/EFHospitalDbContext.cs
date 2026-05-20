@@ -207,6 +207,11 @@ public class EFHospitalDbContext : DbContext
                 .ValueGeneratedOnAdd();
             entity.Property(tp => tp.TriageId).HasColumnName("TriageId");
             entity.Ignore(tp => tp.Triage_ID);
+            entity.HasOne<Triage>()
+                .WithOne()
+                .HasForeignKey<Triage_Parameters>(tp => tp.TriageId)
+                .HasPrincipalKey<Triage>(t => t.Triage_ID)
+                .OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(tp => tp.TriageId).IsUnique();
             entity.Property(tp => tp.Consciousness).HasColumnName("Consciousness");
             entity.Property(tp => tp.Breathing).HasColumnName("Breathing");

@@ -71,6 +71,10 @@ public class ErWorkflowApiClient : HospitalApiClientBase, IErWorkflowApiClient
         {
             return await GetAsync<ERRoomVisitDetailsDto>($"{RoomsBaseUri}/{roomId}/visit-details", cancellationToken);
         }
+        catch (KeyNotFoundException)
+        {
+            return null;
+        }
         catch (InvalidOperationException ex) when (
             ex.Message.Contains("404", StringComparison.OrdinalIgnoreCase) ||
             ex.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))

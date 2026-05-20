@@ -20,6 +20,8 @@ public class RoomAssignmentVisitViewModel
     public string Status { get; set; } = string.Empty;
     public int? TriageLevel { get; set; }
     public string? Specialization { get; set; }
+    public bool HasTriageData { get; set; }
+    public string? WarningMessage { get; set; }
 }
 
 public class RoomOptionViewModel
