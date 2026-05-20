@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using Common.API.Auth;
 using Common.Data.Entity;
 using Microsoft.AspNetCore.Mvc;
 using Common.Data;
@@ -9,6 +10,7 @@ namespace Common.API.Controllers
 {
     [ApiController]
     [Route("api/prescriptions")]
+    [AuthorizeRole("Admin", "Medic")]
     public class PrescriptionController : ControllerBase
     {
         private readonly IPrescriptionService _prescriptionService;

@@ -1,0 +1,54 @@
+@model HospitalManagement.Web.Models.Patient.PatientPrescriptionViewModel
+
+@{
+    ViewData["Title"] = "Prescription";
+    int patientId = (int)(ViewData["PatientId"] ?? 0);
+    int recordId = (int)(ViewData["RecordId"] ?? 0);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Prescription</h1>
+        <p class="text-muted mb-0">Prescription attached to the selected consultation.</p>
+    </div>
+    <a asp-action="Details" asp-route-id="@patientId" asp-route-selectedRecordId="@recordId" class="btn btn-outline-secondary">Back to Patient</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Date</dt>
+            <dd class="col-sm-9">@Model.Date.ToString("yyyy-MM-dd")</dd>
+            <dt class="col-sm-3">Doctor Notes</dt>
+            <dd class="col-sm-9">@Model.DoctorNotes</dd>
+        </dl>
+
+        <h2 class="h5">Medication</h2>
+        @if (Model.Items.Count == 0)
+        {
+            <div class="text-muted">No medication items recorded.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Medication</th>
+                            <th>Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td>@item.MedicationName</td>
+                                <td>@item.Quantity</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

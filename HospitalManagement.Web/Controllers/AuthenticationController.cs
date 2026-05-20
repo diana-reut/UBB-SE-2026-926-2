@@ -6,10 +6,6 @@ namespace HospitalManagement.Web.Controllers;
 
 public class AuthenticationController : Controller
 {
-    private const string AccessTokenSessionKey = "AccessToken";
-    private const string UsernameSessionKey = "Username";
-    private const string RoleSessionKey = "Role";
-
     private readonly IAuthenticationApiClient authenticationApiClient;
 
     public AuthenticationController(IAuthenticationApiClient authenticationApiClient)
@@ -39,9 +35,9 @@ public class AuthenticationController : Controller
             Common.Data.Entity.DTOs.AuthResponseDto response =
                 await authenticationApiClient.LoginAsync(model.Username.Trim(), model.Password, cancellationToken);
 
-            HttpContext.Session.SetString(AccessTokenSessionKey, response.Token);
-            HttpContext.Session.SetString(UsernameSessionKey, response.Username);
-            HttpContext.Session.SetString(RoleSessionKey, response.Role);
+            HttpContext.Session.SetString(WebSessionKeys.AccessToken, response.Token);
+            HttpContext.Session.SetString(WebSessionKeys.Username, response.Username);
+            HttpContext.Session.SetString(WebSessionKeys.Role, response.Role);
 
             TempData["LoginMessage"] = $"Signed in as {response.Username} ({response.Role}).";
             return RedirectToAction("Index", "Home");

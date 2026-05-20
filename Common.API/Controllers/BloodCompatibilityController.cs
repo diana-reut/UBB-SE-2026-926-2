@@ -1,4 +1,5 @@
 using System.Net;
+using Common.API.Auth;
 using Common.API.Services;
 using Common.Data.Entity;
 using Common.Data.Entity.DTOs;
@@ -8,6 +9,7 @@ namespace Common.API.Controllers;
 
 [ApiController]
 [Route("api/bloodcompatibilities")]
+[AuthorizeRole("Admin", "Medic")]
 public class BloodCompatibilityController : ControllerBase
 {
     private readonly IBloodCompatibilityService _service;

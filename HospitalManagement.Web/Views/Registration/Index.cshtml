@@ -1,0 +1,79 @@
+@model HospitalManagement.Web.Models.Registration.RegistrationViewModel
+@using Common.Data.Entity.Enums
+
+@{
+    ViewData["Title"] = "Patient Registration";
+}
+
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Patient Registration</h1>
+        <p class="text-muted mb-0">Create the patient if needed, then open an ER visit with REGISTERED status.</p>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form asp-action="Register" method="post" class="row g-3">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="col-md-4">
+                <label asp-for="PatientId" class="form-label">CNP</label>
+                <input asp-for="PatientId" class="form-control" />
+                <span asp-validation-for="PatientId" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="FirstName" class="form-label">First name</label>
+                <input asp-for="FirstName" class="form-control" />
+                <span asp-validation-for="FirstName" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="LastName" class="form-label">Last name</label>
+                <input asp-for="LastName" class="form-control" />
+                <span asp-validation-for="LastName" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="DateOfBirth" class="form-label">Date of birth</label>
+                <input asp-for="DateOfBirth" type="date" class="form-control" />
+                <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Sex" class="form-label">Sex</label>
+                <select asp-for="Sex" asp-items="Html.GetEnumSelectList<Sex>()" class="form-select"></select>
+                <span asp-validation-for="Sex" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Phone" class="form-label">Phone</label>
+                <input asp-for="Phone" class="form-control" placeholder="07XXXXXXXX" />
+                <span asp-validation-for="Phone" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="EmergencyContact" class="form-label">Emergency contact</label>
+                <input asp-for="EmergencyContact" class="form-control" />
+                <span asp-validation-for="EmergencyContact" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="ChiefComplaint" class="form-label">Chief complaint</label>
+                <input asp-for="ChiefComplaint" class="form-control" />
+                <span asp-validation-for="ChiefComplaint" class="text-danger"></span>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Register Patient and Visit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

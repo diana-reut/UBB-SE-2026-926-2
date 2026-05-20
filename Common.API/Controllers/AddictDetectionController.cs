@@ -1,4 +1,5 @@
 ﻿using Common.Data.Entity;
+using Common.API.Auth;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,7 @@ namespace Common.API.Controllers;
 
 [ApiController]
 [Route("api/addicts")]
+[AuthorizeRole("Admin", "Medic")]
 public class AddictDetectionController : ControllerBase
 {
     private readonly IAddictDetectionService _addictDetectionService;

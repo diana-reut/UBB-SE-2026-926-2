@@ -1,22 +1,22 @@
-using Common.API.Services;
 using Common.Data.Entity;
+using Common.Data.Entity.DTOs;
 using Common.Data.Entity.Enums;
-using Common.Data.Integration;
 using HospitalManagement.Web.Models.Admin;
 using HospitalManagement.Web.Models.Patients;
+using HospitalManagement.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HospitalManagement.Web.Controllers;
 
 public class AdminController : Controller
 {
-    private readonly IPatientService _patientService;
-    private readonly IAllergyService _allergyService;
+    private readonly IPatientApiClient patientApiClient;
+    private readonly IAllergyApiClient allergyApiClient;
 
-    public AdminController(IPatientService patientService, IAllergyService allergyService)
+    public AdminController(IPatientApiClient patientApiClient, IAllergyApiClient allergyApiClient)
     {
-        _patientService = patientService;
-        _allergyService = allergyService;
+        this.patientApiClient = patientApiClient;
+        this.allergyApiClient = allergyApiClient;
     }
 
     [HttpGet]
@@ -26,50 +26,70 @@ public class AdminController : Controller
         int? maxAge,
         Sex? sex,
         bool archived = false,
-        int? selectedId = null)
+        int? selectedId = null,
+        CancellationToken cancellationToken = default)
     {
-        List<Patient> searchResults = await SearchPatientsAsync(searchQuery, minAge, maxAge, sex);
-
-        List<Patient> visiblePatients = searchResults
-            .Where(p => p.IsArchived == archived)
-            .OrderBy(p => p.LastName)
-            .ThenBy(p => p.FirstName)
-            .ToList();
-
-        Patient? selectedPatient = null;
-        if (selectedId.HasValue)
+        try
         {
-            selectedPatient = visiblePatients.FirstOrDefault(p => p.Id == selectedId.Value)
-                ?? await _patientService.GetByIdAsync(selectedId.Value);
+            List<Patient> searchResults = await SearchPatientsAsync(searchQuery, minAge, maxAge, sex, cancellationToken);
 
-            if (selectedPatient?.IsArchived != archived)
+            List<Patient> visiblePatients = searchResults
+                .Where(p => p.IsArchived == archived)
+                .OrderBy(p => p.LastName)
+                .ThenBy(p => p.FirstName)
+                .ToList();
+
+            Patient? selectedPatient = null;
+            if (selectedId.HasValue)
             {
-                selectedPatient = null;
+                selectedPatient = visiblePatients.FirstOrDefault(p => p.Id == selectedId.Value)
+                    ?? await patientApiClient.GetByIdAsync(selectedId.Value, cancellationToken);
+
+                if (selectedPatient?.IsArchived != archived)
+                {
+                    selectedPatient = null;
+                }
             }
+
+            List<PatientListItemViewModel> patientRows = visiblePatients.Select(MapPatientListItem).ToList();
+            PatientListItemViewModel? selectedPatientRow = selectedPatient is null
+                ? null
+                : patientRows.FirstOrDefault(p => p.Id == selectedPatient.Id);
+
+            EditPatientViewModel? selectedPatientModel = selectedPatient is null
+                ? null
+                : MapEditPatient(selectedPatient, selectedPatientRow);
+
+            var model = new AdminPatientsIndexViewModel
+            {
+                SearchQuery = searchQuery,
+                MinAge = minAge,
+                MaxAge = maxAge,
+                Sex = sex,
+                ShowArchived = archived,
+                SelectedPatientId = selectedPatient?.Id,
+                Patients = patientRows,
+                SelectedPatient = selectedPatientModel
+            };
+
+            return View(model);
         }
-
-        List<PatientListItemViewModel> patientRows = visiblePatients.Select(MapPatientListItem).ToList();
-        PatientListItemViewModel? selectedPatientRow = selectedPatient is null
-            ? null
-            : patientRows.FirstOrDefault(p => p.Id == selectedPatient.Id);
-
-        EditPatientViewModel? selectedPatientModel = selectedPatient is null
-            ? null
-            : MapEditPatient(selectedPatient, selectedPatientRow);
-
-        var model = new AdminPatientsIndexViewModel
+        catch (UnauthorizedAccessException)
         {
-            SearchQuery = searchQuery,
-            MinAge = minAge,
-            MaxAge = maxAge,
-            Sex = sex,
-            ShowArchived = archived,
-            SelectedPatientId = selectedPatient?.Id,
-            Patients = patientRows,
-            SelectedPatient = selectedPatientModel
-        };
-
-        return View(model);
+            return RedirectToLogin();
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = ex.Message;
+            return View(new AdminPatientsIndexViewModel
+            {
+                SearchQuery = searchQuery,
+                MinAge = minAge,
+                MaxAge = maxAge,
+                Sex = sex,
+                ShowArchived = archived
+            });
+        }
     }
 
     [HttpGet]
@@ -80,32 +100,36 @@ public class AdminController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CreatePatient(CreatePatientViewModel model)
+    public async Task<IActionResult> CreatePatient(
+        CreatePatientViewModel model,
+        CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
         {
             return View("~/Views/Patients/Create.cshtml", model);
         }
 
-        var patient = new Patient
+        var dto = new CreatePatientDto
         {
             FirstName = model.FirstName.Trim(),
             LastName = model.LastName.Trim(),
             Cnp = model.Cnp.Trim(),
             Dob = model.Dob,
             Sex = model.Sex,
-            PhoneNo = model.PhoneNo.Trim(),
-            EmergencyContact = model.EmergencyContact.Trim(),
-            IsArchived = false,
-            IsDonor = false,
-            Transferred = false
+            PhoneNo = NormalizePhone(model.PhoneNo),
+            EmergencyContact = NormalizePhone(model.EmergencyContact),
+            IsDonor = false
         };
 
         try
         {
-            await _patientService.CreatePatientAsync(patient);
-            TempData["SuccessMessage"] = $"Patient {patient.FullName} was created successfully.";
-            return RedirectToAction(nameof(CreateMedicalHistory), new { patientId = patient.Id });
+            Patient created = await patientApiClient.CreatePatientAsync(dto, cancellationToken);
+            TempData["SuccessMessage"] = $"Patient {created.FullName} was created successfully.";
+            return RedirectToAction(nameof(CreateMedicalHistory), new { patientId = created.Id });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return RedirectToLogin();
         }
         catch (ArgumentException ex)
         {
@@ -115,24 +139,44 @@ public class AdminController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> CreateMedicalHistory(int patientId)
+    public async Task<IActionResult> CreateMedicalHistory(
+        int patientId,
+        CancellationToken cancellationToken)
     {
-        Patient? patient = await _patientService.GetByIdAsync(patientId);
-        if (patient is null)
+        try
         {
-            TempData["ErrorMessage"] = "Patient not found.";
-            return RedirectToAction(nameof(Index));
-        }
+            Patient? patient = await patientApiClient.GetByIdAsync(patientId, cancellationToken);
+            if (patient is null)
+            {
+                TempData["ErrorMessage"] = "Patient not found.";
+                return RedirectToAction(nameof(Index));
+            }
 
-        CreateMedicalHistoryViewModel model = await BuildMedicalHistoryModelAsync(patient);
-        return View(model);
+            CreateMedicalHistoryViewModel model = await BuildMedicalHistoryModelAsync(patient, null, cancellationToken);
+            return View(model);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return RedirectToLogin();
+        }
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CreateMedicalHistory(CreateMedicalHistoryViewModel model)
+    public async Task<IActionResult> CreateMedicalHistory(
+        CreateMedicalHistoryViewModel model,
+        CancellationToken cancellationToken)
     {
-        Patient? patient = await _patientService.GetByIdAsync(model.PatientId);
+        Patient? patient;
+        try
+        {
+            patient = await patientApiClient.GetByIdAsync(model.PatientId, cancellationToken);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return RedirectToLogin();
+        }
+
         if (patient is null)
         {
             TempData["ErrorMessage"] = "Patient not found.";
@@ -141,34 +185,27 @@ public class AdminController : Controller
 
         if (!ModelState.IsValid)
         {
-            return View(await BuildMedicalHistoryModelAsync(patient, model));
+            return View(await BuildMedicalHistoryModelAsync(patient, model, cancellationToken));
         }
 
-        MedicalHistory history = new()
+        var dto = new CreateMedicalHistoryDto
         {
             BloodType = model.BloodType,
             Rh = model.Rh,
             ChronicConditions = SplitConditions(model.ChronicConditionsText),
-            PatientAllergies = model.AllergyIds
-                .Distinct()
-                .Select(id => new PatientAllergy
-                {
-                    AllergyId = id,
-                    SeverityLevel = "Mild"
-                })
-                .ToList()
+            AllergyIds = model.AllergyIds.Distinct().ToList()
         };
 
         try
         {
-            await _patientService.CreateMedicalHistoryAsync(model.PatientId, history);
+            await patientApiClient.CreateMedicalHistoryAsync(model.PatientId, dto, cancellationToken);
             TempData["SuccessMessage"] = "Patient and medical history saved successfully.";
             return RedirectToAction(nameof(Index), new { selectedId = model.PatientId });
         }
         catch (ArgumentException ex)
         {
             ModelState.AddModelError(string.Empty, ex.Message);
-            return View(await BuildMedicalHistoryModelAsync(patient, model));
+            return View(await BuildMedicalHistoryModelAsync(patient, model, cancellationToken));
         }
     }
 
@@ -188,7 +225,8 @@ public class AdminController : Controller
         int? minAge,
         int? maxAge,
         Sex? filterSex,
-        bool archived)
+        bool archived,
+        CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
         {
@@ -196,9 +234,8 @@ public class AdminController : Controller
             return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex = filterSex, archived, selectedId = model.Id });
         }
 
-        var patient = new Patient
+        var dto = new UpdatePatientDto
         {
-            Id = model.Id,
             FirstName = model.FirstName.Trim(),
             LastName = model.LastName.Trim(),
             Cnp = model.Cnp,
@@ -214,8 +251,12 @@ public class AdminController : Controller
 
         try
         {
-            await _patientService.UpdatePatientAsync(patient);
+            await patientApiClient.UpdatePatientAsync(model.Id, dto, cancellationToken);
             TempData["SuccessMessage"] = "Patient updated successfully.";
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return RedirectToLogin();
         }
         catch (ArgumentException ex)
         {
@@ -233,18 +274,26 @@ public class AdminController : Controller
         int? minAge,
         int? maxAge,
         Sex? filterSex,
-        bool archived)
+        bool archived,
+        CancellationToken cancellationToken)
     {
-        Patient? patient = await _patientService.GetByIdAsync(id);
-        if (patient is null)
+        try
         {
-            TempData["ErrorMessage"] = "Patient not found.";
-            return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex = filterSex, archived });
-        }
+            Patient? patient = await patientApiClient.GetByIdAsync(id, cancellationToken);
+            if (patient is null)
+            {
+                TempData["ErrorMessage"] = "Patient not found.";
+                return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex = filterSex, archived });
+            }
 
-        await _patientService.ArchivePatientAsync(patient);
-        TempData["SuccessMessage"] = $"Archived {patient.FullName}.";
-        return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex = filterSex, archived = true, selectedId = id });
+            await patientApiClient.ArchivePatientAsync(id, cancellationToken);
+            TempData["SuccessMessage"] = $"Archived {patient.FullName}.";
+            return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex = filterSex, archived = true, selectedId = id });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return RedirectToLogin();
+        }
     }
 
     [HttpPost]
@@ -255,13 +304,18 @@ public class AdminController : Controller
         int? minAge,
         int? maxAge,
         Sex? filterSex,
-        bool archived)
+        bool archived,
+        CancellationToken cancellationToken)
     {
         try
         {
-            await _patientService.DearchivePatientAsync(id);
+            await patientApiClient.DearchivePatientAsync(id, cancellationToken);
             TempData["SuccessMessage"] = "Patient restored to active records.";
             return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex = filterSex, archived = false, selectedId = id });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return RedirectToLogin();
         }
         catch (Exception ex)
         {
@@ -279,7 +333,8 @@ public class AdminController : Controller
         int? minAge,
         int? maxAge,
         Sex? filterSex,
-        bool archived)
+        bool archived,
+        CancellationToken cancellationToken)
     {
         if (!deathDate.HasValue)
         {
@@ -289,9 +344,13 @@ public class AdminController : Controller
 
         try
         {
-            await _patientService.ArchiveAsDeceasedAsync(id, deathDate.Value);
+            await patientApiClient.ArchiveAsDeceasedAsync(id, new ArchiveAsDeceasedDto { DeathDate = deathDate.Value }, cancellationToken);
             TempData["SuccessMessage"] = "Patient marked as deceased.";
             return RedirectToAction(nameof(Index), new { searchQuery, minAge, maxAge, sex = filterSex, archived = true, selectedId = id });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return RedirectToLogin();
         }
         catch (Exception ex)
         {
@@ -301,48 +360,19 @@ public class AdminController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Details(int id)
+    public IActionResult Details(int id)
     {
-        Patient patient = await _patientService.GetPatientDetailsAsync(id);
-
-        var history = patient.MedicalHistory;
-        var model = new PatientDetailsViewModel
-        {
-            Id = patient.Id,
-            FirstName = patient.FirstName,
-            LastName = patient.LastName,
-            Dob = patient.Dob,
-            Sex = patient.Sex.ToString(),
-            Cnp = patient.Cnp,
-            PhoneNo = FormatPhoneNumber(patient.PhoneNo),
-            EmergencyContact = FormatPhoneNumber(patient.EmergencyContact),
-            IsArchived = patient.IsArchived,
-            BloodType = history?.BloodType?.ToString(),
-            Rh = history?.Rh?.ToString(),
-            ChronicConditions = history?.ChronicConditions is { Count: > 0 }
-                ? string.Join(", ", history.ChronicConditions)
-                : "None",
-            Allergies = await _patientService.GetPatientAllergiesAsync(id),
-            MedicalRecords = history?.MedicalRecords?
-                .OrderByDescending(r => r.ConsultationDate)
-                .Select(r => new PatientMedicalRecordViewModel
-                {
-                    Id = r.Id,
-                    ConsultationDate = r.ConsultationDate,
-                    SourceType = r.SourceType.ToString(),
-                    StaffId = r.StaffId,
-                    Symptoms = r.Symptoms ?? "N/A",
-                    Diagnosis = r.Diagnosis ?? "N/A"
-                })
-                .ToList() ?? []
-        };
-
-        return View(model);
+        return RedirectToAction("Details", "Patient", new { id });
     }
 
-    private async Task<List<Patient>> SearchPatientsAsync(string? searchQuery, int? minAge, int? maxAge, Sex? sex)
+    private async Task<List<Patient>> SearchPatientsAsync(
+        string? searchQuery,
+        int? minAge,
+        int? maxAge,
+        Sex? sex,
+        CancellationToken cancellationToken)
     {
-        var filter = new PatientFilter
+        var dto = new SearchPatientsDto
         {
             MinAge = minAge,
             MaxAge = maxAge,
@@ -354,15 +384,15 @@ public class AdminController : Controller
             string trimmedQuery = searchQuery.Trim();
             if (trimmedQuery.All(char.IsDigit) && trimmedQuery.Length == 13)
             {
-                filter.CNP = trimmedQuery;
+                dto.Cnp = trimmedQuery;
             }
             else
             {
-                filter.NamePart = trimmedQuery;
+                dto.NamePart = trimmedQuery;
             }
         }
 
-        return await _patientService.SearchPatientsAsync(filter);
+        return await patientApiClient.SearchPatientsAsync(dto, cancellationToken);
     }
 
     private static PatientListItemViewModel MapPatientListItem(Patient patient)
@@ -470,9 +500,10 @@ public class AdminController : Controller
 
     private async Task<CreateMedicalHistoryViewModel> BuildMedicalHistoryModelAsync(
         Patient patient,
-        CreateMedicalHistoryViewModel? source = null)
+        CreateMedicalHistoryViewModel? source,
+        CancellationToken cancellationToken)
     {
-        List<AllergyOptionViewModel> allergies = (await _allergyService.GetAllergiesAsync())
+        List<AllergyOptionViewModel> allergies = (await allergyApiClient.GetAllergiesAsync(cancellationToken))
             .OrderBy(a => a.AllergyName)
             .Select(a => new AllergyOptionViewModel
             {
@@ -491,6 +522,12 @@ public class AdminController : Controller
             AllergyIds = source?.AllergyIds ?? [],
             AvailableAllergies = allergies
         };
+    }
+
+    private IActionResult RedirectToLogin()
+    {
+        TempData["ErrorMessage"] = "Please sign in before opening patient administration.";
+        return RedirectToAction("AuthenticationView", "Authentication");
     }
 
     private static List<string> SplitConditions(string? conditionsText)
