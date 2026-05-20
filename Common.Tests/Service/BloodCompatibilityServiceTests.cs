@@ -531,16 +531,6 @@ public sealed class BloodCompatibilityServiceTests
         };
     }
 
-    private static Patient CreateDeceasedPatient(int id)
-    {
-        Patient patient = CreatePatient(id);
-
-        typeof(Patient)
-            .GetProperty(nameof(Patient.IsDeceased))!
-            .SetValue(patient, true);
-
-        return patient;
-    }
 
     private static MedicalHistory CreateHistory(
         BloodType? bloodType,
