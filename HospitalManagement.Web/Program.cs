@@ -31,10 +31,11 @@ builder.Services.AddHttpClient<IBillingApiClient, BillingApiClient>(client =>
     ConfigureHospitalApiClient(builder.Configuration, client));
 builder.Services.AddHttpClient<IErWorkflowApiClient, ErWorkflowApiClient>(client =>
     ConfigureHospitalApiClient(builder.Configuration, client));
-builder.Services.AddHttpClient<IPrescriptionApiClient, PrescriptionApiClient>(client =>
-    ConfigureHospitalApiClient(builder.Configuration, client));
 builder.Services.AddTransient<BearerTokenHandler>();
 builder.Services.AddHttpClient<IAddictDetectionApiClient, AddictDetectionApiClient>(client =>
+    ConfigureHospitalApiClient(builder.Configuration, client))
+    .AddHttpMessageHandler<BearerTokenHandler>();
+builder.Services.AddHttpClient<IPrescriptionApiClient, PrescriptionApiClient>(client =>
     ConfigureHospitalApiClient(builder.Configuration, client))
     .AddHttpMessageHandler<BearerTokenHandler>();
 builder.Services.AddSingleton<IErStaffService, ErStaffService>();
