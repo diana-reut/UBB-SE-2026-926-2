@@ -8,8 +8,13 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
+    options.Cookie.Name = "HospitalManagement.Web.Session";
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+});
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.Name = "HospitalManagement.Web.Antiforgery";
 });
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -17,6 +22,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.LoginPath = "/Authentication/AuthenticationView";
         options.AccessDeniedPath = "/Authentication/AuthenticationView";
+        options.Cookie.Name = "HospitalManagement.Web.Auth";
         options.Cookie.HttpOnly = true;
         options.Cookie.IsEssential = true;
     });

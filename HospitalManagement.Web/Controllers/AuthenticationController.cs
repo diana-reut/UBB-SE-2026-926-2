@@ -19,10 +19,18 @@ public class AuthenticationController : Controller
 
     [HttpGet]
     [AllowAnonymous]
-    public IActionResult AuthenticationView()
+    public async Task<IActionResult> AuthenticationView()
     {
         if (User.Identity?.IsAuthenticated == true)
         {
+            if (string.IsNullOrWhiteSpace(HttpContext.Session.GetString(WebSessionKeys.AccessToken)))
+            {
+                HttpContext.Session.Clear();
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                TempData["ErrorMessage"] = "Your session expired. Please sign in again.";
+                return RedirectToAction(nameof(AuthenticationView));
+            }
+
             return RedirectToAction("Index", "Home");
         }
 
@@ -56,8 +64,7 @@ public class AuthenticationController : Controller
             Claim[] claims =
             [
                 new(ClaimTypes.Name, response.Username),
-                new(ClaimTypes.Role, response.Role),
-                new("access_token", response.Token)
+                new(ClaimTypes.Role, response.Role)
             ];
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
