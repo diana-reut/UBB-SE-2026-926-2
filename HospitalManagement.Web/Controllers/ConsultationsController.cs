@@ -69,6 +69,20 @@ public class ConsultationController : Controller
             }
         }
 
+        // Look up the prescription tied to this consultation record (if any),
+        // so the "View Prescription" button can link directly to it.
+        int? prescriptionId = null;
+        try
+        {
+            Prescription? prescription = await patientApiClient.GetPrescriptionByRecordIdAsync(recordId, HttpContext.RequestAborted);
+            prescriptionId = prescription?.Id;
+        }
+        catch (InvalidOperationException)
+        {
+            // Non-fatal: the rest of the consultation page still works without the link.
+            prescriptionId = null;
+        }
+
         var model = new ConsultationDetailsViewModel
         {
             RecordId = record.Id,
@@ -83,6 +97,7 @@ public class ConsultationController : Controller
             BasePrice = basePrice,
             FinalPrice = finalPrice,
             DiscountApplied = discountApplied,
+            PrescriptionId = prescriptionId,
             IsArchived = patient.IsArchived
         };
 

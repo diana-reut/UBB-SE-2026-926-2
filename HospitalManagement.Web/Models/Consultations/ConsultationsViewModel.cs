@@ -23,6 +23,10 @@ public class ConsultationDetailsViewModel
     public int? DiscountApplied { get; set; }
     public bool IsDiscountApplied => DiscountApplied.HasValue;
 
+    // Linked prescription (null when no prescription exists for this record)
+    public int? PrescriptionId { get; set; }
+    public bool HasPrescription => PrescriptionId.HasValue;
+
     // For back-navigation
     public bool IsArchived { get; set; }
 }

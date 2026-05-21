@@ -7,9 +7,16 @@
 <div style="background:#F4F6F8; min-height:100vh; padding:20px;">
 
     @* Header *@
-    <div class="mb-4">
-        <div style="font-size:13px;font-weight:700;color:#4A90A4;letter-spacing:3px;">PRESCRIPTIONS FEED</div>
-        <div style="font-size:26px;font-weight:700;color:#1E2A38;">Chronological Overview</div>
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <div style="font-size:13px;font-weight:700;color:#4A90A4;letter-spacing:3px;">PRESCRIPTIONS FEED</div>
+            <div style="font-size:26px;font-weight:700;color:#1E2A38;">Chronological Overview</div>
+        </div>
+        <a asp-controller="Pharmacist" asp-action="Addicts"
+           class="btn"
+           style="background:#FFE779;color:#1E2A38;font-weight:700;border-radius:8px;padding:8px 16px;border:1px solid #E6CE5B;">
+            ⚠ See All Addicts
+        </a>
     </div>
 
     @* Back button if coming from patient profile *@

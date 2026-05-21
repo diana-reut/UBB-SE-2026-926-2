@@ -9,10 +9,21 @@
         <h1 class="mb-1">Consultation Details</h1>
         <p class="text-muted mb-0">@Model.PatientFullName &middot; @Model.ConsultationDate.ToString("yyyy-MM-dd")</p>
     </div>
-    <a asp-controller="Admin"
-       asp-action="Details"
-       asp-route-id="@Model.PatientId"
-       class="btn btn-outline-secondary">Back to Patient</a>
+    <div class="d-flex gap-2">
+        @if (Model.HasPrescription)
+        {
+            <a asp-controller="Pharmacist"
+               asp-action="PrescriptionDetail"
+               asp-route-id="@Model.PrescriptionId"
+               asp-route-returnPatientId="@Model.PatientId"
+               asp-route-returnRecordId="@Model.RecordId"
+               class="btn btn-primary">📋 View Prescription</a>
+        }
+        <a asp-controller="Admin"
+           asp-action="Details"
+           asp-route-id="@Model.PatientId"
+           class="btn btn-outline-secondary">Back to Patient</a>
+    </div>
 </div>
 
 @if (TempData["ErrorMessage"] is string errorMessage && !string.IsNullOrWhiteSpace(errorMessage))

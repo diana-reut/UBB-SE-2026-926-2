@@ -4,70 +4,94 @@
     ViewData["Title"] = $"Prescription #{Model.Id}";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-start mb-4">
     <div>
-        <h1 class="mb-1">Prescription #@Model.Id</h1>
-        <p class="text-muted mb-0">@Model.Date.ToString("yyyy-MM-dd")</p>
+        <div style="font-size:12px;font-weight:700;color:#4A90A4;letter-spacing:3px;">PRESCRIPTION</div>
+        <h1 class="mb-1">Prescription Details</h1>
+        <p class="text-muted mb-0">
+            <span class="badge rounded-pill" style="background:#F0F9F6;color:#2A6478;border:1px solid #5EC499;font-weight:700;padding:6px 12px;">📋 #@Model.Id</span>
+            <span class="ms-2">@Model.Date.ToString("yyyy-MM-dd")</span>
+        </p>
     </div>
-    <a asp-action="Prescriptions" class="btn btn-outline-secondary">Back to list</a>
+    @if (Model.HasConsultationReturn)
+    {
+        <a asp-controller="Consultation"
+           asp-action="Details"
+           asp-route-patientId="@Model.ReturnPatientId"
+           asp-route-recordId="@Model.ReturnRecordId"
+           class="btn btn-outline-secondary">← Back to Consultation</a>
+    }
+    else
+    {
+        <a asp-controller="Prescription"
+           asp-action="Feed"
+           class="btn btn-outline-secondary">← Back to Feed</a>
+    }
 </div>
 
 <div class="row g-4">
-    <div class="col-md-6">
-        <div class="card">
+    <div class="col-lg-7">
+        <div class="card shadow-sm mb-4">
             <div class="card-body">
-                <h5 class="card-title">Details</h5>
-                <dl class="row mb-0">
-                    <dt class="col-sm-4">Patient</dt>
-                    <dd class="col-sm-8">@Model.PatientName</dd>
-                    <dt class="col-sm-4">Doctor</dt>
-                    <dd class="col-sm-8">@Model.DoctorName</dd>
-                    <dt class="col-sm-4">Date</dt>
-                    <dd class="col-sm-8">@Model.Date.ToString("yyyy-MM-dd")</dd>
-                </dl>
-            </div>
-        </div>
-    </div>
+                <h2 class="h6 text-muted text-uppercase mb-3" style="letter-spacing:2px;">Medications</h2>
 
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Doctor Notes</h5>
-                <p class="card-text">@Model.DoctorNotes</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Medications</h5>
                 @if (Model.Medications.Count == 0)
                 {
-                    <p class="text-muted">No medications listed for this prescription.</p>
+                    <p class="text-muted mb-0">No medications listed for this prescription.</p>
                 }
                 else
                 {
-                    <div class="table-responsive">
-                        <table class="table table-striped align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Medication</th>
-                                    <th>Quantity</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var med in Model.Medications)
-                                {
-                                    <tr>
-                                        <td>@med.MedName</td>
-                                        <td>@(med.Quantity ?? "—")</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var med in Model.Medications)
+                        {
+                            <div class="d-flex justify-content-between align-items-center"
+                                 style="background:#F4F6F8;border:1px solid #E5E7EB;border-radius:10px;padding:12px 16px;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span style="font-size:18px;">💊</span>
+                                    <strong style="color:#1E2A38;font-size:15px;">@med.MedName</strong>
+                                </div>
+                                <span class="badge rounded-pill"
+                                      style="background:white;border:1px solid #E5E7EB;color:#4B5563;font-weight:600;padding:6px 12px;">
+                                    Qty: @(string.IsNullOrWhiteSpace(med.Quantity) ? "—" : med.Quantity)
+                                </span>
+                            </div>
+                        }
                     </div>
                 }
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 text-muted text-uppercase mb-3" style="letter-spacing:2px;">Doctor Notes</h2>
+                <div style="background:#F4F6F8;border:1px solid #E5E7EB;border-radius:10px;padding:14px 16px;color:#1E2A38;">
+                    @Model.DoctorNotes
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 text-muted text-uppercase mb-3" style="letter-spacing:2px;">Details</h2>
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Patient</dt>
+                    <dd class="col-sm-7 fw-semibold">@Model.PatientName</dd>
+
+                    <dt class="col-sm-5">Doctor</dt>
+                    <dd class="col-sm-7 fw-semibold">@Model.DoctorName</dd>
+
+                    <dt class="col-sm-5">Date</dt>
+                    <dd class="col-sm-7">@Model.Date.ToString("yyyy-MM-dd")</dd>
+
+                    <dt class="col-sm-5">Medications</dt>
+                    <dd class="col-sm-7">
+                        <span class="badge" style="background:#5EC499;color:white;font-weight:600;padding:4px 10px;">
+                            @Model.Medications.Count
+                        </span>
+                    </dd>
+                </dl>
             </div>
         </div>
     </div>
