@@ -3,7 +3,6 @@ using HospitalManagement.Web.Models.Consultations;
 using HospitalManagement.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace HospitalManagement.Web.Controllers;
@@ -11,7 +10,10 @@ namespace HospitalManagement.Web.Controllers;
 [Authorize]
 public class RouletteController : Controller
 {
-    private static readonly int[] DiscountOptions = [0, 10, 25, 50, 100];
+    // Set of discounts accepted from the client. The base wheel has segments
+    // for 0/10/25/50/100; the "let it ride" double-or-nothing can also produce
+    // 20 (10x2) or shove anything back to 0.
+    private static readonly HashSet<int> AllowedSubmittedDiscounts = [0, 10, 20, 25, 50, 100];
 
     private readonly IPatientApiClient patientApiClient;
     private readonly IBillingApiClient billingApiClient;
@@ -67,9 +69,16 @@ public class RouletteController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Spin(int patientId, int recordId, decimal basePrice)
+    public async Task<IActionResult> Spin(int patientId, int recordId, decimal basePrice, int discount)
     {
-        int discount = DiscountOptions[RandomNumberGenerator.GetInt32(DiscountOptions.Length)];
+        // The client picks the discount (so the wheel actually lands on the
+        // correct color) — we just validate it's one of the allowed values
+        // and persist the result.
+        if (!AllowedSubmittedDiscounts.Contains(discount))
+        {
+            TempData["ErrorMessage"] = "Invalid discount value.";
+            return RedirectToAction("Details", "Consultation", new { patientId, recordId });
+        }
 
         decimal finalPrice;
         try
