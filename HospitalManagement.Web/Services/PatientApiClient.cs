@@ -1,370 +1,117 @@
 using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
 using Common.Data.Entity;
 using Common.Data.Entity.DTOs;
 
 namespace HospitalManagement.Web.Services;
 
-public class PatientApiClient : IPatientApiClient
+public class PatientApiClient : HospitalApiClientBase, IPatientApiClient
 {
     private const string BaseUri = "api/patients";
-    private const int StartupRetryCount = 5;
-    private static readonly TimeSpan StartupRetryDelay = TimeSpan.FromMilliseconds(800);
 
-    private readonly HttpClient httpClient;
-    private readonly JsonSerializerOptions jsonOptions = new()
+    public PatientApiClient(HttpClient httpClient, IHttpContextAccessor httpContextAccessor)
+        : base(httpClient, httpContextAccessor)
     {
-        PropertyNameCaseInsensitive = true,
-    };
-
-    public PatientApiClient(HttpClient httpClient)
-    {
-        this.httpClient = httpClient;
     }
 
-    public async Task<List<Patient>> SearchPatientsAsync(SearchPatientsDto dto, CancellationToken cancellationToken)
+    public async Task<Patient?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         try
         {
-            using HttpResponseMessage response = await ExecuteWithStartupRetryAsync(
-                ct => httpClient.PostAsJsonAsync(
-                    $"{BaseUri}/search",
-                    dto,
-                    jsonOptions,
-                    ct),
-                cancellationToken);
-
-            return await ReadAsync<List<Patient>>(response, cancellationToken) ?? [];
+            return await GetAsync<Patient>($"{BaseUri}/{id}", cancellationToken);
         }
-        catch (HttpRequestException)
+        catch (KeyNotFoundException)
         {
-            throw new InvalidOperationException("Could not connect to the patient API.");
-        }
-        catch (TaskCanceledException)
-        {
-            throw new InvalidOperationException("The patient API request timed out or was interrupted.");
+            return null;
         }
     }
 
-    public async Task<Patient?> GetByIdAsync(int id, CancellationToken cancellationToken)
-    {
-        try
-        {
-            using HttpResponseMessage response = await ExecuteWithStartupRetryAsync(
-                ct => httpClient.GetAsync($"{BaseUri}/{id}", ct),
-                cancellationToken);
-            if (response.StatusCode == HttpStatusCode.NotFound)
-            {
-                return null;
-            }
+    public async Task<Patient> GetPatientDetailsAsync(int id, CancellationToken cancellationToken = default) =>
+        await GetAsync<Patient>($"{BaseUri}/{id}/details", cancellationToken)
+        ?? throw new KeyNotFoundException($"Patient with ID {id} not found.");
 
-            return await ReadAsync<Patient>(response, cancellationToken);
-        }
-        catch (HttpRequestException)
-        {
-            throw new InvalidOperationException("Could not connect to the patient API.");
-        }
-        catch (TaskCanceledException)
-        {
-            throw new InvalidOperationException("The patient API request timed out or was interrupted.");
-        }
-    }
+    public Task<MedicalHistory?> GetMedicalHistoryAsync(int id, CancellationToken cancellationToken = default) =>
+        GetAsync<MedicalHistory>($"{BaseUri}/{id}/medical-history", cancellationToken);
 
-    public async Task<Patient> GetPatientDetailsAsync(int id, CancellationToken cancellationToken)
-    {
-        try
-        {
-            using HttpResponseMessage response = await ExecuteWithStartupRetryAsync(
-                ct => httpClient.GetAsync($"{BaseUri}/{id}/details", ct),
-                cancellationToken);
-            return await ReadAsync<Patient>(response, cancellationToken)
-                ?? throw new InvalidOperationException("Patient details response was empty.");
-        }
-        catch (HttpRequestException)
-        {
-            throw new InvalidOperationException("Could not connect to the patient API.");
-        }
-        catch (TaskCanceledException)
-        {
-            throw new InvalidOperationException("The patient API request timed out or was interrupted.");
-        }
-    }
+    public async Task<List<MedicalRecord>> GetMedicalRecordsAsync(int historyId, CancellationToken cancellationToken = default) =>
+        await GetAsync<List<MedicalRecord>>($"{BaseUri}/{historyId}/medical-records", cancellationToken) ?? [];
 
-    public async Task<List<string>> GetPatientAllergiesAsync(int id, CancellationToken cancellationToken)
-    {
-        try
-        {
-            using HttpResponseMessage response = await ExecuteWithStartupRetryAsync(
-                ct => httpClient.GetAsync($"{BaseUri}/{id}/allergies", ct),
-                cancellationToken);
-            return await ReadAsync<List<string>>(response, cancellationToken) ?? [];
-        }
-        catch (HttpRequestException)
-        {
-            throw new InvalidOperationException("Could not connect to the patient API.");
-        }
-        catch (TaskCanceledException)
-        {
-            throw new InvalidOperationException("The patient API request timed out or was interrupted.");
-        }
-    }
+    public async Task<int> CreateMedicalRecordAsync(
+        int patientId,
+        CreateMedicalRecordDto dto,
+        CancellationToken cancellationToken = default) =>
+        await PostAsync<CreateMedicalRecordDto, int>($"{BaseUri}/{patientId}/medical-records", dto, cancellationToken);
 
-    public async Task<List<MedicalRecord>> GetMedicalRecordsAsync(
-        int medicalHistoryId,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            using HttpResponseMessage response = await ExecuteWithStartupRetryAsync(
-                ct => httpClient.GetAsync($"{BaseUri}/{medicalHistoryId}/medical-records", ct),
-                cancellationToken);
-            return await ReadAsync<List<MedicalRecord>>(response, cancellationToken) ?? [];
-        }
-        catch (HttpRequestException)
-        {
-            throw new InvalidOperationException("Could not connect to the patient API.");
-        }
-        catch (TaskCanceledException)
-        {
-            throw new InvalidOperationException("The patient API request timed out or was interrupted.");
-        }
-    }
+    public Task CreatePrescriptionForRecordAsync(
+        int recordId,
+        CreatePrescriptionDto dto,
+        CancellationToken cancellationToken = default) =>
+        PostAsync($"{BaseUri}/records/{recordId}/prescription", dto, cancellationToken);
+
+    public async Task<List<string>> GetPatientAllergiesAsync(int id, CancellationToken cancellationToken = default) =>
+        await GetAsync<List<string>>($"{BaseUri}/{id}/allergies", cancellationToken) ?? [];
 
     public async Task<Prescription?> GetPrescriptionByRecordIdAsync(
         int recordId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            using HttpResponseMessage response = await ExecuteWithStartupRetryAsync(
-                ct => httpClient.GetAsync($"{BaseUri}/records/{recordId}/prescription", ct),
-                cancellationToken);
-            if (response.StatusCode == HttpStatusCode.NotFound)
-            {
-                return null;
-            }
-
-            return await ReadAsync<Prescription>(response, cancellationToken);
+            return await GetAsync<Prescription>($"{BaseUri}/records/{recordId}/prescription", cancellationToken);
         }
-        catch (HttpRequestException)
+        catch (InvalidOperationException e) when (e.Message.Contains(((int)HttpStatusCode.NotFound).ToString(), StringComparison.Ordinal))
         {
-            throw new InvalidOperationException("Could not connect to the patient API.");
+            return null;
         }
-        catch (TaskCanceledException)
+        catch (KeyNotFoundException)
         {
-            throw new InvalidOperationException("The patient API request timed out or was interrupted.");
+            return null;
         }
     }
 
     public async Task<RecordExportDataDto> GetRecordExportDataAsync(
         int recordId,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            using HttpResponseMessage response = await ExecuteWithStartupRetryAsync(
-                ct => httpClient.GetAsync($"{BaseUri}/records/{recordId}/export-data", ct),
-                cancellationToken);
-            return await ReadAsync<RecordExportDataDto>(response, cancellationToken)
-                ?? throw new InvalidOperationException("Record export response was empty.");
-        }
-        catch (HttpRequestException)
-        {
-            throw new InvalidOperationException("Could not connect to the patient API.");
-        }
-        catch (TaskCanceledException)
-        {
-            throw new InvalidOperationException("The patient API request timed out or was interrupted.");
-        }
-    }
+        CancellationToken cancellationToken = default) =>
+        await GetAsync<RecordExportDataDto>($"{BaseUri}/records/{recordId}/export-data", cancellationToken)
+        ?? throw new KeyNotFoundException($"Medical record {recordId} not found.");
 
-    public async Task<Patient> CreatePatientAsync(CreatePatientDto dto, CancellationToken cancellationToken)
-    {
-        try
-        {
-            using HttpResponseMessage response = await ExecuteWithStartupRetryAsync(
-                ct => httpClient.PostAsJsonAsync(
-                    BaseUri,
-                    dto,
-                    jsonOptions,
-                    ct),
-                cancellationToken);
+    public async Task<bool> IsHighRiskPatientAsync(int id, CancellationToken cancellationToken = default) =>
+        await GetAsync<bool>($"{BaseUri}/{id}/high-risk", cancellationToken);
 
-            return await ReadAsync<Patient>(response, cancellationToken)
-                ?? throw new InvalidOperationException("Create patient returned an empty response.");
-        }
-        catch (HttpRequestException)
-        {
-            throw new InvalidOperationException("Could not connect to the patient API.");
-        }
-        catch (TaskCanceledException)
-        {
-            throw new InvalidOperationException("The patient API request timed out or was interrupted.");
-        }
-    }
+    public async Task<bool> ExistsAsync(string cnp, CancellationToken cancellationToken = default) =>
+        await GetAsync<bool>($"{BaseUri}/exists/{cnp}", cancellationToken);
 
-    public async Task CreateMedicalHistoryAsync(int id, CreateMedicalHistoryDto dto, CancellationToken cancellationToken)
-    {
-        try
-        {
-            using HttpResponseMessage response = await ExecuteWithStartupRetryAsync(
-                ct => httpClient.PostAsJsonAsync(
-                    $"{BaseUri}/{id}/medical-history",
-                    dto,
-                    jsonOptions,
-                    ct),
-                cancellationToken);
+    public async Task<List<Patient>> SearchPatientsAsync(
+        SearchPatientsDto dto,
+        CancellationToken cancellationToken = default) =>
+        await PostAsync<SearchPatientsDto, List<Patient>>($"{BaseUri}/search", dto, cancellationToken) ?? [];
 
-            await EnsureSuccessAsync(response, cancellationToken);
-        }
-        catch (HttpRequestException)
-        {
-            throw new InvalidOperationException("Could not connect to the patient API.");
-        }
-        catch (TaskCanceledException)
-        {
-            throw new InvalidOperationException("The patient API request timed out or was interrupted.");
-        }
-    }
+    public async Task<Patient> CreatePatientAsync(
+        CreatePatientDto dto,
+        CancellationToken cancellationToken = default) =>
+        await PostAsync<CreatePatientDto, Patient>(BaseUri, dto, cancellationToken)
+        ?? throw new InvalidOperationException("Failed to create patient: no response from server.");
 
-    public async Task UpdatePatientAsync(int id, UpdatePatientDto dto, CancellationToken cancellationToken)
-    {
-        try
-        {
-            using HttpResponseMessage response = await ExecuteWithStartupRetryAsync(
-                ct => httpClient.PutAsJsonAsync(
-                    $"{BaseUri}/{id}",
-                    dto,
-                    jsonOptions,
-                    ct),
-                cancellationToken);
+    public Task UpdatePatientAsync(int id, UpdatePatientDto dto, CancellationToken cancellationToken = default) =>
+        PutAsync($"{BaseUri}/{id}", dto, cancellationToken);
 
-            await EnsureSuccessAsync(response, cancellationToken);
-        }
-        catch (HttpRequestException)
-        {
-            throw new InvalidOperationException("Could not connect to the patient API.");
-        }
-        catch (TaskCanceledException)
-        {
-            throw new InvalidOperationException("The patient API request timed out or was interrupted.");
-        }
-    }
+    public Task ArchivePatientAsync(int id, CancellationToken cancellationToken = default) =>
+        PutAsync<object>($"{BaseUri}/{id}/archive", new { }, cancellationToken);
 
-    public async Task ArchivePatientAsync(int id, CancellationToken cancellationToken)
-    {
-        try
-        {
-            using HttpResponseMessage response = await ExecuteWithStartupRetryAsync(
-                ct => httpClient.PutAsJsonAsync(
-                    $"{BaseUri}/{id}/archive",
-                    new { },
-                    jsonOptions,
-                    ct),
-                cancellationToken);
+    public Task DearchivePatientAsync(int id, CancellationToken cancellationToken = default) =>
+        PutAsync<object>($"{BaseUri}/{id}/dearchive", new { }, cancellationToken);
 
-            await EnsureSuccessAsync(response, cancellationToken);
-        }
-        catch (HttpRequestException)
-        {
-            throw new InvalidOperationException("Could not connect to the patient API.");
-        }
-        catch (TaskCanceledException)
-        {
-            throw new InvalidOperationException("The patient API request timed out or was interrupted.");
-        }
-    }
+    public Task ArchiveAsDeceasedAsync(
+        int id,
+        ArchiveAsDeceasedDto dto,
+        CancellationToken cancellationToken = default) =>
+        PutAsync($"{BaseUri}/{id}/archive-deceased", dto, cancellationToken);
 
-    public async Task DearchivePatientAsync(int id, CancellationToken cancellationToken)
-    {
-        try
-        {
-            using HttpResponseMessage response = await ExecuteWithStartupRetryAsync(
-                ct => httpClient.PutAsJsonAsync(
-                    $"{BaseUri}/{id}/dearchive",
-                    new { },
-                    jsonOptions,
-                    ct),
-                cancellationToken);
+    public Task CreateMedicalHistoryAsync(
+        int id,
+        CreateMedicalHistoryDto dto,
+        CancellationToken cancellationToken = default) =>
+        PostAsync($"{BaseUri}/{id}/medical-history", dto, cancellationToken);
 
-            await EnsureSuccessAsync(response, cancellationToken);
-        }
-        catch (HttpRequestException)
-        {
-            throw new InvalidOperationException("Could not connect to the patient API.");
-        }
-        catch (TaskCanceledException)
-        {
-            throw new InvalidOperationException("The patient API request timed out or was interrupted.");
-        }
-    }
-
-    public async Task ArchiveAsDeceasedAsync(int id, ArchiveAsDeceasedDto dto, CancellationToken cancellationToken)
-    {
-        try
-        {
-            using HttpResponseMessage response = await ExecuteWithStartupRetryAsync(
-                ct => httpClient.PutAsJsonAsync(
-                    $"{BaseUri}/{id}/archive-deceased",
-                    dto,
-                    jsonOptions,
-                    ct),
-                cancellationToken);
-
-            await EnsureSuccessAsync(response, cancellationToken);
-        }
-        catch (HttpRequestException)
-        {
-            throw new InvalidOperationException("Could not connect to the patient API.");
-        }
-        catch (TaskCanceledException)
-        {
-            throw new InvalidOperationException("The patient API request timed out or was interrupted.");
-        }
-    }
-
-    private async Task<T?> ReadAsync<T>(HttpResponseMessage response, CancellationToken cancellationToken)
-    {
-        await EnsureSuccessAsync(response, cancellationToken);
-        return await response.Content.ReadFromJsonAsync<T>(jsonOptions, cancellationToken);
-    }
-
-    private static async Task<HttpResponseMessage> ExecuteWithStartupRetryAsync(
-        Func<CancellationToken, Task<HttpResponseMessage>> operation,
-        CancellationToken cancellationToken)
-    {
-        for (int attempt = 1; ; attempt++)
-        {
-            try
-            {
-                return await operation(cancellationToken);
-            }
-            catch (HttpRequestException) when (attempt < StartupRetryCount && !cancellationToken.IsCancellationRequested)
-            {
-                await Task.Delay(StartupRetryDelay, cancellationToken);
-            }
-            catch (TaskCanceledException) when (attempt < StartupRetryCount && !cancellationToken.IsCancellationRequested)
-            {
-                await Task.Delay(StartupRetryDelay, cancellationToken);
-            }
-        }
-    }
-
-    private static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
-    {
-        if (response.IsSuccessStatusCode)
-        {
-            return;
-        }
-
-        string message = await ApiErrorReader.ReadErrorMessageAsync(response, cancellationToken);
-
-        if (response.StatusCode == HttpStatusCode.BadRequest || response.StatusCode == HttpStatusCode.Conflict)
-        {
-            throw new ArgumentException(message);
-        }
-
-        throw new InvalidOperationException(message);
-    }
+    public Task DeletePatientAsync(int id, CancellationToken cancellationToken = default) =>
+        DeleteAsync($"{BaseUri}/{id}", cancellationToken);
 }

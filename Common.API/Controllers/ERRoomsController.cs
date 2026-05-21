@@ -1,4 +1,5 @@
 using System.Net;
+using Common.API.Auth;
 using Common.API.Services;
 using Common.Data.Entity.DTOs;
 using Common.Data.Models;
@@ -8,6 +9,7 @@ namespace Common.API.Controllers
 {
     [ApiController]
     [Route("api/er-rooms")]
+    [AuthorizeRole("Admin", "Medic")]
     public class ERRoomsController : ControllerBase
     {
         private readonly IERRoomService _erRoomService;

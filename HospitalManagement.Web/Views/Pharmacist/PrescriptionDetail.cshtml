@@ -1,0 +1,74 @@
+@model HospitalManagement.Web.Models.Prescription.PrescriptionDetailViewModel
+
+@{
+    ViewData["Title"] = $"Prescription #{Model.Id}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Prescription #@Model.Id</h1>
+        <p class="text-muted mb-0">@Model.Date.ToString("yyyy-MM-dd")</p>
+    </div>
+    <a asp-action="Prescriptions" class="btn btn-outline-secondary">Back to list</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Details</h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Patient</dt>
+                    <dd class="col-sm-8">@Model.PatientName</dd>
+                    <dt class="col-sm-4">Doctor</dt>
+                    <dd class="col-sm-8">@Model.DoctorName</dd>
+                    <dt class="col-sm-4">Date</dt>
+                    <dd class="col-sm-8">@Model.Date.ToString("yyyy-MM-dd")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Doctor Notes</h5>
+                <p class="card-text">@Model.DoctorNotes</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Medications</h5>
+                @if (Model.Medications.Count == 0)
+                {
+                    <p class="text-muted">No medications listed for this prescription.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Medication</th>
+                                    <th>Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var med in Model.Medications)
+                                {
+                                    <tr>
+                                        <td>@med.MedName</td>
+                                        <td>@(med.Quantity ?? "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

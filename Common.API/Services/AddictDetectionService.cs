@@ -36,8 +36,13 @@ internal class AddictDetectionService : IAddictDetectionService
     public async Task<List<Patient>> GetAddictCandidatesAsync()
     {
         List<Patient> flaggedPatients = await _prescriptionRepository.GetAddictCandidatePatientsAsync();
+
+        List<int> notifiedIds = await _prescriptionRepository.GetPoliceNotifiedPatientIdsAsync(
+            flaggedPatients.Select(p => p.Id));
+
         foreach (Patient patient in flaggedPatients)
         {
+            patient.IsPoliceNotified = notifiedIds.Contains(patient.Id);
             patient.MedicalHistory = await _medicalHistoryRepository.GetByPatientIdAsync(patient.Id);
             if (patient.MedicalHistory is not null)
             {
@@ -48,6 +53,14 @@ internal class AddictDetectionService : IAddictDetectionService
             NormalizeMedicalHistory(patient);
         }
         return flaggedPatients;
+    }
+
+    public async Task MarkPoliceNotifiedAsync(int patientId)
+    {
+        if (patientId <= 0)
+            throw new ArgumentException("Invalid patient ID.");
+
+        await _prescriptionRepository.MarkPoliceNotifiedAsync(patientId);
     }
 
     public async Task<string> BuildPoliceReportAsync(int patientId)

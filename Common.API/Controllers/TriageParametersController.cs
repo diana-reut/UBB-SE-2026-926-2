@@ -1,4 +1,5 @@
 using System.Net;
+using Common.API.Auth;
 using Common.API.Services;
 using Common.Data.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +8,7 @@ namespace Common.API.Controllers
 {
     [ApiController]
     [Route("api/triage-parameters")]
+    [AuthorizeRole("Admin", "Medic")]
     public class TriageParametersController : ControllerBase
     {
         private readonly ITriageParametersService _triageParametersService;
@@ -77,7 +79,7 @@ namespace Common.API.Controllers
                 _logger.LogError(e, "Failed to create triage parameters.");
 
                 return Problem(
-                    detail: "Failed to create triage parameters.",
+                    detail: e.Message,
                     statusCode: (int)HttpStatusCode.InternalServerError,
                     title: "Could not create triage parameters.");
             }

@@ -138,7 +138,7 @@
                                 string deceasedClass = Model.IsArchivedMode && patient.IsDeceased ? "patient-deceased" : string.Empty;
                                 <tr class="patient-row @(isSelected ? "table-active" : string.Empty)"
                                     data-select-url="@Url.Action("Index", new { searchQuery = Model.SearchQuery, minAge = Model.MinAge, maxAge = Model.MaxAge, sex = Model.Sex, archived = Model.ShowArchived, selectedId = patient.Id })"
-                                    data-details-url="@Url.Action("Details", new { id = patient.Id })"
+                                    data-details-url="@Url.Action("Details", "Patient", new { id = patient.Id })"
                                     style="cursor: pointer;">
                                     <td class="@deceasedClass">@patient.FirstName</td>
                                     <td class="@deceasedClass">@patient.LastName</td>

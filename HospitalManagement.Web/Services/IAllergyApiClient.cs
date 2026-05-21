@@ -4,5 +4,6 @@ namespace HospitalManagement.Web.Services;
 
 public interface IAllergyApiClient
 {
-    Task<List<Allergy>> GetAllAsync(CancellationToken cancellationToken);
+    Task<List<Allergy>> GetAllergiesAsync(CancellationToken cancellationToken = default);
+    Task<List<Allergy>> GetAllAsync(CancellationToken cancellationToken = default);
 }

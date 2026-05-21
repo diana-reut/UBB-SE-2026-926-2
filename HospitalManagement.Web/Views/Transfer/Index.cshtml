@@ -1,0 +1,129 @@
+@model HospitalManagement.Web.Models.Transfer.TransferViewModel
+
+@{
+    ViewData["Title"] = "Transfer";
+    var selectedVisit = Model.EligibleVisits.FirstOrDefault(visit => visit.VisitId == Model.SelectedVisitId);
+    string? displayError = TempData["ErrorMessage"] as string ?? Model.ErrorMessage;
+}
+
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+@if (displayError is not null)
+{
+    <div class="alert alert-danger" role="alert">@displayError</div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Transfer</h1>
+        <p class="text-muted mb-0">Send completed ER examination data to Patient Management or close the visit.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Refresh</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                @if (Model.EligibleVisits.Count == 0)
+                {
+                    <div class="p-4 text-muted">No visits are eligible for transfer.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Visit</th>
+                                    <th>Patient</th>
+                                    <th>Complaint</th>
+                                    <th>Transferred</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var visit in Model.EligibleVisits)
+                            {
+                                bool isSelected = visit.VisitId == Model.SelectedVisitId;
+                                <tr class="@(isSelected ? "table-active" : string.Empty)">
+                                    <td>@visit.VisitId</td>
+                                    <td>@visit.PatientName</td>
+                                    <td>@visit.ChiefComplaint</td>
+                                    <td>@(visit.Transferred ? "Yes" : "No")</td>
+                                    <td class="text-end">
+                                        <a asp-action="Index" asp-route-selectedVisitId="@visit.VisitId" class="btn btn-sm btn-outline-primary">Select</a>
+                                    </td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                @if (selectedVisit is null)
+                {
+                    <div class="text-muted">Select a visit to send, retry, or close.</div>
+                }
+                else
+                {
+                    <h2 class="h5 mb-3">Visit @selectedVisit.VisitId</h2>
+                    <p class="mb-1"><strong>Patient:</strong> @selectedVisit.PatientName</p>
+                    <p class="mb-3"><strong>Complaint:</strong> @selectedVisit.ChiefComplaint</p>
+
+                    <form asp-action="Send" method="post" class="mb-2">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="visitId" value="@selectedVisit.VisitId" />
+                        <button type="submit" class="btn btn-primary w-100" @(selectedVisit.Transferred ? "disabled" : null)>Send Patient Data</button>
+                    </form>
+
+                    <form asp-action="Retry" method="post" class="mb-2">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="visitId" value="@selectedVisit.VisitId" />
+                        <button type="submit" class="btn btn-outline-primary w-100" @(Model.CanRetry ? null : "disabled")>Retry Transfer</button>
+                    </form>
+
+                    <form asp-action="Close" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="visitId" value="@selectedVisit.VisitId" />
+                        <button type="submit" class="btn btn-outline-danger w-100">Close Visit</button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Transfer Logs</h2>
+                @if (Model.TransferLogs.Count == 0)
+                {
+                    <div class="text-muted">No logs loaded for the selected visit.</div>
+                }
+                else
+                {
+                    <div class="list-group">
+                        @foreach (var log in Model.TransferLogs)
+                        {
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between">
+                                    <strong>@log.Status</strong>
+                                    <span>@log.TransferTime.ToString("yyyy-MM-dd HH:mm")</span>
+                                </div>
+                                <div class="small text-muted">@log.TargetSystem</div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

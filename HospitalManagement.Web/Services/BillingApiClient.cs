@@ -1,47 +1,33 @@
-using System.Net.Http.Json;
-using System.Text.Json;
+using Common.Data.Entity.DTOs;
 
 namespace HospitalManagement.Web.Services;
 
-public class BillingApiClient : IBillingApiClient
+public class BillingApiClient : HospitalApiClientBase, IBillingApiClient
 {
     private const string BaseUri = "api/billing";
-    private readonly HttpClient httpClient;
-    private readonly JsonSerializerOptions jsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-    };
 
-    public BillingApiClient(HttpClient httpClient)
+    public BillingApiClient(HttpClient httpClient, IHttpContextAccessor httpContextAccessor)
+        : base(httpClient, httpContextAccessor)
     {
-        this.httpClient = httpClient;
     }
 
     public async Task<decimal> ComputeBasePriceAsync(
         int patientId,
         int recordId,
-        CancellationToken cancellationToken)
-    {
-        using HttpResponseMessage response = await httpClient.GetAsync(
-            $"{BaseUri}/base-price/{patientId}/{recordId}",
-            cancellationToken);
-        response.EnsureSuccessStatusCode();
-
-        return await response.Content.ReadFromJsonAsync<decimal>(jsonOptions, cancellationToken);
-    }
+        CancellationToken cancellationToken = default) =>
+        await GetAsync<decimal>($"{BaseUri}/base-price/{patientId}/{recordId}", cancellationToken);
 
     public async Task<decimal> ApplyDiscountAsync(
         decimal basePrice,
-        int discountPercent,
-        CancellationToken cancellationToken)
+        int discount,
+        CancellationToken cancellationToken = default)
     {
-        using HttpResponseMessage response = await httpClient.PostAsJsonAsync(
-            $"{BaseUri}/discount",
-            new { BasePrice = basePrice, Discount = discountPercent },
-            jsonOptions,
-            cancellationToken);
-        response.EnsureSuccessStatusCode();
+        var dto = new ApplyDiscountRequestDto
+        {
+            BasePrice = basePrice,
+            Discount = discount
+        };
 
-        return await response.Content.ReadFromJsonAsync<decimal>(jsonOptions, cancellationToken);
+        return await PostAsync<ApplyDiscountRequestDto, decimal>($"{BaseUri}/discount", dto, cancellationToken);
     }
 }

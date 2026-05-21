@@ -1,0 +1,35 @@
+@model HospitalManagement.Web.Models.Examination.ExaminationSummaryViewModel
+
+@{
+    ViewData["Title"] = "Examination Summary";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Examination Summary</h1>
+        <p class="text-muted mb-0">Visit @Model.VisitId</p>
+    </div>
+    <a asp-action="Index" asp-route-selectedVisitId="@Model.VisitId" class="btn btn-outline-secondary">Back to Examination</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h2 class="h5 mb-3">@Model.Summary.FirstName @Model.Summary.LastName</h2>
+        <dl class="row">
+            <dt class="col-sm-4">Arrival</dt>
+            <dd class="col-sm-8">@Model.Summary.ArrivalDateTime.ToString("yyyy-MM-dd HH:mm")</dd>
+            <dt class="col-sm-4">Chief Complaint</dt>
+            <dd class="col-sm-8">@Model.Summary.ChiefComplaint</dd>
+            <dt class="col-sm-4">Triage</dt>
+            <dd class="col-sm-8">Level @Model.Summary.TriageLevel, @Model.Summary.Specialization</dd>
+            <dt class="col-sm-4">Severity Score</dt>
+            <dd class="col-sm-8">@Model.Summary.SeverityScore</dd>
+            <dt class="col-sm-4">Doctor</dt>
+            <dd class="col-sm-8">@Model.Summary.AssignedDoctorName</dd>
+            <dt class="col-sm-4">Exam Time</dt>
+            <dd class="col-sm-8">@Model.Summary.ExamTime.ToString("yyyy-MM-dd HH:mm")</dd>
+            <dt class="col-sm-4">Notes</dt>
+            <dd class="col-sm-8">@Model.Summary.Notes</dd>
+        </dl>
+    </div>
+</div>
