@@ -17,6 +17,6 @@ public class PatientProfileModel
     public decimal BasePrice { get; set; }
     public decimal FinalPrice { get; set; }
     public int? DiscountApplied { get; set; }
-    public Prescription? SelectedPrescription { get; set; }
+    public Common.Data.Entity.Prescription? SelectedPrescription { get; set; }
     public DateTime CachedAt { get; set; } = DateTime.UtcNow;
 }
