@@ -16,8 +16,7 @@ public class BearerTokenHandler : DelegatingHandler
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
-        string? token = httpContextAccessor.HttpContext?
-            .User.Claims.FirstOrDefault(c => c.Type == "access_token")?.Value;
+        string? token = httpContextAccessor.HttpContext?.Session.GetString(WebSessionKeys.AccessToken);
 
         if (!string.IsNullOrEmpty(token))
         {

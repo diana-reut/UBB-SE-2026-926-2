@@ -1,4 +1,5 @@
 using System.Net;
+using Common.API.Auth;
 using Common.API.Services;
 using Common.Data.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +8,7 @@ namespace Common.API.Controllers
 {
     [ApiController]
     [Route("api/er-visits")]
+    [AuthorizeRole("Admin", "Medic")]
     public class ERVisitsController : ControllerBase
     {
         private readonly IERVisitService _erVisitService;

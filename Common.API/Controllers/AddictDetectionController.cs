@@ -1,12 +1,12 @@
 ﻿using Common.API.Auth;
+using Common.API.Services;
 using Common.Data.Entity;
+using Common.Data.Entity.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Common.Data.Entity.DTOs;
-using Common.API.Services;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace Common.API.Controllers;
 
@@ -35,11 +35,9 @@ public class AddictDetectionController : ControllerBase
             return Problem(
                 detail: ex.Message,
                 statusCode: (int)HttpStatusCode.InternalServerError,
-                title: "Could not get addict candidates."
-            );
+                title: "Could not get addict candidates.");
         }
     }
-
 
     [HttpPost("police-report")]
     public async Task<ActionResult<string>> BuildPoliceReportAsync([FromBody] BuildPoliceReportRequestDto dto)
@@ -54,19 +52,16 @@ public class AddictDetectionController : ControllerBase
             return Problem(
                 detail: ex.Message,
                 statusCode: (int)HttpStatusCode.BadRequest,
-                title: "Invalid patient data."
-            );
+                title: "Invalid patient data.");
         }
         catch (Exception ex)
         {
             return Problem(
                 detail: ex.Message,
                 statusCode: (int)HttpStatusCode.InternalServerError,
-                title: "Could not build police report."
-            );
+                title: "Could not build police report.");
         }
     }
-
 
     [HttpPost("{patientId:int}/notify")]
     public async Task<ActionResult> MarkPoliceNotifiedAsync([FromRoute] int patientId)
@@ -81,16 +76,14 @@ public class AddictDetectionController : ControllerBase
             return Problem(
                 detail: ex.Message,
                 statusCode: (int)HttpStatusCode.BadRequest,
-                title: "Invalid patient ID."
-            );
+                title: "Invalid patient ID.");
         }
         catch (Exception ex)
         {
             return Problem(
                 detail: ex.Message,
                 statusCode: (int)HttpStatusCode.InternalServerError,
-                title: "Could not mark patient as police notified."
-            );
+                title: "Could not mark patient as police notified.");
         }
     }
 
@@ -107,16 +100,14 @@ public class AddictDetectionController : ControllerBase
             return Problem(
                 detail: ex.Message,
                 statusCode: (int)HttpStatusCode.BadRequest,
-                title: "Invalid patient id."
-            );
+                title: "Invalid patient id.");
         }
         catch (Exception ex)
         {
             return Problem(
                 detail: ex.Message,
                 statusCode: (int)HttpStatusCode.InternalServerError,
-                title: "Could not get chronic conditions."
-            );
+                title: "Could not get chronic conditions.");
         }
     }
 }

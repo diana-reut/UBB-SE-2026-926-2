@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using Common.API.Auth;
 using Common.API.Services;
 using Common.Data.Entity;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +8,7 @@ namespace Common.API.Controllers
 {
     [ApiController]
     [Route("api/allergies")]
+    [AuthorizeRole("Admin", "Medic")]
     public class AllergyController : ControllerBase
     {
         private readonly IAllergyService _allergyService;
