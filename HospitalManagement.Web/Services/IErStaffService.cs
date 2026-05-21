@@ -5,8 +5,6 @@ namespace HospitalManagement.Web.Services;
 public interface IErStaffService
 {
     int? RequestAvailableNurse();
-    int CalculateTriageLevel(Triage_Parameters parameters);
-    string DetermineSpecialization(Triage_Parameters parameters);
     ErDoctorAssignment RequestDoctor(string specialization, Triage_Parameters parameters);
     ErDoctorAssignment GetDoctorById(int doctorId);
 }
