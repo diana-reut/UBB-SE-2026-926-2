@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using HospitalManagement.Web.Services;
+using Microsoft.AspNetCore.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,28 +43,22 @@ builder.Services.AddHttpClient<IAllergyApiClient, AllergyApiClient>(client =>
 builder.Services.AddHttpClient<IPrescriptionApiClient, PrescriptionApiClient>(client =>
 {
     string apiBaseUri = builder.Configuration["ApiSettings:BaseUri"];
-    client.BaseAddress = new Uri(apiBaseUri);
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
-    client.Timeout = TimeSpan.FromSeconds(30);
-});
-builder.Services.AddHttpClient<IBillingApiClient, BillingApiClient>(client =>
-{
-    string apiBaseUri = builder.Configuration["ApiSettings:BaseUri"];
-    client.BaseAddress = new Uri(apiBaseUri);
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
-    client.Timeout = TimeSpan.FromSeconds(30);
-});
 
-// Session is used to remember per-record discount results across requests
-// (the WinUI version keeps it in-memory on the ViewModel; on the web we use
-// session storage keyed by record id).
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession(options =>
-{
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-    options.IdleTimeout = TimeSpan.FromHours(2);
+    client.BaseAddress = new Uri(apiBaseUri);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
 });
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddTransient<BearerTokenHandler>();
+builder.Services.AddHttpClient<IAddictDetectionApiClient, AddictDetectionApiClient>(client =>
+{
+    string apiBaseUri = builder.Configuration["ApiSettings:BaseUri"]
+        ?? "http://localhost:5059/";
+
+    client.BaseAddress = new Uri(apiBaseUri);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+}).AddHttpMessageHandler<BearerTokenHandler>();
 
 var app = builder.Build();
 

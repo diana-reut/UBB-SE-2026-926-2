@@ -1,4 +1,5 @@
-﻿using Common.Data.Entity;
+﻿using Common.API.Auth;
+using Common.Data.Entity;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,7 @@ namespace Common.API.Controllers;
 
 [ApiController]
 [Route("api/addicts")]
+[AuthorizeRole("Admin", "Medic")]
 public class AddictDetectionController : ControllerBase
 {
     private readonly IAddictDetectionService _addictDetectionService;
@@ -65,6 +67,32 @@ public class AddictDetectionController : ControllerBase
         }
     }
 
+
+    [HttpPost("{patientId:int}/notify")]
+    public async Task<ActionResult> MarkPoliceNotifiedAsync([FromRoute] int patientId)
+    {
+        try
+        {
+            await _addictDetectionService.MarkPoliceNotifiedAsync(patientId);
+            return Ok();
+        }
+        catch (ArgumentException ex)
+        {
+            return Problem(
+                detail: ex.Message,
+                statusCode: (int)HttpStatusCode.BadRequest,
+                title: "Invalid patient ID."
+            );
+        }
+        catch (Exception ex)
+        {
+            return Problem(
+                detail: ex.Message,
+                statusCode: (int)HttpStatusCode.InternalServerError,
+                title: "Could not mark patient as police notified."
+            );
+        }
+    }
 
     [HttpGet("{patientId:int}/chronic-conditions")]
     public async Task<ActionResult<string>> GetChronicConditionsAsync([FromRoute] int patientId)
