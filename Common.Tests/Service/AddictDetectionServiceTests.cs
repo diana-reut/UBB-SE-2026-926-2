@@ -64,8 +64,6 @@ public sealed class AddictDetectionServiceTests
         },
     };
 
-    // --- Constructor ---
-
     [TestMethod]
     public void ConstructorWhenPrescriptionRepositoryIsNullThrowsArgumentNullException()
     {
@@ -79,8 +77,6 @@ public sealed class AddictDetectionServiceTests
         Assert.Throws<ArgumentNullException>(
             () => new AddictDetectionService(_prescriptionRepository.Object, null!));
     }
-
-    // --- GetAddictCandidatesAsync ---
 
     [TestMethod]
     public async Task GetAddictCandidatesAsyncWhenNoPatientsReturnedReturnsEmptyList()
@@ -202,8 +198,6 @@ public sealed class AddictDetectionServiceTests
         Assert.IsFalse(result[0].IsPoliceNotified);
     }
 
-    // --- MarkPoliceNotifiedAsync ---
-
     [TestMethod]
     public async Task MarkPoliceNotifiedAsyncWhenPatientIdIsZeroThrowsArgumentException()
     {
@@ -227,8 +221,6 @@ public sealed class AddictDetectionServiceTests
 
         _prescriptionRepository.Verify(r => r.MarkPoliceNotifiedAsync(7), Times.Once);
     }
-
-    // --- BuildPoliceReportAsync ---
 
     [TestMethod]
     public async Task BuildPoliceReportAsyncWhenPatientIdIsZeroThrowsArgumentException()
@@ -327,8 +319,6 @@ public sealed class AddictDetectionServiceTests
         Assert.IsTrue(result.Contains("Unknown"));
     }
 
-    // --- GetChronicConditionsAsync ---
-
     [TestMethod]
     public async Task GetChronicConditionsAsyncWhenPatientIdIsZeroThrowsArgumentException()
     {
@@ -411,8 +401,6 @@ public sealed class AddictDetectionServiceTests
 
         Assert.AreEqual("None reported.", result);
     }
-
-    // --- Private methods via reflection ---
 
     [TestMethod]
     public void NormalizeMedicalHistoryWhenChronicConditionsIsNullSetsToNoneReported()
