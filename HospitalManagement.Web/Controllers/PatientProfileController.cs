@@ -3,27 +3,21 @@ using HospitalManagement.Web.Models.PatientProfile;
 using HospitalManagement.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace HospitalManagement.Web.Controllers;
 
 [Authorize]
 public class PatientProfileController : Controller
 {
-    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
-
     private readonly IPatientApiClient patientApiClient;
     private readonly IBillingApiClient billingApiClient;
-    private readonly IMemoryCache cache;
 
     public PatientProfileController(
         IPatientApiClient patientApiClient,
-        IBillingApiClient billingApiClient,
-        IMemoryCache cache)
+        IBillingApiClient billingApiClient)
     {
         this.patientApiClient = patientApiClient;
         this.billingApiClient = billingApiClient;
-        this.cache = cache;
     }
 
     [HttpGet]
@@ -32,7 +26,7 @@ public class PatientProfileController : Controller
         PatientProfileModel model;
         try
         {
-            model = await GetOrBuildProfileAsync(id, HttpContext.RequestAborted);
+            model = await BuildProfileModelAsync(id, HttpContext.RequestAborted);
         }
         catch (InvalidOperationException ex)
         {
@@ -52,7 +46,7 @@ public class PatientProfileController : Controller
         PatientProfileModel model;
         try
         {
-            model = await GetOrBuildProfileAsync(patientId, HttpContext.RequestAborted);
+            model = await BuildProfileModelAsync(patientId, HttpContext.RequestAborted);
         }
         catch (InvalidOperationException ex)
         {
@@ -88,7 +82,7 @@ public class PatientProfileController : Controller
         PatientProfileModel model;
         try
         {
-            model = await GetOrBuildProfileAsync(patientId, HttpContext.RequestAborted);
+            model = await BuildProfileModelAsync(patientId, HttpContext.RequestAborted);
         }
         catch (InvalidOperationException ex)
         {
@@ -138,8 +132,6 @@ public class PatientProfileController : Controller
             decimal finalPrice = await billingApiClient.ApplyDiscountAsync(
                 basePrice, discountPercent, HttpContext.RequestAborted);
 
-            cache.Remove(CacheKey(patientId));
-
             TempData["SuccessMessage"] = $"Discount of {discountPercent}% applied. Final price: {finalPrice:C}.";
         }
         catch (HttpRequestException ex)
@@ -172,20 +164,6 @@ public class PatientProfileController : Controller
             TempData["ErrorMessage"] = $"Export failed: {ex.Message}";
         }
         return RedirectToAction(nameof(SelectRecord), new { patientId, recordId });
-    }
-
-    private static string CacheKey(int patientId) => $"patient_profile_{patientId}";
-    private async Task<PatientProfileModel> GetOrBuildProfileAsync(
-        int patientId, CancellationToken cancellationToken)
-    {
-        if (cache.TryGetValue(CacheKey(patientId), out PatientProfileModel? cached) && cached is not null)
-        {
-            return cached;
-        }
-
-        PatientProfileModel model = await BuildProfileModelAsync(patientId, cancellationToken);
-        cache.Set(CacheKey(patientId), model, CacheDuration);
-        return model;
     }
 
     private async Task<PatientProfileModel> BuildProfileModelAsync(

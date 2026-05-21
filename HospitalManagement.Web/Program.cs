@@ -5,7 +5,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<AuthTokenForwardingHandler>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -39,7 +38,7 @@ builder.Services.AddHttpClient<IBillingApiClient, BillingApiClient>(client =>
 builder.Services.AddHttpClient<IStatisticsApiClient, StatisticsApiClient>(client =>
 {
     ConfigureApiClient(client, builder.Configuration);
-});
+}).AddHttpMessageHandler<AuthTokenForwardingHandler>();
 
 var app = builder.Build();
 
