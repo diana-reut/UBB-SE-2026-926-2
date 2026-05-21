@@ -7,9 +7,3 @@ public class DiscountRouletteViewModel
     public string PatientFullName { get; set; } = string.Empty;
     public decimal BasePrice { get; set; }
 }
-
-public class DiscountAppliedResult
-{
-    public int Discount { get; set; }
-    public decimal FinalPrice { get; set; }
-}

@@ -3,7 +3,6 @@ using HospitalManagement.Web.Models.Consultations;
 using HospitalManagement.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
 
 namespace HospitalManagement.Web.Controllers;
 
@@ -73,26 +72,22 @@ public class RouletteController : Controller
     {
         // The client picks the discount (so the wheel actually lands on the
         // correct color) — we just validate it's one of the allowed values
-        // and persist the result.
+        // and ask the billing API to persist it on the medical record.
         if (!AllowedSubmittedDiscounts.Contains(discount))
         {
             TempData["ErrorMessage"] = "Invalid discount value.";
             return RedirectToAction("Details", "Consultation", new { patientId, recordId });
         }
 
-        decimal finalPrice;
         try
         {
-            finalPrice = await billingApiClient.ApplyDiscountAsync(basePrice, discount, HttpContext.RequestAborted);
+            await billingApiClient.ApplyDiscountAsync(recordId, basePrice, discount, HttpContext.RequestAborted);
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
-            // Fallback to local calculation if the billing API is unreachable.
-            finalPrice = basePrice * (1 - discount / 100m);
+            TempData["ErrorMessage"] = ex.Message;
+            return RedirectToAction("Details", "Consultation", new { patientId, recordId });
         }
-
-        var result = new DiscountAppliedResult { Discount = discount, FinalPrice = finalPrice };
-        HttpContext.Session.SetString(SessionKeyForRecord(recordId), JsonSerializer.Serialize(result));
 
         TempData["SuccessMessage"] = discount == 0
             ? "Unlucky — no discount this time."
@@ -100,6 +95,4 @@ public class RouletteController : Controller
 
         return RedirectToAction("Details", "Consultation", new { patientId, recordId });
     }
-
-    internal static string SessionKeyForRecord(int recordId) => $"discount:{recordId}";
 }

@@ -3,11 +3,13 @@ using Common.Data.Entity.DTOs;
 using Common.Data.Integration;
 using HospitalManagement.Web.Models.Prescription;
 using HospitalManagement.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Cryptography;
 
 namespace HospitalManagement.Web.Controllers;
 
+[Authorize]
 public class PrescriptionController : Controller
 {
     private readonly IPrescriptionApiClient _prescriptionApiClient;

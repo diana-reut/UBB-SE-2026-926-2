@@ -39,12 +39,12 @@ public class BillingApiClient : IBillingApiClient
         }
     }
 
-    public async Task<decimal> ApplyDiscountAsync(decimal basePrice, int discount, CancellationToken cancellationToken)
+    public async Task<decimal> ApplyDiscountAsync(int recordId, decimal basePrice, int discount, CancellationToken cancellationToken)
     {
         try
         {
             using HttpResponseMessage response = await httpClient.PostAsJsonAsync(
-                $"{BaseUri}/discount",
+                $"{BaseUri}/discount/{recordId}",
                 new ApplyDiscountRequestDto { BasePrice = basePrice, Discount = discount },
                 jsonOptions,
                 cancellationToken);

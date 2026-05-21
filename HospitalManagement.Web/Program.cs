@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using HospitalManagement.Web.Services;
-using Microsoft.AspNetCore.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -68,17 +67,6 @@ builder.Services.AddHttpClient<IBillingApiClient, BillingApiClient>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
-// Session is used to remember per-record discount results across requests
-// (the WinUI version keeps it in-memory on the ViewModel; on the web we use
-// session storage keyed by record id).
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession(options =>
-{
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-    options.IdleTimeout = TimeSpan.FromHours(2);
-});
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -91,8 +79,6 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
-
-app.UseSession();
 
 app.UseAuthentication();
 app.UseAuthorization();

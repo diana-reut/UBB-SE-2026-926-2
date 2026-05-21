@@ -3,10 +3,12 @@ using Common.Data.Entity.DTOs;
 using HospitalManagement.Web.Models.MedicalStaff;
 using HospitalManagement.Web.Models.Patients;
 using HospitalManagement.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HospitalManagement.Web.Controllers;
 
+[Authorize]
 public class PatientProfileController : Controller
 {
     private readonly IPatientApiClient _patientApiClient;

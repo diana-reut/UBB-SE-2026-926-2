@@ -3,7 +3,6 @@ using HospitalManagement.Web.Models.Consultations;
 using HospitalManagement.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
 
 namespace HospitalManagement.Web.Controllers;
 
@@ -54,20 +53,6 @@ public class ConsultationController : Controller
 
         int? discountApplied = record.DiscountApplied;
         decimal finalPrice = record.DiscountApplied.HasValue ? record.FinalPrice : basePrice;
-
-        if (!discountApplied.HasValue)
-        {
-            string? sessionResult = HttpContext.Session.GetString(RouletteController.SessionKeyForRecord(recordId));
-            if (!string.IsNullOrEmpty(sessionResult))
-            {
-                DiscountAppliedResult? result = JsonSerializer.Deserialize<DiscountAppliedResult>(sessionResult);
-                if (result is not null)
-                {
-                    discountApplied = result.Discount;
-                    finalPrice = result.FinalPrice;
-                }
-            }
-        }
 
         // Look up the prescription tied to this consultation record (if any),
         // so the "View Prescription" button can link directly to it.

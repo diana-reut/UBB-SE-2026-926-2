@@ -1,0 +1,81 @@
+sequenceDiagram
+    actor User
+    participant Browser as Browser<br/>(Spin.cshtml + JS + Web Audio)
+    participant RC as RouletteController
+    participant PAC as PatientApiClient
+    participant BAC as BillingApiClient
+    participant API as Billing API
+    participant CC as ConsultationController
+    participant DB as SQL Database
+
+    rect rgb(220, 235, 250)
+        Note over User,DB: 1) Open Roulette
+        User->>Browser: clicks "Apply Discount"
+        Browser->>+RC: GET /Roulette/Spin?patientId=X&recordId=Y
+        RC->>+PAC: GetPatientDetailsAsync(patientId)
+        PAC->>+DB: SELECT patient + history + records
+        DB-->>-PAC: Patient row
+        PAC-->>-RC: Patient
+        RC->>+BAC: ComputeBasePriceAsync(patientId, recordId)
+        BAC->>+API: GET /api/billing/base-price/{patientId}/{recordId}
+        API->>+DB: query record
+        DB-->>-API: record
+        API-->>-BAC: basePrice
+        BAC-->>-RC: basePrice
+        RC-->>-Browser: 200 OK + Spin.cshtml view
+        Browser-->>User: renders wheel + base price
+    end
+
+    rect rgb(220, 245, 220)
+        Note over User,DB: 2) Spin the Wheel
+        User->>Browser: clicks SPIN
+        Browser->>Browser: ensureAudio() create AudioContext
+        Browser->>Browser: pickDiscount() via crypto.getRandomValues
+        Browser->>Browser: playSpinTicks(3s) Web Audio
+        Browser->>Browser: rotateToSegment(index, 3000ms) CSS transform
+        Browser->>Browser: emitSparkles() at t+2.2s, t+2.8s
+        Browser->>Browser: playResultSound(discount) at t+3.1s
+        Browser->>Browser: showResultModal(discount, allowGamble=true)
+        Browser-->>User: modal with discount + trashy message
+
+        alt User clicks DOUBLE OR NOTHING
+            User->>Browser: clicks "DOUBLE OR NOTHING"
+            Browser->>Browser: playAnticipation(4s)
+            Browser->>Browser: coinflip = Math.random() < 0.5
+            Browser->>Browser: newDiscount = win ? min(100, current*2) : 0
+            Browser->>Browser: runSpin(newDiscount, isGamble=true) 4s
+            Browser-->>User: modal with new result (no DOUBLE button)
+        else User clicks Take It directly
+            Note over User,Browser: skips the gamble
+        end
+    end
+
+    rect rgb(255, 245, 215)
+        Note over User,DB: 3) Confirm and Persist
+        User->>Browser: clicks "Take It"
+        Browser->>+RC: POST /Roulette/Spin<br/>(patientId, recordId, basePrice, discount)
+        RC->>RC: validate discount in AllowedSubmittedDiscounts<br/>{0, 10, 20, 25, 50, 100}
+        RC->>+BAC: ApplyDiscountAsync(basePrice, discount)
+        BAC->>+API: POST /api/billing/discount
+        API-->>-BAC: finalPrice
+        BAC-->>-RC: finalPrice
+        RC->>RC: Session.SetString(key,<br/>JSON.Serialize(DiscountAppliedResult))
+        RC-->>-Browser: 302 Redirect to /Consultation/Details
+
+        Browser->>+CC: GET /Consultation/Details?patientId=X&recordId=Y
+        CC->>+PAC: GetPatientDetailsAsync(patientId)
+        PAC->>DB: SELECT
+        DB-->>PAC: Patient
+        PAC-->>-CC: Patient
+        CC->>+BAC: ComputeBasePriceAsync(patientId, recordId)
+        BAC->>API: GET /api/billing/base-price/...
+        API-->>BAC: basePrice
+        BAC-->>-CC: basePrice
+        CC->>CC: Session.GetString(key)<br/>deserialize DiscountAppliedResult
+        CC->>+PAC: GetPrescriptionByRecordIdAsync(recordId)
+        PAC->>DB: SELECT prescription
+        DB-->>PAC: Prescription
+        PAC-->>-CC: Prescription
+        CC-->>-Browser: 200 OK + Details.cshtml
+        Browser-->>User: renders page with discount + final price
+    end

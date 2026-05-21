@@ -54,4 +54,32 @@ public class BillingController : ControllerBase
             );
         }
     }
+
+    [HttpPost("discount/{recordId:int}")]
+    public async Task<ActionResult<decimal>> PersistDiscountAsync(
+        [FromRoute] int recordId,
+        [FromBody] ApplyDiscountRequestDto dto)
+    {
+        try
+        {
+            decimal finalPrice = await _billingService.PersistDiscountAsync(recordId, dto.BasePrice, dto.Discount);
+            return Ok(finalPrice);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Problem(
+                detail: ex.Message,
+                statusCode: (int)HttpStatusCode.NotFound,
+                title: "Medical record not found."
+            );
+        }
+        catch (Exception ex)
+        {
+            return Problem(
+                detail: ex.Message,
+                statusCode: (int)HttpStatusCode.InternalServerError,
+                title: "Could not persist discount."
+            );
+        }
+    }
 }
