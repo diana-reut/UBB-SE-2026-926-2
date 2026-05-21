@@ -13,11 +13,8 @@
     @{
         bool hideShell = ViewData["HideShell"] as bool? ?? false;
         string? currentController = ViewContext.RouteData.Values["controller"]?.ToString();
-        string? currentAction = ViewContext.RouteData.Values["action"]?.ToString();
         bool isArchiveView = string.Equals(currentController, "Admin", StringComparison.OrdinalIgnoreCase)
             && string.Equals(Context.Request.Query["archived"], "true", StringComparison.OrdinalIgnoreCase);
-        bool isAuthenticationView = string.Equals(currentController, "Authentication", StringComparison.OrdinalIgnoreCase)
-            && string.Equals(currentAction, "AuthenticationView", StringComparison.OrdinalIgnoreCase);
         string? currentModule = Context.Request.Query["id"];
         string? username = User.Identity?.Name;
         string? role = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
@@ -40,12 +37,6 @@
                            asp-controller="Admin"
                            asp-action="Index">
                             Admin Dashboard
-                        </a>
-                        <a class="app-nav-link @(isAuthenticationView ? "active" : string.Empty)"
-                           asp-area=""
-                           asp-controller="Authentication"
-                           asp-action="AuthenticationView">
-                            Sign In
                         </a>
                         <a class="app-nav-link @(string.Equals(currentController, "Modules", StringComparison.OrdinalIgnoreCase) && string.Equals(currentModule, "medical-staff", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
                            asp-area=""

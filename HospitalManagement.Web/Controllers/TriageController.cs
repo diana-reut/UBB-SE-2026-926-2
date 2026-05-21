@@ -2,10 +2,12 @@ using Common.Data.Models;
 using Common.Data.Entity.DTOs;
 using HospitalManagement.Web.Models.Triage;
 using HospitalManagement.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HospitalManagement.Web.Controllers;
 
+[Authorize]
 public class TriageController : Controller
 {
     private readonly IErWorkflowApiClient erApiClient;

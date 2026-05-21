@@ -3,10 +3,12 @@ using Common.Data.Entity.DTOs;
 using Common.Data.Models;
 using HospitalManagement.Web.Models.Registration;
 using HospitalManagement.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HospitalManagement.Web.Controllers;
 
+[Authorize]
 public class RegistrationController : Controller
 {
     private readonly IPatientApiClient patientApiClient;

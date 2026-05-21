@@ -1,10 +1,12 @@
 using Common.Data.Models;
 using HospitalManagement.Web.Models.Queue;
 using HospitalManagement.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HospitalManagement.Web.Controllers;
 
+[Authorize]
 public class QueueController : Controller
 {
     private readonly IErWorkflowApiClient erApiClient;

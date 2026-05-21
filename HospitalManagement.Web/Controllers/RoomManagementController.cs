@@ -2,10 +2,12 @@ using Common.Data.Entity.DTOs;
 using Common.Data.Models;
 using HospitalManagement.Web.Models.RoomManagement;
 using HospitalManagement.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HospitalManagement.Web.Controllers;
 
+[Authorize]
 public class RoomManagementController : Controller
 {
     private readonly IErWorkflowApiClient erApiClient;
