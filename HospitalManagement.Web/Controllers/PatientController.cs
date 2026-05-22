@@ -84,7 +84,7 @@ public class PatientController : Controller
         try
         {
             decimal basePrice = await billingApiClient.ComputeBasePriceAsync(patientId, recordId, cancellationToken);
-            decimal discountedPrice = await billingApiClient.ApplyDiscountAsync(basePrice, discount, cancellationToken);
+            decimal discountedPrice = await billingApiClient.ApplyDiscountAsync(recordId, basePrice, discount, cancellationToken);
 
             TempData["SuccessMessage"] = $"Applied a {discount}% discount. Final price: {discountedPrice:C}.";
             TempData["TemporaryDiscount"] = discount.ToString();

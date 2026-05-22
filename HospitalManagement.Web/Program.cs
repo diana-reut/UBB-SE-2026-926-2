@@ -46,14 +46,6 @@ builder.Services.AddHttpClient<IPrescriptionApiClient, PrescriptionApiClient>(cl
     .AddHttpMessageHandler<BearerTokenHandler>();
 builder.Services.AddSingleton<IErStaffService, ErStaffService>();
 
-builder.Services.AddHttpClient<IBillingApiClient, BillingApiClient>(client =>
-{
-    string apiBaseUri = builder.Configuration["ApiSettings:BaseUri"];
-    client.BaseAddress = new Uri(apiBaseUri);
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
-    client.Timeout = TimeSpan.FromSeconds(30);
-});
-
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
