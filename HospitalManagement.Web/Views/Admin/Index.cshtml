@@ -61,9 +61,12 @@
                     <a asp-action="CreatePatient" class="btn btn-primary">
                         Add New Patient
                     </a>
-                    <button type="button" class="btn btn-warning admin-ghost-button">
-                        I saw a ghost!
-                    </button>
+                    <form asp-controller="Ghost" asp-action="ReportSighting" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-warning admin-ghost-button">
+                            I saw a ghost!
+                        </button>
+                    </form>
                 </div>
             }
 

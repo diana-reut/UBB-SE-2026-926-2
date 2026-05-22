@@ -1,5 +1,4 @@
 using System.Net.Http.Headers;
-using System.Security.Claims;
 
 namespace HospitalManagement.Web.Services;
 
@@ -16,7 +15,7 @@ public class AuthTokenForwardingHandler : DelegatingHandler
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
-        string? token = httpContextAccessor.HttpContext?.User.FindFirstValue("access_token");
+        string? token = httpContextAccessor.HttpContext?.Session.GetString(WebSessionKeys.AccessToken);
         if (!string.IsNullOrWhiteSpace(token))
         {
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);

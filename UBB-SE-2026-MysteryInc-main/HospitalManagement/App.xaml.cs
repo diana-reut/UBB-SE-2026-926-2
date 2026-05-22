@@ -146,7 +146,7 @@ public partial class App : Application
             client.BaseAddress = new Uri(uriString);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.Timeout = TimeSpan.FromSeconds(30);
-        });
+        }).AddHttpMessageHandler<AuthTokenForwardingHandler>();
         _ = services.AddHttpClient("ERPatientProxy", (client) =>
         {
             string? uriString = AppConfiguration["ApiSettings:BaseUri"];
