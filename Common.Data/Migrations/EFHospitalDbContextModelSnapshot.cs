@@ -563,9 +563,12 @@ namespace Common.Data.Migrations
 
             modelBuilder.Entity("Common.Data.Models.Triage_Parameters", b =>
                 {
-                    b.Property<int>("Triage_ID")
+                    b.Property<int>("TriageParametersId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasColumnName("Triage_ID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TriageParametersId"));
 
                     b.Property<int>("Bleeding")
                         .HasColumnType("int")
@@ -587,9 +590,25 @@ namespace Common.Data.Migrations
                         .HasColumnType("int")
                         .HasColumnName("Pain_Level");
 
-                    b.HasKey("Triage_ID");
+                    b.Property<int>("TriageId")
+                        .HasColumnType("int")
+                        .HasColumnName("TriageId");
+
+                    b.HasKey("TriageParametersId");
+
+                    b.HasIndex("TriageId")
+                        .IsUnique();
 
                     b.ToTable("Triage_Parameters", (string)null);
+                });
+
+            modelBuilder.Entity("Common.Data.Models.Triage_Parameters", b =>
+                {
+                    b.HasOne("Common.Data.Models.Triage", null)
+                        .WithOne()
+                        .HasForeignKey("Common.Data.Models.Triage_Parameters", "TriageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Common.Data.Entity.MedicalHistory", b =>

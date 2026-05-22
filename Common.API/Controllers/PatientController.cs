@@ -1,4 +1,5 @@
 using System.Net;
+using Common.API.Auth;
 using Common.API.Services;
 using Common.Data.Entity.DTOs;
 using Common.Data.Entity;
@@ -9,6 +10,7 @@ namespace Common.API.Controllers;
 
 [ApiController]
 [Route("api/patients")]
+[AuthorizeRole("Admin", "Medic")]
 public class PatientController : ControllerBase
 {
     private readonly IPatientService _patientService;
@@ -192,6 +194,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpPost]
+    [AuthorizeRole("Admin")]
     public async Task<ActionResult<Patient>> CreatePatient([FromBody] CreatePatientDto dto)
     {
         try
@@ -266,6 +269,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpPost("{id}/medical-history")]
+    [AuthorizeRole("Admin")]
     public async Task<ActionResult> CreateMedicalHistory(int id, [FromBody] CreateMedicalHistoryDto dto)
     {
         try
@@ -275,6 +279,14 @@ public class PatientController : ControllerBase
                 BloodType = dto.BloodType,
                 Rh = dto.Rh,
                 ChronicConditions = dto.ChronicConditions,
+                PatientAllergies = dto.AllergyIds
+                    .Distinct()
+                    .Select(allergyId => new PatientAllergy
+                    {
+                        AllergyId = allergyId,
+                        SeverityLevel = "Mild"
+                    })
+                    .ToList()
             };
 
             await _patientService.CreateMedicalHistoryAsync(id, history);
@@ -296,6 +308,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpPost("{id}/medical-records")]
+    [AuthorizeRole("Admin", "Medic")]
     public async Task<ActionResult<int>> CreateMedicalRecord(int id, [FromBody] CreateMedicalRecordDto dto)
     {
         try
@@ -340,6 +353,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpPost("records/{recordId}/prescription")]
+    [AuthorizeRole("Admin", "Medic")]
     public async Task<ActionResult> CreatePrescriptionForRecord(int recordId, [FromBody] CreatePrescriptionDto dto)
     {
         try
@@ -415,6 +429,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [AuthorizeRole("Admin")]
     public async Task<ActionResult> UpdatePatient(int id, [FromBody] UpdatePatientDto dto)
     {
         try
@@ -454,6 +469,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpPut("{id}/archive")]
+    [AuthorizeRole("Admin")]
     public async Task<ActionResult> ArchivePatient(int id)
     {
         try
@@ -476,6 +492,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpPut("{id}/dearchive")]
+    [AuthorizeRole("Admin")]
     public async Task<ActionResult> DearchivePatient(int id)
     {
         try
@@ -499,6 +516,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpPut("{id}/archive-deceased")]
+    [AuthorizeRole("Admin")]
     public async Task<ActionResult> ArchiveAsDeceased(int id, [FromBody] ArchiveAsDeceasedDto dto)
     {
         try
@@ -527,6 +545,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [AuthorizeRole("Admin")]
     public async Task<ActionResult> DeletePatient(int id)
     {
         try

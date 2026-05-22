@@ -1,11 +1,24 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Common.Data.Models
 {
     public class Triage_Parameters
     {
-        public int Triage_ID { get; set; }
+        public int TriageParametersId { get; set; }
+
+        [JsonIgnore]
+        public int TriageId { get; set; }
+
+        [NotMapped]
+        [JsonPropertyName("Triage_ID")]
+        public int Triage_ID
+        {
+            get => TriageId;
+            set => TriageId = value;
+        }
 
         [Range(1, 3, ErrorMessage = "Consciousness must be between 1 and 3.")]
         public int Consciousness { get; set; }

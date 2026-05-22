@@ -353,7 +353,7 @@ INSERT INTO [Triage] ([Triage_ID], [Visit_ID], [Triage_Level], [Specialization],
 (90, 90, 1, N'Emergency Medicine', 3, '2026-01-24T02:00:00');
 SET IDENTITY_INSERT [Triage] OFF;
 
-INSERT INTO [Triage_Parameters] ([Triage_ID], [Consciousness], [Breathing], [Bleeding], [Injury_Type], [Pain_Level]) VALUES
+INSERT INTO [Triage_Parameters] ([TriageId], [Consciousness], [Breathing], [Bleeding], [Injury_Type], [Pain_Level]) VALUES
 (1, 1, 1, 1, 3, 3),
 (2, 1, 1, 2, 1, 3),
 (3, 2, 1, 2, 1, 3),

@@ -13,6 +13,13 @@
 
             <h2 class="h5 mb-3">Sign in</h2>
 
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            @if (TempData["ErrorMessage"] is string errorMessage)
+            {
+                <div class="alert alert-danger" role="alert">@errorMessage</div>
+            }
+
             @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
             {
                 <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>

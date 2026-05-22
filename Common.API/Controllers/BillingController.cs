@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System;
+using Common.API.Auth;
 using Common.Data.Entity.DTOs;
 using Common.API.Services;
 using System.Net;
@@ -8,6 +9,7 @@ namespace Common.API.Controllers;
 
 [ApiController]
 [Route("api/billing")]
+[AuthorizeRole("Admin", "Medic")]
 public class BillingController : ControllerBase
 {
     private readonly IBillingService _billingService;

@@ -4,12 +4,14 @@ using System.Text.Json;
 
 namespace HospitalManagement.Web.Services;
 
-public class BillingApiClient : IBillingApiClient
+public class BillingApiClient : HospitalApiClientBase, IBillingApiClient
 {
     private const string BaseUri = "api/billing";
 
     private readonly HttpClient httpClient;
     private readonly JsonSerializerOptions jsonOptions = new()
+    public BillingApiClient(HttpClient httpClient, IHttpContextAccessor httpContextAccessor)
+        : base(httpClient, httpContextAccessor)
     {
         PropertyNameCaseInsensitive = true,
     };

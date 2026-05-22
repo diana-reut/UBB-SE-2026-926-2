@@ -1,0 +1,166 @@
+@model HospitalManagement.Web.Models.RoomAssignment.RoomAssignmentViewModel
+
+@{
+    ViewData["Title"] = "Room Assignment";
+    var selectedVisit = Model.WaitingVisits.FirstOrDefault(visit => visit.VisitId == Model.SelectedVisitId);
+    string? displayError = TempData["ErrorMessage"] as string ?? Model.ErrorMessage;
+}
+
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+@if (displayError is not null)
+{
+    <div class="alert alert-danger" role="alert">@displayError</div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Room Assignment</h1>
+        <p class="text-muted mb-0">Assign the highest-priority waiting visit automatically or choose a room manually.</p>
+    </div>
+    <form asp-action="AutoAssign" method="post">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-primary">Auto Assign Highest Priority</button>
+    </form>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-0">
+                @if (Model.WaitingVisits.Count == 0)
+                {
+                    <div class="p-4 text-muted">No visits are waiting for a room.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Visit</th>
+                                    <th>Patient</th>
+                                    <th>Complaint</th>
+                                    <th>Priority</th>
+                                    <th>Notes</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var visit in Model.WaitingVisits)
+                            {
+                                bool isSelected = visit.VisitId == Model.SelectedVisitId;
+                                <tr class="@(isSelected ? "table-active" : string.Empty)">
+                                    <td>@visit.VisitId</td>
+                                    <td>@visit.PatientId</td>
+                                    <td>@visit.ChiefComplaint</td>
+                                    <td>
+                                        @if (visit.TriageLevel.HasValue)
+                                        {
+                                            <span>Level @visit.TriageLevel, @visit.Specialization</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-warning">Missing triage data</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!visit.HasTriageData)
+                                        {
+                                            <span class="text-warning">@visit.WarningMessage</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-action="Index" asp-route-selectedVisitId="@visit.VisitId" class="btn btn-sm btn-outline-primary">Select</a>
+                                    </td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                @if (Model.AvailableRooms.Count == 0)
+                {
+                    <div class="p-4 text-muted">No rooms are currently available.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Room</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var room in Model.AvailableRooms)
+                            {
+                                <tr>
+                                    <td>@room.RoomId</td>
+                                    <td>@room.RoomType</td>
+                                    <td>@room.Status</td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                @if (selectedVisit is null)
+                {
+                    <div class="text-muted">Select a waiting visit to see patient and triage details.</div>
+                }
+                else
+                {
+                    <h2 class="h5 mb-3">Manual Assignment</h2>
+                    <p class="mb-1"><strong>Visit:</strong> @selectedVisit.VisitId</p>
+                    <p class="mb-1"><strong>Patient:</strong> @(Model.SelectedPatient?.Name ?? selectedVisit.PatientId)</p>
+                    <p class="mb-1"><strong>Phone:</strong> @(Model.SelectedPatient?.Phone ?? "N/A")</p>
+                    <p class="mb-3">
+                        <strong>Triage:</strong>
+                        @if (selectedVisit.HasTriageData)
+                        {
+                            <span>Level @Model.SelectedTriage?.TriageLevel, @Model.SelectedTriage?.Specialization</span>
+                        }
+                        else
+                        {
+                            <span class="text-warning">@selectedVisit.WarningMessage</span>
+                        }
+                    </p>
+
+                    <form asp-action="Assign" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="visitId" value="@selectedVisit.VisitId" />
+                        <div class="mb-3">
+                            <label for="roomId" class="form-label">Available room</label>
+                            <select id="roomId" name="roomId" class="form-select">
+                                <option value="">Choose a room</option>
+                                @foreach (var room in Model.AvailableRooms)
+                                {
+                                    <option value="@room.RoomId">@room.RoomId - @room.RoomType</option>
+                                }
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100" disabled="@(!selectedVisit.HasTriageData)">Assign Selected Room</button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>

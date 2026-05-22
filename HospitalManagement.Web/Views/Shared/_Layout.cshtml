@@ -52,53 +52,46 @@
                             Pharmacy
                         </a>
                         <div class="app-nav-separator"></div>
-                        <a class="app-nav-link @(string.Equals(currentController, "Modules", StringComparison.OrdinalIgnoreCase) && string.Equals(currentModule, "patient-registration", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                        <a class="app-nav-link @(string.Equals(currentController, "Registration", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
                            asp-area=""
-                           asp-controller="Modules"
-                           asp-action="Index"
-                           asp-route-id="patient-registration">
+                           asp-controller="Registration"
+                           asp-action="Index">
                             Patient Registration
                         </a>
-                        <a class="app-nav-link @(string.Equals(currentController, "Modules", StringComparison.OrdinalIgnoreCase) && string.Equals(currentModule, "queue", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                        <a class="app-nav-link @(string.Equals(currentController, "Queue", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
                            asp-area=""
-                           asp-controller="Modules"
-                           asp-action="Index"
-                           asp-route-id="queue">
+                           asp-controller="Queue"
+                           asp-action="Index">
                             Queue
                         </a>
-                        <a class="app-nav-link @(string.Equals(currentController, "Modules", StringComparison.OrdinalIgnoreCase) && string.Equals(currentModule, "triage", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                        <a class="app-nav-link @(string.Equals(currentController, "Triage", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
                            asp-area=""
-                           asp-controller="Modules"
-                           asp-action="Index"
-                           asp-route-id="triage">
+                           asp-controller="Triage"
+                           asp-action="Index">
                             Triage
                         </a>
-                        <a class="app-nav-link @(string.Equals(currentController, "Modules", StringComparison.OrdinalIgnoreCase) && string.Equals(currentModule, "room-assignment", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                        <a class="app-nav-link @(string.Equals(currentController, "RoomAssignment", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
                            asp-area=""
-                           asp-controller="Modules"
-                           asp-action="Index"
-                           asp-route-id="room-assignment">
+                           asp-controller="RoomAssignment"
+                           asp-action="Index">
                             Room Assignment
                         </a>
-                        <a class="app-nav-link @(string.Equals(currentController, "Modules", StringComparison.OrdinalIgnoreCase) && string.Equals(currentModule, "examination", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                        <a class="app-nav-link @(string.Equals(currentController, "Examination", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
                            asp-area=""
-                           asp-controller="Modules"
-                           asp-action="Index"
-                           asp-route-id="examination">
+                           asp-controller="Examination"
+                           asp-action="Index">
                             Examination
                         </a>
-                        <a class="app-nav-link @(string.Equals(currentController, "Modules", StringComparison.OrdinalIgnoreCase) && string.Equals(currentModule, "transfer-log", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                        <a class="app-nav-link @(string.Equals(currentController, "Transfer", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
                            asp-area=""
-                           asp-controller="Modules"
-                           asp-action="Index"
-                           asp-route-id="transfer-log">
+                           asp-controller="Transfer"
+                           asp-action="Index">
                             Transfer Log
                         </a>
-                        <a class="app-nav-link @(string.Equals(currentController, "Modules", StringComparison.OrdinalIgnoreCase) && string.Equals(currentModule, "room-management", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                        <a class="app-nav-link @(string.Equals(currentController, "RoomManagement", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
                            asp-area=""
-                           asp-controller="Modules"
-                           asp-action="Index"
-                           asp-route-id="room-management">
+                           asp-controller="RoomManagement"
+                           asp-action="Index">
                             Room Management
                         </a>
                     </nav>

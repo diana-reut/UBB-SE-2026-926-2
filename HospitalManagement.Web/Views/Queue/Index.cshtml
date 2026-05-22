@@ -1,0 +1,79 @@
+@model HospitalManagement.Web.Models.Queue.QueueViewModel
+
+@{
+    ViewData["Title"] = "Queue";
+    string? displayError = TempData["ErrorMessage"] as string ?? Model.ErrorMessage;
+}
+
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+@if (displayError is not null)
+{
+    <div class="alert alert-danger" role="alert">@displayError</div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">ER Queue</h1>
+        <p class="text-muted mb-0">Visits waiting for a room, ordered by triage level and arrival time.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Refresh</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        @if (Model.ActiveVisits.Count == 0)
+        {
+            <div class="p-4 text-muted">No triaged visits are currently waiting for a room.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Visit</th>
+                            <th>Patient CNP</th>
+                            <th>Triage Level</th>
+                            <th>Specialization</th>
+                            <th>Arrival</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var visit in Model.ActiveVisits)
+                    {
+                        <tr>
+                            <td>@visit.VisitId</td>
+                            <td>@visit.PatientId</td>
+                            <td>
+                                @if (visit.TriageLevel.HasValue)
+                                {
+                                    <span class="badge text-bg-danger">@visit.TriageLevel</span>
+                                }
+                                else
+                                {
+                                    <span class="badge text-bg-warning text-dark">Missing</span>
+                                }
+                            </td>
+                            <td>@(visit.Specialization ?? "Missing")</td>
+                            <td>@visit.ArrivalTime.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>@visit.Status</td>
+                            <td>
+                                @if (!visit.HasTriageData)
+                                {
+                                    <span class="text-warning">@visit.WarningMessage</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
