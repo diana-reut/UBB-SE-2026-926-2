@@ -15,12 +15,6 @@ public class ModulesController : Controller
             Title = "Statistics",
             Description = "This statistics section exists in the web app to mirror the original desktop admin shell, but it is not implemented yet."
         },
-        ["medical-staff"] = new()
-        {
-            Key = "medical-staff",
-            Title = "Medical Staff",
-            Description = "This area exists in the web toolbar to mirror the original desktop shell, but it is not implemented yet."
-        },
         ["pharmacy"] = new()
         {
             Key = "pharmacy",
@@ -74,6 +68,11 @@ public class ModulesController : Controller
     [HttpGet]
     public IActionResult Index(string id)
     {
+        if (string.Equals(id, "medical-staff", StringComparison.OrdinalIgnoreCase))
+        {
+            return RedirectToAction("Dashboard", "MedicalStaff");
+        }
+
         if (!Modules.TryGetValue(id, out ModulePageViewModel? module))
         {
             return NotFound();

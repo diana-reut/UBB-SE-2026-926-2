@@ -11,23 +11,39 @@ public class BillingApiClient : HospitalApiClientBase, IBillingApiClient
     {
     }
 
-    public async Task<decimal> ComputeBasePriceAsync(
-        int patientId,
-        int recordId,
-        CancellationToken cancellationToken = default) =>
-        await GetAsync<decimal>($"{BaseUri}/base-price/{patientId}/{recordId}", cancellationToken);
-
-    public async Task<decimal> ApplyDiscountAsync(
-        decimal basePrice,
-        int discount,
-        CancellationToken cancellationToken = default)
+    public async Task<decimal> ComputeBasePriceAsync(int patientId, int recordId, CancellationToken cancellationToken)
     {
-        var dto = new ApplyDiscountRequestDto
+        try
         {
-            BasePrice = basePrice,
-            Discount = discount
-        };
+            return await GetAsync<decimal>(
+                $"{BaseUri}/base-price/{patientId}/{recordId}", cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            throw new InvalidOperationException("Could not connect to the billing API.");
+        }
+        catch (TaskCanceledException)
+        {
+            throw new InvalidOperationException("The billing API request timed out or was interrupted.");
+        }
+    }
 
-        return await PostAsync<ApplyDiscountRequestDto, decimal>($"{BaseUri}/discount", dto, cancellationToken);
+    public async Task<decimal> ApplyDiscountAsync(int recordId, decimal basePrice, int discount, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await PostAsync<ApplyDiscountRequestDto, decimal>(
+                $"{BaseUri}/discount/{recordId}",
+                new ApplyDiscountRequestDto { BasePrice = basePrice, Discount = discount },
+                cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            throw new InvalidOperationException("Could not connect to the billing API.");
+        }
+        catch (TaskCanceledException)
+        {
+            throw new InvalidOperationException("The billing API request timed out or was interrupted.");
+        }
     }
 }

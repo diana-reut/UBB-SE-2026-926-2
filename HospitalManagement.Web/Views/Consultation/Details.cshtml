@@ -1,0 +1,114 @@
+@model HospitalManagement.Web.Models.Consultations.ConsultationDetailsViewModel
+
+@{
+    ViewData["Title"] = "Consultation Details";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Consultation Details</h1>
+        <p class="text-muted mb-0">@Model.PatientFullName &middot; @Model.ConsultationDate.ToString("yyyy-MM-dd")</p>
+    </div>
+    <div class="d-flex gap-2">
+        @if (Model.HasPrescription)
+        {
+            <a asp-controller="Pharmacist"
+               asp-action="PrescriptionDetail"
+               asp-route-id="@Model.PrescriptionId"
+               asp-route-returnPatientId="@Model.PatientId"
+               asp-route-returnRecordId="@Model.RecordId"
+               class="btn btn-primary">📋 View Prescription</a>
+        }
+        <a asp-controller="Admin"
+           asp-action="Details"
+           asp-route-id="@Model.PatientId"
+           class="btn btn-outline-secondary">Back to Patient</a>
+    </div>
+</div>
+
+@if (TempData["ErrorMessage"] is string errorMessage && !string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+@if (TempData["SuccessMessage"] is string successMessage && !string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Consultation</h2>
+
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Patient Name</dt>
+                    <dd class="col-sm-8">@Model.PatientFullName</dd>
+
+                    <dt class="col-sm-4">Consultation Source</dt>
+                    <dd class="col-sm-8">@Model.SourceType</dd>
+
+                    <dt class="col-sm-4">Staff ID</dt>
+                    <dd class="col-sm-8">@Model.StaffId</dd>
+
+                    <dt class="col-sm-4">Consultation Date</dt>
+                    <dd class="col-sm-8">@Model.ConsultationDate.ToString("yyyy-MM-dd HH:mm")</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="h6 text-muted text-uppercase mb-2">Symptoms</h2>
+                <p class="mb-0">@Model.Symptoms</p>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 text-muted text-uppercase mb-2">Diagnosis</h2>
+                <p class="mb-0">@Model.Diagnosis</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Billing Information</h2>
+
+                <dl class="row mb-3">
+                    <dt class="col-sm-6">Base Price</dt>
+                    <dd class="col-sm-6 text-success fw-bold">@Model.BasePrice.ToString("C")</dd>
+
+                    @if (Model.IsDiscountApplied)
+                    {
+                        <dt class="col-sm-6">Discount</dt>
+                        <dd class="col-sm-6">@Model.DiscountApplied%</dd>
+
+                        <dt class="col-sm-6">Final Price</dt>
+                        <dd class="col-sm-6 text-success fw-bold">@Model.FinalPrice.ToString("C")</dd>
+                    }
+                </dl>
+
+                @if (Model.IsDiscountApplied)
+                {
+                    <div class="alert alert-success mb-0" role="alert">
+                        <strong>✓ Discount applied!</strong>
+                        <div class="small">@Model.DiscountApplied% off the base price.</div>
+                    </div>
+                }
+                else
+                {
+                    <a asp-controller="Roulette"
+                       asp-action="Spin"
+                       asp-route-patientId="@Model.PatientId"
+                       asp-route-recordId="@Model.RecordId"
+                       class="btn btn-warning w-100">
+                        🎡 Apply Discount
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</div>

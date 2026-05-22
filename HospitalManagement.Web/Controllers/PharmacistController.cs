@@ -25,93 +25,15 @@ public class PharmacistController : Controller
     }
 
     [HttpGet]
-    public IActionResult Index()
-    {
-        return RedirectToAction(nameof(Prescriptions));
-    }
+    public IActionResult Index() => RedirectToAction("Feed", "Prescription");
+
+    // Legacy route — the table view was replaced by the card-grid Feed.
+    // Redirect any existing links/bookmarks to the new view.
+    [HttpGet]
+    public IActionResult Prescriptions() => RedirectToAction("Feed", "Prescription");
 
     [HttpGet]
-    public async Task<IActionResult> Prescriptions(
-        string? searchId,
-        string? searchName,
-        string? searchMedication,
-        DateTime? dateFrom,
-        DateTime? dateTo,
-        int page = 1)
-    {
-        bool hasFilter =
-            !string.IsNullOrWhiteSpace(searchId) ||
-            !string.IsNullOrWhiteSpace(searchName) ||
-            !string.IsNullOrWhiteSpace(searchMedication) ||
-            dateFrom.HasValue ||
-            dateTo.HasValue;
-
-        List<Prescription> prescriptions;
-        string? infoMessage = null;
-
-        try
-        {
-            if (hasFilter)
-            {
-                var filter = new PrescriptionFilter
-                {
-                    PrescriptionId = TryParseNullableInt(searchId),
-                    MedName = Normalize(searchMedication),
-                    DateFrom = dateFrom,
-                    DateTo = dateTo,
-                    PatientName = Normalize(searchName),
-                    DoctorName = Normalize(searchName)
-                };
-
-                List<Prescription> filtered = await prescriptionApiClient.ApplyFilterAsync(filter, HttpContext.RequestAborted);
-                prescriptions = filtered
-                    .Skip((page - 1) * PageSize)
-                    .Take(PageSize)
-                    .ToList();
-            }
-            else
-            {
-                prescriptions = await prescriptionApiClient.GetLatestPrescriptionsAsync(PageSize, page, HttpContext.RequestAborted);
-            }
-
-            if (prescriptions.Count == 0)
-            {
-                infoMessage = hasFilter
-                    ? "No prescriptions found matching those criteria."
-                    : "No prescriptions available.";
-            }
-        }
-        catch (InvalidOperationException ex)
-        {
-            TempData["ErrorMessage"] = ex.Message;
-            prescriptions = [];
-        }
-
-        var model = new PrescriptionIndexViewModel
-        {
-            SearchId = searchId,
-            SearchName = searchName,
-            SearchMedication = searchMedication,
-            DateFrom = dateFrom,
-            DateTo = dateTo,
-            CurrentPage = page,
-            HasNextPage = prescriptions.Count == PageSize,
-            InfoMessage = infoMessage,
-            Prescriptions = prescriptions.Select(p => new PrescriptionListItemViewModel
-            {
-                Id = p.Id,
-                PatientName = p.PatientName,
-                DoctorName = p.DoctorName,
-                Date = p.Date,
-                MedicationCount = p.MedicationList?.Count ?? 0
-            }).ToList()
-        };
-
-        return View(model);
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> PrescriptionDetail(int id)
+    public async Task<IActionResult> PrescriptionDetail(int id, int? returnPatientId = null, int? returnRecordId = null)
     {
         Prescription? prescription;
         try
@@ -137,6 +59,8 @@ public class PharmacistController : Controller
             DoctorName = prescription.DoctorName,
             Date = prescription.Date,
             DoctorNotes = prescription.DoctorNotes ?? "No notes provided",
+            ReturnPatientId = returnPatientId,
+            ReturnRecordId = returnRecordId,
             Medications = (prescription.MedicationList ?? [])
                 .Select(m => new PrescriptionItemViewModel
                 {
@@ -165,13 +89,18 @@ public class PharmacistController : Controller
 
         var model = new AddictListViewModel
         {
-            Candidates = candidates.Select(p => new AddictCandidateViewModel
-            {
-                Id = p.Id,
-                FirstName = p.FirstName,
-                LastName = p.LastName,
-                IsPoliceNotified = p.IsPoliceNotified
-            }).ToList()
+            // Match WinUI behavior: once reported, the candidate disappears
+            // from the list entirely (no "Reported to Police" badge row).
+            Candidates = candidates
+                .Where(p => !p.IsPoliceNotified)
+                .Select(p => new AddictCandidateViewModel
+                {
+                    Id = p.Id,
+                    FirstName = p.FirstName,
+                    LastName = p.LastName,
+                    IsPoliceNotified = p.IsPoliceNotified
+                })
+                .ToList()
         };
 
         return View(model);

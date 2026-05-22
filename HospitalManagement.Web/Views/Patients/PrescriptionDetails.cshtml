@@ -1,0 +1,54 @@
+﻿@model HospitalManagement.Web.Models.MedicalStaff.PrescriptionDetailsViewModel
+
+@{
+    ViewData["Title"] = "Prescription Details";
+}
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a asp-action="Index" asp-controller="PatientProfile" asp-route-id="@Model.ReturnPatientId" class="btn btn-outline-secondary">← Back</a>
+    <h2 class="mb-0">Prescription #@Model.Id</h2>
+</div>
+
+<div class="card p-4" style="max-width:600px;">
+    <dl class="row">
+        <dt class="col-sm-4 text-muted">Patient</dt>
+        <dd class="col-sm-8">@Model.PatientName</dd>
+
+        <dt class="col-sm-4 text-muted">Doctor</dt>
+        <dd class="col-sm-8">@Model.DoctorName</dd>
+
+        <dt class="col-sm-4 text-muted">Date</dt>
+        <dd class="col-sm-8">@Model.Date.ToShortDateString()</dd>
+
+        <dt class="col-sm-4 text-muted">Instructions</dt>
+        <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.DoctorNotes) ? "None" : Model.DoctorNotes)</dd>
+    </dl>
+
+    <hr />
+
+    <h6 class="fw-semibold mb-3">Medications</h6>
+    @if (!Model.Items.Any())
+    {
+        <p class="text-muted">No medications listed.</p>
+    }
+    else
+    {
+        <table class="table table-sm">
+            <thead class="table-secondary">
+                <tr>
+                    <th>Medication</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td>@item.MedName</td>
+                        <td>@item.Quantity</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
