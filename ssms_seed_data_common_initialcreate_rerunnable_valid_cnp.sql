@@ -1184,7 +1184,13 @@ INSERT INTO [MedicalRecord]
 VALUES
 (121, 1, N'Consultation', 121, 301, N'Back pain', N'Pain management', '2026-05-08T00:00:00', 200.00, 200.00, 0, 0, NULL),
 (122, 1, N'Consultation', 122, 302, N'Back pain', N'Pain management', '2026-05-08T00:00:00', 200.00, 200.00, 0, 0, NULL),
-(123, 1, N'Consultation', 123, 303, N'Back pain', N'Pain management', '2026-05-08T00:00:00', 200.00, 200.00, 0, 0, NULL);
+(123, 1, N'Consultation', 123, 303, N'Back pain', N'Pain management', '2026-05-08T00:00:00', 200.00, 200.00, 0, 0, NULL),
+(124, 2, N'Consultation', 124, 304, N'Chronic pain', N'Pain management', '2026-05-10T00:00:00', 210.00, 210.00, 0, 0, NULL),
+(125, 2, N'Consultation', 125, 305, N'Chronic pain', N'Pain management', '2026-05-12T00:00:00', 210.00, 210.00, 0, 0, NULL),
+(126, 2, N'Consultation', 126, 306, N'Chronic pain', N'Pain management', '2026-05-14T00:00:00', 210.00, 210.00, 0, 0, NULL),
+(127, 3, N'Consultation', 127, 307, N'Post-op pain', N'Pain management', '2026-05-09T00:00:00', 220.00, 220.00, 0, 0, NULL),
+(128, 3, N'Consultation', 128, 308, N'Post-op pain', N'Pain management', '2026-05-11T00:00:00', 220.00, 220.00, 0, 0, NULL),
+(129, 3, N'Consultation', 129, 309, N'Post-op pain', N'Pain management', '2026-05-13T00:00:00', 220.00, 220.00, 0, 0, NULL);
 SET IDENTITY_INSERT [MedicalRecord] OFF;
 
 SET IDENTITY_INSERT [Prescription] ON;
@@ -1193,7 +1199,13 @@ INSERT INTO [Prescription]
 VALUES
 (81, 121, N'Use only as prescribed', '2026-05-08T00:00:00'),
 (82, 122, N'Use only as prescribed', '2026-05-08T00:00:00'),
-(83, 123, N'Use only as prescribed', '2026-05-08T00:00:00');
+(83, 123, N'Use only as prescribed', '2026-05-08T00:00:00'),
+(84, 124, N'Use only as prescribed', '2026-05-10T00:00:00'),
+(85, 125, N'Use only as prescribed', '2026-05-12T00:00:00'),
+(86, 126, N'Use only as prescribed', '2026-05-14T00:00:00'),
+(87, 127, N'Use only as prescribed', '2026-05-09T00:00:00'),
+(88, 128, N'Use only as prescribed', '2026-05-11T00:00:00'),
+(89, 129, N'Use only as prescribed', '2026-05-13T00:00:00');
 SET IDENTITY_INSERT [Prescription] OFF;
 
 SET IDENTITY_INSERT [PrescriptionItems] ON;
@@ -1202,7 +1214,13 @@ INSERT INTO [PrescriptionItems]
 VALUES
 (158, 81, N'Tramadol', N'1 tablet daily'),
 (159, 82, N'Tramadol', N'1 tablet daily'),
-(160, 83, N'Tramadol', N'1 tablet daily');
+(160, 83, N'Tramadol', N'1 tablet daily'),
+(161, 84, N'Tramadol', N'1 tablet daily'),
+(162, 85, N'Tramadol', N'1 tablet daily'),
+(163, 86, N'Tramadol', N'1 tablet daily'),
+(164, 87, N'Codeine', N'1 tablet daily'),
+(165, 88, N'Codeine', N'1 tablet daily'),
+(166, 89, N'Codeine', N'1 tablet daily');
 SET IDENTITY_INSERT [PrescriptionItems] OFF;
 
 
