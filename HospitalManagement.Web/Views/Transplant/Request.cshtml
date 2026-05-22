@@ -1,0 +1,67 @@
+﻿@model HospitalManagement.Web.Models.Transplant.TransplantRequestViewModel
+
+@{
+    ViewData["Title"] = "Waitlist Entry Form";
+}
+
+<div class="row justify-content-start">
+    <div class="col-md-6 col-lg-5">
+
+        <h1 class="mb-1">Waitlist Entry Form</h1>
+        <p class="text-muted mb-4">@Model.PatientName</p>
+
+        @if (TempData["ErrorMessage"] is string errorMessage)
+        {
+            <div class="alert alert-danger" role="alert">@errorMessage</div>
+        }
+
+        @* Urgent banner *@
+        @if (Model.IsUrgent)
+        {
+            <div class="alert alert-danger d-flex align-items-center gap-2 mb-3" role="alert">
+                <strong class="fs-5">!</strong>
+                <div>
+                    <div class="fw-bold">URGENT PRIORITY</div>
+                    <small>(10+ ER Visits in last 3 months)</small>
+                </div>
+            </div>
+        }
+
+        @* Chronic condition warning *@
+        @if (!string.IsNullOrEmpty(Model.WarningMessage))
+        {
+            <div class="alert alert-warning d-flex align-items-center gap-2 mb-3" role="alert">
+                <span class="fw-bold fs-5">⚠</span>
+                <span>@Model.WarningMessage</span>
+            </div>
+        }
+
+        <form asp-action="Request" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="PatientId" />
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            <div class="mb-4">
+                <label asp-for="SelectedOrgan" class="form-label fw-semibold">Select Required Organ</label>
+                <select asp-for="SelectedOrgan"
+                        asp-items="@(new SelectList(Model.AvailableOrgans))"
+                        class="form-select">
+                    <option value="">Choose Organ...</option>
+                </select>
+                <span asp-validation-for="SelectedOrgan" class="text-danger small"></span>
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">Submit Request</button>
+                <a asp-action="Dashboard" asp-controller="MedicalStaff"
+                   class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

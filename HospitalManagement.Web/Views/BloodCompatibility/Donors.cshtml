@@ -1,0 +1,50 @@
+﻿@model HospitalManagement.Web.Models.BloodCompatibility.BloodDonorsViewModel
+
+@{
+    ViewData["Title"] = "Top Compatible Blood Donors";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Top 20 Compatible Blood Donors</h1>
+        <p class="text-muted mb-0">Recipient: <strong>@Model.PatientName</strong></p>
+    </div>
+    <a asp-action="Dashboard" asp-controller="MedicalStaff"
+       class="btn btn-outline-secondary">Back to Dashboard</a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert alert-info" role="alert">@Model.StatusMessage</div>
+}
+
+@if (Model.Donors.Count > 0)
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>CNP</th>
+                    <th>Blood Type</th>
+                    <th>Rh Factor</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var donor in Model.Donors)
+                {
+                    <tr>
+                        <td>@donor.FirstName</td>
+                        <td>@donor.LastName</td>
+                        <td>@donor.Cnp</td>
+                        <td><span class="fw-semibold">@donor.BloodType</span></td>
+                        <td><span class="fw-semibold">@donor.RhFactor</span></td>
+                        <td><span class="fw-bold text-success">@donor.Score</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

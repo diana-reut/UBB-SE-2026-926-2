@@ -71,8 +71,10 @@
                     <h6 class="fw-semibold mb-3">Patient Actions</h6>
                     <a href="@Url.Action("Index", "PatientProfile", new { id = Model.SelectedPatient.Id })"
                        class="btn btn-primary w-100 mb-2">View Profile</a>
-                    <button class="btn btn-primary w-100 mb-2" disabled>Compatible Blood Donors</button>
-                    <button class="btn btn-primary w-100" disabled>Request Organ Transplant</button>
+                    <a href="@Url.Action("Donors", "BloodCompatibility", new { patientId = Model.SelectedPatient.Id })"
+                       class="btn btn-primary w-100 mb-2">Compatible Blood Donors</a>
+                    <a href="@Url.Action("Request", "Transplant", new { patientId = Model.SelectedPatient.Id })"
+                       class="btn btn-primary w-100">Request Organ Transplant</a>
                 </div>
             }
 

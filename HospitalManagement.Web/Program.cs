@@ -46,6 +46,11 @@ builder.Services.AddHttpClient<IPrescriptionApiClient, PrescriptionApiClient>(cl
     .AddHttpMessageHandler<BearerTokenHandler>();
 builder.Services.AddSingleton<IErStaffService, ErStaffService>();
 
+builder.Services.AddHttpClient<IBloodCompatibilityApiClient, BloodCompatibilityApiClient>(client =>
+    ConfigureHospitalApiClient(builder.Configuration, client)).AddHttpMessageHandler<BearerTokenHandler>(); ;
+builder.Services.AddHttpClient<ITransplantApiClient, TransplantApiClient>(client =>
+    ConfigureHospitalApiClient(builder.Configuration, client)).AddHttpMessageHandler<BearerTokenHandler>(); ;
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
