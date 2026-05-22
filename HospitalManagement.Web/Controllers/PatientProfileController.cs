@@ -124,4 +124,4 @@ public class PatientProfileController : Controller
             return RedirectToAction(nameof(Index), new { id = 0 });
         }
     }
-}
+}

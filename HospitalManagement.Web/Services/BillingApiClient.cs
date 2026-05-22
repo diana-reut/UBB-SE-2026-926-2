@@ -1,4 +1,6 @@
-using Common.Data.Entity.DTOs;
+﻿using Common.Data.Entity.DTOs;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace HospitalManagement.Web.Services;
 
@@ -6,17 +8,28 @@ public class BillingApiClient : HospitalApiClientBase, IBillingApiClient
 {
     private const string BaseUri = "api/billing";
 
+    private readonly HttpClient httpClient;
+    private readonly JsonSerializerOptions jsonOptions = new()
     public BillingApiClient(HttpClient httpClient, IHttpContextAccessor httpContextAccessor)
         : base(httpClient, httpContextAccessor)
     {
+        PropertyNameCaseInsensitive = true,
+    };
+
+    public BillingApiClient(HttpClient httpClient)
+    {
+        this.httpClient = httpClient;
     }
 
     public async Task<decimal> ComputeBasePriceAsync(int patientId, int recordId, CancellationToken cancellationToken)
     {
         try
         {
-            return await GetAsync<decimal>(
+            using HttpResponseMessage response = await httpClient.GetAsync(
                 $"{BaseUri}/base-price/{patientId}/{recordId}", cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<decimal>(jsonOptions, cancellationToken);
         }
         catch (HttpRequestException)
         {
@@ -32,10 +45,14 @@ public class BillingApiClient : HospitalApiClientBase, IBillingApiClient
     {
         try
         {
-            return await PostAsync<ApplyDiscountRequestDto, decimal>(
+            using HttpResponseMessage response = await httpClient.PostAsJsonAsync(
                 $"{BaseUri}/discount/{recordId}",
                 new ApplyDiscountRequestDto { BasePrice = basePrice, Discount = discount },
+                jsonOptions,
                 cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<decimal>(jsonOptions, cancellationToken);
         }
         catch (HttpRequestException)
         {

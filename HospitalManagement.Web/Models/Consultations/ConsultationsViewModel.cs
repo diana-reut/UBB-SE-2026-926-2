@@ -29,4 +29,4 @@ public class ConsultationDetailsViewModel
 
     // For back-navigation
     public bool IsArchived { get; set; }
-}
+}
