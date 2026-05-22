@@ -119,6 +119,13 @@
                     <div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
                         <h2 class="h5 mb-0">Consultation Details</h2>
                         <div class="d-flex flex-wrap gap-2">
+                            <a asp-controller="Consultation"
+                               asp-action="Details"
+                               asp-route-patientId="@Model.Id"
+                               asp-route-recordId="@Model.SelectedRecord.Id"
+                               class="btn btn-outline-primary btn-sm">
+                                View Full Details
+                            </a>
                             <a asp-action="Prescription"
                                asp-route-patientId="@Model.Id"
                                asp-route-recordId="@Model.SelectedRecord.Id"
@@ -165,18 +172,16 @@
                         </dd>
                     </dl>
 
-                    <form asp-action="ApplyDiscount" method="post" class="row g-2 align-items-end">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="patientId" value="@Model.Id" />
-                        <input type="hidden" name="recordId" value="@Model.SelectedRecord.Id" />
-                        <div class="col-sm-5">
-                            <label for="discount" class="form-label">Discount percent</label>
-                            <input id="discount" name="discount" class="form-control" type="number" min="0" max="100" value="10" />
-                        </div>
-                        <div class="col-sm-auto">
-                            <button type="submit" class="btn btn-warning">Apply Discount</button>
-                        </div>
-                    </form>
+                    @if (!Model.SelectedRecord.DiscountApplied.HasValue)
+                    {
+                        <a asp-controller="Roulette"
+                           asp-action="Spin"
+                           asp-route-patientId="@Model.Id"
+                           asp-route-recordId="@Model.SelectedRecord.Id"
+                           class="btn btn-warning">
+                            🎡 Apply Discount
+                        </a>
+                    }
 
                     @if (Model.SelectedPrescription is not null)
                     {
