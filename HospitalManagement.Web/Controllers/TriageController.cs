@@ -85,8 +85,6 @@ public class TriageController : Controller
             var request = new PerformTriageRequestDto
             {
                 VisitId = form.VisitId,
-                TriageLevel = erStaffService.CalculateTriageLevel(parameters),
-                Specialization = erStaffService.DetermineSpecialization(parameters),
                 NurseId = nurseId,
                 TriageTime = DateTime.Now,
                 Consciousness = parameters.Consciousness,

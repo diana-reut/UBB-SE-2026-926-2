@@ -15,15 +15,18 @@ namespace Common.API.Controllers
     public class TriageController : ControllerBase
     {
         private readonly ITriageService _triageService;
+        private readonly ITriageDecisionService _triageDecisionService;
         private readonly EFHospitalDbContext _dbContext;
         private readonly ILogger<TriageController> _logger;
 
         public TriageController(
             ITriageService triageService,
+            ITriageDecisionService triageDecisionService,
             EFHospitalDbContext dbContext,
             ILogger<TriageController> logger)
         {
             _triageService = triageService;
+            _triageDecisionService = triageDecisionService;
             _dbContext = dbContext;
             _logger = logger;
         }
@@ -106,6 +109,8 @@ namespace Common.API.Controllers
 
                 Triage_Parameters pendingParameters = request.ToParameters(triageId: 0);
                 pendingParameters.ValidateParameters();
+                int triageLevel = _triageDecisionService.CalculateTriageLevel(pendingParameters);
+                string specialization = _triageDecisionService.DetermineSpecialization(pendingParameters);
 
                 Triage? triage = await _dbContext.Triages.FirstOrDefaultAsync(item => item.Visit_ID == request.VisitId);
                 if (triage is not null)
@@ -118,8 +123,8 @@ namespace Common.API.Controllers
                         return Conflict($"Triage has already been completed for visit {request.VisitId}.");
                     }
 
-                    triage.Triage_Level = request.TriageLevel;
-                    triage.Specialization = request.Specialization;
+                    triage.Triage_Level = triageLevel;
+                    triage.Specialization = specialization;
                     triage.Nurse_ID = request.NurseId;
                     triage.Triage_Time = request.TriageTime;
                 }
@@ -128,8 +133,8 @@ namespace Common.API.Controllers
                     triage = new Triage
                     {
                         Visit_ID = request.VisitId,
-                        Triage_Level = request.TriageLevel,
-                        Specialization = request.Specialization,
+                        Triage_Level = triageLevel,
+                        Specialization = specialization,
                         Nurse_ID = request.NurseId,
                         Triage_Time = request.TriageTime
                     };
