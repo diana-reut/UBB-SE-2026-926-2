@@ -9,9 +9,8 @@
         <h1 class="mb-1">Top 20 Compatible Blood Donors</h1>
         <p class="text-muted mb-0">Recipient: <strong>@Model.PatientName</strong></p>
     </div>
-    <a asp-action="Index" asp-controller="Admin"
-       asp-route-selectedId="@Model.PatientId"
-       class="btn btn-outline-secondary">Back to Patient</a>
+    <a asp-action="Dashboard" asp-controller="MedicalStaff"
+       class="btn btn-outline-secondary">Back to Dashboard</a>
 </div>
 
 @if (!string.IsNullOrEmpty(Model.StatusMessage))
