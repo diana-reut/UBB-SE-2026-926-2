@@ -1,4 +1,5 @@
 using System.Net;
+using Common.API.Auth;
 using Common.API.Services;
 using Common.Data.Entity.DTOs;
 using Common.Data.Models;
@@ -8,6 +9,7 @@ namespace Common.API.Controllers
 {
     [ApiController]
     [Route("api/examinations")]
+    [AuthorizeRole("Admin", "Medic")]
     public class ExaminationController : ControllerBase
     {
         private readonly IExaminationService _examinationService;

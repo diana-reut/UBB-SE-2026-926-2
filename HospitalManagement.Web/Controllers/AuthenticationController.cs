@@ -1,10 +1,10 @@
+using System.Security.Claims;
 using HospitalManagement.Web.Models;
 using HospitalManagement.Web.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace HospitalManagement.Web.Controllers;
 
@@ -19,10 +19,18 @@ public class AuthenticationController : Controller
 
     [HttpGet]
     [AllowAnonymous]
-    public IActionResult AuthenticationView()
+    public async Task<IActionResult> AuthenticationView()
     {
         if (User.Identity?.IsAuthenticated == true)
         {
+            if (string.IsNullOrWhiteSpace(HttpContext.Session.GetString(WebSessionKeys.AccessToken)))
+            {
+                HttpContext.Session.Clear();
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                TempData["ErrorMessage"] = "Your session expired. Please sign in again.";
+                return RedirectToAction(nameof(AuthenticationView));
+            }
+
             return RedirectToAction("Index", "Home");
         }
 
@@ -49,11 +57,14 @@ public class AuthenticationController : Controller
             Common.Data.Entity.DTOs.AuthResponseDto response =
                 await authenticationApiClient.LoginAsync(model.Username.Trim(), model.Password, cancellationToken);
 
+            HttpContext.Session.SetString(WebSessionKeys.AccessToken, response.Token);
+            HttpContext.Session.SetString(WebSessionKeys.Username, response.Username);
+            HttpContext.Session.SetString(WebSessionKeys.Role, response.Role);
+
             Claim[] claims =
             [
                 new(ClaimTypes.Name, response.Username),
-                new(ClaimTypes.Role, response.Role),
-                new("access_token", response.Token)
+                new(ClaimTypes.Role, response.Role)
             ];
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -63,6 +74,7 @@ public class AuthenticationController : Controller
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 principal);
 
+            TempData["LoginMessage"] = $"Signed in as {response.Username}.";
             return RedirectToAction("Index", "Home");
         }
         catch (UnauthorizedAccessException e)
@@ -98,6 +110,9 @@ public class AuthenticationController : Controller
     [Authorize]
     public async Task<IActionResult> Logout()
     {
+        HttpContext.Session.Remove(WebSessionKeys.AccessToken);
+        HttpContext.Session.Remove(WebSessionKeys.Username);
+        HttpContext.Session.Remove(WebSessionKeys.Role);
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return RedirectToAction(nameof(AuthenticationView));
     }

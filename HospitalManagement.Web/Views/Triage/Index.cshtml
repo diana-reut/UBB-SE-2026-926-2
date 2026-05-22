@@ -1,0 +1,186 @@
+@model HospitalManagement.Web.Models.Triage.TriageViewModel
+
+@{
+    ViewData["Title"] = "Triage";
+    var selectedVisit = Model.Visits.FirstOrDefault(visit => visit.VisitId == Model.SelectedVisitId);
+    string? displayError = TempData["ErrorMessage"] as string ?? Model.ErrorMessage;
+}
+
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+@if (displayError is not null)
+{
+    <div class="alert alert-danger" role="alert">@displayError</div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Triage</h1>
+        <p class="text-muted mb-0">Assess registered ER visits and move triaged visits into the room queue.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Refresh</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                @if (Model.Visits.Count == 0)
+                {
+                    <div class="p-4 text-muted">No visits are waiting for triage.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Visit</th>
+                                    <th>Patient</th>
+                                    <th>Complaint</th>
+                                    <th>Status</th>
+                                    <th>Result</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var visit in Model.Visits)
+                            {
+                                bool isSelected = visit.VisitId == Model.SelectedVisitId;
+                                <tr class="@(isSelected ? "table-active" : string.Empty)">
+                                    <td>@visit.VisitId</td>
+                                    <td>@visit.PatientId</td>
+                                    <td>@visit.ChiefComplaint</td>
+                                    <td>@visit.Status</td>
+                                    <td>
+                                        @if (visit.TriageLevel.HasValue)
+                                        {
+                                            <span>Level @visit.TriageLevel, @visit.Specialization</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not triaged</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-action="Index" asp-route-selectedVisitId="@visit.VisitId" class="btn btn-sm btn-outline-primary">Select</a>
+                                    </td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                @if (selectedVisit is null)
+                {
+                    <div class="text-muted">Select a visit to perform or review triage.</div>
+                }
+                else
+                {
+                    <h2 class="h5 mb-3">Visit @selectedVisit.VisitId</h2>
+                    <p class="mb-1"><strong>Patient:</strong> @selectedVisit.PatientId</p>
+                    <p class="mb-3"><strong>Complaint:</strong> @selectedVisit.ChiefComplaint</p>
+
+                    @if (Model.SelectedTriage is null)
+                    {
+                        <form asp-action="Perform" method="post">
+                            @Html.AntiForgeryToken()
+                            <input asp-for="Form.VisitId" type="hidden" value="@selectedVisit.VisitId" />
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label asp-for="Form.Consciousness" class="form-label">Consciousness</label>
+                                    <select asp-for="Form.Consciousness" class="form-select">
+                                        <option value="0">Choose</option>
+                                        <option value="1">1 - Normal</option>
+                                        <option value="2">2 - Altered</option>
+                                        <option value="3">3 - Critical</option>
+                                    </select>
+                                    <span asp-validation-for="Form.Consciousness" class="text-danger"></span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label asp-for="Form.Breathing" class="form-label">Breathing</label>
+                                    <select asp-for="Form.Breathing" class="form-select">
+                                        <option value="0">Choose</option>
+                                        <option value="1">1 - Normal</option>
+                                        <option value="2">2 - Difficult</option>
+                                        <option value="3">3 - Critical</option>
+                                    </select>
+                                    <span asp-validation-for="Form.Breathing" class="text-danger"></span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label asp-for="Form.Bleeding" class="form-label">Bleeding</label>
+                                    <select asp-for="Form.Bleeding" class="form-select">
+                                        <option value="0">Choose</option>
+                                        <option value="1">1 - None</option>
+                                        <option value="2">2 - Moderate</option>
+                                        <option value="3">3 - Severe</option>
+                                    </select>
+                                    <span asp-validation-for="Form.Bleeding" class="text-danger"></span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label asp-for="Form.InjuryType" class="form-label">Injury Type</label>
+                                    <select asp-for="Form.InjuryType" class="form-select">
+                                        <option value="0">Choose</option>
+                                        <option value="1">1 - Minor</option>
+                                        <option value="2">2 - Orthopedic</option>
+                                        <option value="3">3 - Surgical</option>
+                                    </select>
+                                    <span asp-validation-for="Form.InjuryType" class="text-danger"></span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label asp-for="Form.PainLevel" class="form-label">Pain Level</label>
+                                    <select asp-for="Form.PainLevel" class="form-select">
+                                        <option value="0">Choose</option>
+                                        <option value="1">1 - Mild</option>
+                                        <option value="2">2 - Moderate</option>
+                                        <option value="3">3 - Severe</option>
+                                    </select>
+                                    <span asp-validation-for="Form.PainLevel" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 mt-3">Perform Triage</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <dl class="row">
+                            <dt class="col-sm-5">Level</dt>
+                            <dd class="col-sm-7">@Model.SelectedTriage.TriageLevel</dd>
+                            <dt class="col-sm-5">Specialization</dt>
+                            <dd class="col-sm-7">@Model.SelectedTriage.Specialization</dd>
+                            <dt class="col-sm-5">Nurse</dt>
+                            <dd class="col-sm-7">@Model.SelectedTriage.NurseId</dd>
+                            <dt class="col-sm-5">Time</dt>
+                            <dd class="col-sm-7">@Model.SelectedTriage.TriageTime.ToString("yyyy-MM-dd HH:mm")</dd>
+                        </dl>
+                        <form asp-action="MoveToQueue" method="post" class="mb-2">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="visitId" value="@selectedVisit.VisitId" />
+                            <button type="submit" class="btn btn-success w-100">Move to Queue</button>
+                        </form>
+                    }
+
+                    <form asp-action="CloseVisit" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="visitId" value="@selectedVisit.VisitId" />
+                        <button type="submit" class="btn btn-outline-danger w-100">Close Visit</button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

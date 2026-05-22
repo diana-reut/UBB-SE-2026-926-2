@@ -1,20 +1,33 @@
 using System.Net;
+using Common.API.Auth;
 using Common.API.Services;
+using Common.Data.Data;
+using Common.Data.Entity.DTOs;
 using Common.Data.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Common.API.Controllers
 {
     [ApiController]
     [Route("api/triages")]
+    [AuthorizeRole("Admin", "Medic")]
     public class TriageController : ControllerBase
     {
         private readonly ITriageService _triageService;
+        private readonly ITriageDecisionService _triageDecisionService;
+        private readonly EFHospitalDbContext _dbContext;
         private readonly ILogger<TriageController> _logger;
 
-        public TriageController(ITriageService triageService, ILogger<TriageController> logger)
+        public TriageController(
+            ITriageService triageService,
+            ITriageDecisionService triageDecisionService,
+            EFHospitalDbContext dbContext,
+            ILogger<TriageController> logger)
         {
             _triageService = triageService;
+            _triageDecisionService = triageDecisionService;
+            _dbContext = dbContext;
             _logger = logger;
         }
 
@@ -78,6 +91,80 @@ namespace Common.API.Controllers
                     detail: "Failed to create triage.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
                     title: "Could not create triage.");
+            }
+        }
+
+        [HttpPost("perform")]
+        public async Task<ActionResult<PerformTriageResponseDto>> Perform([FromBody] PerformTriageRequestDto request)
+        {
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync();
+
+            try
+            {
+                ER_Visit? visit = await _dbContext.ERVisits.FirstOrDefaultAsync(item => item.Visit_ID == request.VisitId);
+                if (visit is null)
+                {
+                    return NotFound($"Visit {request.VisitId} was not found.");
+                }
+
+                Triage_Parameters pendingParameters = request.ToParameters(triageId: 0);
+                pendingParameters.ValidateParameters();
+                int triageLevel = _triageDecisionService.CalculateTriageLevel(pendingParameters);
+                string specialization = _triageDecisionService.DetermineSpecialization(pendingParameters);
+
+                Triage? triage = await _dbContext.Triages.FirstOrDefaultAsync(item => item.Visit_ID == request.VisitId);
+                if (triage is not null)
+                {
+                    Triage_Parameters? existingParameters = await _dbContext.TriageParameters
+                        .FirstOrDefaultAsync(item => item.TriageId == triage.Triage_ID);
+
+                    if (existingParameters is not null)
+                    {
+                        return Conflict($"Triage has already been completed for visit {request.VisitId}.");
+                    }
+
+                    triage.Triage_Level = triageLevel;
+                    triage.Specialization = specialization;
+                    triage.Nurse_ID = request.NurseId;
+                    triage.Triage_Time = request.TriageTime;
+                }
+                else
+                {
+                    triage = new Triage
+                    {
+                        Visit_ID = request.VisitId,
+                        Triage_Level = triageLevel,
+                        Specialization = specialization,
+                        Nurse_ID = request.NurseId,
+                        Triage_Time = request.TriageTime
+                    };
+
+                    await _dbContext.Triages.AddAsync(triage);
+                    await _dbContext.SaveChangesAsync();
+                }
+
+                Triage_Parameters parameters = request.ToParameters(triage.Triage_ID);
+                await _dbContext.TriageParameters.AddAsync(parameters);
+
+                visit.Status = ER_Visit.VisitStatus.TRIAGED;
+                await _dbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new PerformTriageResponseDto
+                {
+                    Triage = triage,
+                    Parameters = parameters
+                });
+            }
+            catch (Exception e)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(e, "Failed to perform triage for visit {VisitId}.", request.VisitId);
+
+                return Problem(
+                    detail: e.Message,
+                    statusCode: (int)HttpStatusCode.InternalServerError,
+                    title: "Could not perform triage.");
             }
         }
 

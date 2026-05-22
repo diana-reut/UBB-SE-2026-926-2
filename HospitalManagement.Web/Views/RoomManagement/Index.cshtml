@@ -1,0 +1,153 @@
+@model HospitalManagement.Web.Models.RoomManagement.RoomManagementViewModel
+
+@{
+    ViewData["Title"] = "Room Management";
+    string? displayError = TempData["ErrorMessage"] as string ?? Model.ErrorMessage;
+}
+
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+@if (displayError is not null)
+{
+    <div class="alert alert-danger" role="alert">@displayError</div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Room Management</h1>
+        <p class="text-muted mb-0">Monitor available, occupied, and cleaning rooms.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Refresh</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="admin-quick-info">
+            <div class="admin-quick-info-label">Total</div>
+            <div class="admin-quick-info-value">@Model.TotalRooms</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-quick-info">
+            <div class="admin-quick-info-label">Available</div>
+            <div class="admin-quick-info-value">@Model.AvailableRooms.Count</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-quick-info">
+            <div class="admin-quick-info-label">Occupied</div>
+            <div class="admin-quick-info-value">@Model.OccupiedRooms.Count</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-quick-info">
+            <div class="admin-quick-info-label">Cleaning</div>
+            <div class="admin-quick-info-value">@Model.CleaningRooms.Count</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-8">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white fw-bold">Available</div>
+                    <div class="list-group list-group-flush">
+                        @foreach (var room in Model.AvailableRooms)
+                        {
+                            <div class="list-group-item">
+                                <strong>Room @room.RoomId</strong>
+                                <div class="small text-muted">@room.RoomType</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white fw-bold">Occupied</div>
+                    <div class="list-group list-group-flush">
+                        @foreach (var room in Model.OccupiedRooms)
+                        {
+                            <a asp-action="Index" asp-route-selectedRoomId="@room.RoomId" class="list-group-item list-group-item-action @(Model.SelectedRoomId == room.RoomId ? "active" : string.Empty)">
+                                <strong>Room @room.RoomId</strong>
+                                <div class="small">@room.RoomType</div>
+                                <div class="small">Visit @room.CurrentVisitId</div>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white fw-bold">Cleaning</div>
+                    <div class="list-group list-group-flush">
+                        @foreach (var room in Model.CleaningRooms)
+                        {
+                            <a asp-action="Index" asp-route-selectedRoomId="@room.RoomId" class="list-group-item list-group-item-action @(Model.SelectedRoomId == room.RoomId ? "active" : string.Empty)">
+                                <strong>Room @room.RoomId</strong>
+                                <div class="small">@room.RoomType</div>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                @if (Model.SelectedRoomId is null)
+                {
+                    <div class="text-muted">Select an occupied or cleaning room for details and actions.</div>
+                }
+                else
+                {
+                    <h2 class="h5 mb-3">Room @Model.SelectedRoomId</h2>
+
+                    @if (Model.SelectedRoomVisit is not null)
+                    {
+                        <dl class="row">
+                            <dt class="col-sm-5">Visit</dt>
+                            <dd class="col-sm-7">@Model.SelectedRoomVisit.VisitId</dd>
+                            <dt class="col-sm-5">Patient</dt>
+                            <dd class="col-sm-7">@Model.SelectedRoomVisit.PatientName</dd>
+                            <dt class="col-sm-5">Complaint</dt>
+                            <dd class="col-sm-7">@Model.SelectedRoomVisit.ChiefComplaint</dd>
+                            <dt class="col-sm-5">Status</dt>
+                            <dd class="col-sm-7">@Model.SelectedRoomVisit.VisitStatus</dd>
+                            <dt class="col-sm-5">Triage</dt>
+                            <dd class="col-sm-7">Level @Model.SelectedRoomVisit.TriageLevel, @Model.SelectedRoomVisit.Specialization</dd>
+                        </dl>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No active visit details are linked to this room.</p>
+                    }
+
+                    @if (Model.OccupiedRooms.Any(room => room.RoomId == Model.SelectedRoomId))
+                    {
+                        <form asp-action="MarkCleaning" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="roomId" value="@Model.SelectedRoomId" />
+                            <button type="submit" class="btn btn-warning w-100">Mark as Cleaning</button>
+                        </form>
+                    }
+                    else if (Model.CleaningRooms.Any(room => room.RoomId == Model.SelectedRoomId))
+                    {
+                        <form asp-action="MarkAvailable" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="roomId" value="@Model.SelectedRoomId" />
+                            <button type="submit" class="btn btn-success w-100">Mark as Available</button>
+                        </form>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,98 +1,63 @@
-using Common.API.Services;
-using Common.Data.Data;
-using Common.Data.Repository;
 using HospitalManagement.Web.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseUrls("http://localhost:5126");
 
-// Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.Cookie.Name = "HospitalManagement.Web.Session";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.Name = "HospitalManagement.Web.Antiforgery";
+});
+
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/Authentication/AuthenticationView";
         options.AccessDeniedPath = "/Authentication/AuthenticationView";
+        options.Cookie.Name = "HospitalManagement.Web.Auth";
         options.Cookie.HttpOnly = true;
         options.Cookie.IsEssential = true;
     });
 
 builder.Services.AddHttpClient<IAuthenticationApiClient, AuthenticationApiClient>(client =>
-{
-    string apiBaseUri = builder.Configuration["ApiSettings:BaseUri"]
-        ?? "http://localhost:5059/";
-
-    client.BaseAddress = new Uri(apiBaseUri);
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
-    client.Timeout = TimeSpan.FromSeconds(30);
-});
+    ConfigureHospitalApiClient(builder.Configuration, client));
 builder.Services.AddHttpClient<IPatientApiClient, PatientApiClient>(client =>
-{
-    string apiBaseUri = builder.Configuration["ApiSettings:BaseUri"]
-        ?? "http://localhost:5059/";
-
-    client.BaseAddress = new Uri(apiBaseUri);
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
-    client.Timeout = TimeSpan.FromSeconds(30);
-});
-builder.Services.AddControllersWithViews();
-builder.Services.AddDbContext<EFHospitalDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddScoped<IPatientRepository, PatientRepository>();
-builder.Services.AddScoped<IAllergyRepository, AllergyRepository>();
-builder.Services.AddScoped<IMedicalHistoryRepository, MedicalHistoryRepository>();
-builder.Services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
-builder.Services.AddScoped<IAllergyService, AllergyService>();
-builder.Services.AddScoped<IPatientService, PatientService>();
-
-
-builder.Services.AddHttpContextAccessor();
+    ConfigureHospitalApiClient(builder.Configuration, client));
+builder.Services.AddHttpClient<IAllergyApiClient, AllergyApiClient>(client =>
+    ConfigureHospitalApiClient(builder.Configuration, client));
+builder.Services.AddHttpClient<IBillingApiClient, BillingApiClient>(client =>
+    ConfigureHospitalApiClient(builder.Configuration, client));
+builder.Services.AddHttpClient<IErWorkflowApiClient, ErWorkflowApiClient>(client =>
+    ConfigureHospitalApiClient(builder.Configuration, client));
 builder.Services.AddTransient<BearerTokenHandler>();
-builder.Services.AddHttpClient<ITransplantApiClient, TransplantApiClient>(client =>
-    {
-        string apiBaseUri = builder.Configuration["ApiSettings:BaseUri"]
-        ?? "http://localhost:5059/";
-        client.BaseAddress = new Uri(apiBaseUri);
-        client.DefaultRequestHeaders.Add("Accept", "application/json");
-        client.Timeout = TimeSpan.FromSeconds(30);
-    }).AddHttpMessageHandler<BearerTokenHandler>();
-
-builder.Services.AddHttpClient<IBloodCompatibilityApiClient, BloodCompatibilityApiClient>(client =>
-{
-    string apiBaseUri = builder.Configuration["ApiSettings:BaseUri"]
-        ?? "http://localhost:5059/";
-
-    client.BaseAddress = new Uri(apiBaseUri);
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
-    client.Timeout = TimeSpan.FromSeconds(30);
-}).AddHttpMessageHandler<BearerTokenHandler>();
-
-builder.Services.AddHttpClient<ITransplantApiClient, TransplantApiClient>(client =>
-{
-    string apiBaseUri = builder.Configuration["ApiSettings:BaseUri"]
-        ?? "http://localhost:5059/";
-
-    client.BaseAddress = new Uri(apiBaseUri);
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
-    client.Timeout = TimeSpan.FromSeconds(30);
-}).AddHttpMessageHandler<BearerTokenHandler>();
+builder.Services.AddHttpClient<IAddictDetectionApiClient, AddictDetectionApiClient>(client =>
+    ConfigureHospitalApiClient(builder.Configuration, client))
+    .AddHttpMessageHandler<BearerTokenHandler>();
+builder.Services.AddHttpClient<IPrescriptionApiClient, PrescriptionApiClient>(client =>
+    ConfigureHospitalApiClient(builder.Configuration, client))
+    .AddHttpMessageHandler<BearerTokenHandler>();
+builder.Services.AddSingleton<IErStaffService, ErStaffService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseRouting();
-
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -103,5 +68,14 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-
 app.Run();
+
+static void ConfigureHospitalApiClient(IConfiguration configuration, HttpClient client)
+{
+    string apiBaseUri = configuration["ApiSettings:BaseUri"]
+        ?? throw new InvalidOperationException("ApiSettings:BaseUri is not configured.");
+
+    client.BaseAddress = new Uri(apiBaseUri);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+}

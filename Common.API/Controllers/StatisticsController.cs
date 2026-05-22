@@ -1,4 +1,5 @@
 using System.Net;
+using Common.API.Auth;
 using Common.API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -7,6 +8,7 @@ namespace Common.API.Controllers
 {
     [ApiController]
     [Route("api/statistics")]
+    [AuthorizeRole("Admin")]
     public class StatisticsController : ControllerBase
     {
         private readonly IStatisticsService _statisticsService;

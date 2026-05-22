@@ -1,0 +1,177 @@
+@model HospitalManagement.Web.Models.Examination.ExaminationViewModel
+
+@{
+    ViewData["Title"] = "Examination";
+    string? displayError = TempData["ErrorMessage"] as string ?? Model.ErrorMessage;
+}
+
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+@if (displayError is not null)
+{
+    <div class="alert alert-danger" role="alert">@displayError</div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Examination</h1>
+        <p class="text-muted mb-0">Request a doctor, capture examination notes, and review visit summaries.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Refresh</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-5">
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                @if (Model.EligibleVisits.Count == 0)
+                {
+                    <div class="p-4 text-muted">No visits are eligible for examination.</div>
+                }
+                else
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var visit in Model.EligibleVisits)
+                        {
+                            <a asp-action="Index"
+                               asp-route-selectedVisitId="@visit.VisitId"
+                               class="list-group-item list-group-item-action @(Model.SelectedVisitId == visit.VisitId ? "active" : string.Empty)">
+                                <div class="d-flex justify-content-between">
+                                    <strong>Visit @visit.VisitId</strong>
+                                    <span>@visit.Status</span>
+                                </div>
+                                <div class="small">@visit.PatientId</div>
+                                <div class="small">@visit.ChiefComplaint</div>
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-7">
+        @if (Model.SelectedVisit is null)
+        {
+            <div class="card shadow-sm">
+                <div class="card-body text-muted">Select a visit to start an examination flow.</div>
+            </div>
+        }
+        else
+        {
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
+                        <div>
+                            <h2 class="h5 mb-1">Visit @Model.SelectedVisit.VisitId</h2>
+                            <div class="text-muted">@Model.SelectedVisit.PatientId, @Model.SelectedVisit.ChiefComplaint</div>
+                        </div>
+                        <span class="badge text-bg-secondary align-self-start">@Model.SelectedVisit.Status</span>
+                    </div>
+
+                    @if (Model.TriageDetails is not null)
+                    {
+                        <dl class="row">
+                            <dt class="col-sm-4">Triage Level</dt>
+                            <dd class="col-sm-8">@Model.TriageDetails.TriageLevel</dd>
+                            <dt class="col-sm-4">Specialization</dt>
+                            <dd class="col-sm-8">@Model.TriageDetails.Specialization</dd>
+                            <dt class="col-sm-4">Nurse</dt>
+                            <dd class="col-sm-8">@Model.TriageDetails.NurseId</dd>
+                            <dt class="col-sm-4">Vitals</dt>
+                            <dd class="col-sm-8">
+                                C:@Model.TriageDetails.Consciousness
+                                Br:@Model.TriageDetails.Breathing
+                                Bl:@Model.TriageDetails.Bleeding
+                                Inj:@Model.TriageDetails.InjuryType
+                                Pn:@Model.TriageDetails.PainLevel
+                            </dd>
+                        </dl>
+                    }
+
+                    @if (Model.CanRequestDoctor)
+                    {
+                        <form asp-action="RequestDoctor" method="post" class="mb-3">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="visitId" value="@Model.SelectedVisit.VisitId" />
+                            <button type="submit" class="btn btn-primary">Request Doctor</button>
+                        </form>
+                    }
+
+                    @if (Model.CanSaveExamination)
+                    {
+                        <form asp-action="Save" method="post">
+                            @Html.AntiForgeryToken()
+                            <input asp-for="Form.VisitId" type="hidden" value="@Model.SelectedVisit.VisitId" />
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label asp-for="Form.DoctorId" class="form-label">Doctor ID</label>
+                                    <input asp-for="Form.DoctorId" class="form-control" />
+                                    <span asp-validation-for="Form.DoctorId" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">Assigned Doctor</label>
+                                    <input class="form-control" value="@(string.IsNullOrWhiteSpace(Model.DoctorName) ? "N/A" : $"{Model.DoctorName} ({Model.DoctorSpecialty})")" readonly />
+                                </div>
+                                <div class="col-12">
+                                    <label asp-for="Form.Notes" class="form-label">Notes</label>
+                                    <textarea asp-for="Form.Notes" class="form-control" rows="6"></textarea>
+                                    <span asp-validation-for="Form.Notes" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                <button type="submit" class="btn btn-success">Save Examination</button>
+                                <a asp-action="Summary" asp-route-visitId="@Model.SelectedVisit.VisitId" class="btn btn-outline-primary">View Summary</a>
+                            </div>
+                        </form>
+                    }
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Patient Examination History</h2>
+                    @if (Model.ExaminationHistory.Count == 0)
+                    {
+                        <div class="text-muted">No examination history is available for this patient.</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Exam</th>
+                                        <th>Visit</th>
+                                        <th>Doctor</th>
+                                        <th>Room</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                @foreach (var exam in Model.ExaminationHistory)
+                                {
+                                    <tr>
+                                        <td>@exam.ExamId</td>
+                                        <td>@exam.VisitId</td>
+                                        <td>@exam.DoctorId</td>
+                                        <td>@exam.RoomId</td>
+                                        <td>@exam.ExamTime.ToString("yyyy-MM-dd HH:mm")</td>
+                                    </tr>
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

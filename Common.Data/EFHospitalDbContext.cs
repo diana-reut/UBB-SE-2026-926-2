@@ -202,10 +202,18 @@ public class EFHospitalDbContext : DbContext
         modelBuilder.Entity<Triage_Parameters>(entity =>
         {
             entity.ToTable("Triage_Parameters");
-            entity.HasKey(tp => tp.Triage_ID);
-            entity.Property(tp => tp.Triage_ID)
+            entity.HasKey(tp => tp.TriageParametersId);
+            entity.Property(tp => tp.TriageParametersId)
                 .HasColumnName("Triage_ID")
-                .ValueGeneratedNever();
+                .ValueGeneratedOnAdd();
+            entity.Property(tp => tp.TriageId).HasColumnName("TriageId");
+            entity.Ignore(tp => tp.Triage_ID);
+            entity.HasOne<Triage>()
+                .WithOne()
+                .HasForeignKey<Triage_Parameters>(tp => tp.TriageId)
+                .HasPrincipalKey<Triage>(t => t.Triage_ID)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(tp => tp.TriageId).IsUnique();
             entity.Property(tp => tp.Consciousness).HasColumnName("Consciousness");
             entity.Property(tp => tp.Breathing).HasColumnName("Breathing");
             entity.Property(tp => tp.Bleeding).HasColumnName("Bleeding");

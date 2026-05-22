@@ -1,3 +1,5 @@
+using System.Net;
+using Common.API.Auth;
 using Common.API.Services;
 using Common.Data.Entity;
 using Microsoft.AspNetCore.Authorization;
@@ -8,8 +10,7 @@ namespace Common.API.Controllers
 {
     [ApiController]
     [Route("api/transplants")]
-    [Authorize]
-
+    [AuthorizeRole("Admin", "Medic")]
     public class TransplantController : ControllerBase
     {
         private readonly ITransplantService _transplantService;
