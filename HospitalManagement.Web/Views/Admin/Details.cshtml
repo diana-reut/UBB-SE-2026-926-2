@@ -88,7 +88,12 @@
                                 <div class="accordion-body">
                                     <p><strong>Staff ID:</strong> @record.StaffId</p>
                                     <p><strong>Symptoms:</strong> @record.Symptoms</p>
-                                    <p class="mb-0"><strong>Diagnosis:</strong> @record.Diagnosis</p>
+                                    <p class="mb-3"><strong>Diagnosis:</strong> @record.Diagnosis</p>
+                                    <a asp-controller="Consultation"
+                                       asp-action="Details"
+                                       asp-route-patientId="@Model.Id"
+                                       asp-route-recordId="@record.Id"
+                                       class="btn btn-primary btn-sm">View Details</a>
                                 </div>
                             </div>
                         </div>

@@ -50,30 +50,6 @@ public class PatientApiClient : HospitalApiClientBase, IPatientApiClient
     public async Task<List<string>> GetPatientAllergiesAsync(int id, CancellationToken cancellationToken = default) =>
         await GetAsync<List<string>>($"{BaseUri}/{id}/allergies", cancellationToken) ?? [];
 
-    public async Task<Prescription?> GetPrescriptionByRecordIdAsync(
-        int recordId,
-        CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            return await GetAsync<Prescription>($"{BaseUri}/records/{recordId}/prescription", cancellationToken);
-        }
-        catch (InvalidOperationException e) when (e.Message.Contains(((int)HttpStatusCode.NotFound).ToString(), StringComparison.Ordinal))
-        {
-            return null;
-        }
-        catch (KeyNotFoundException)
-        {
-            return null;
-        }
-    }
-
-    public async Task<RecordExportDataDto> GetRecordExportDataAsync(
-        int recordId,
-        CancellationToken cancellationToken = default) =>
-        await GetAsync<RecordExportDataDto>($"{BaseUri}/records/{recordId}/export-data", cancellationToken)
-        ?? throw new KeyNotFoundException($"Medical record {recordId} not found.");
-
     public async Task<bool> IsHighRiskPatientAsync(int id, CancellationToken cancellationToken = default) =>
         await GetAsync<bool>($"{BaseUri}/{id}/high-risk", cancellationToken);
 
@@ -114,4 +90,31 @@ public class PatientApiClient : HospitalApiClientBase, IPatientApiClient
 
     public Task DeletePatientAsync(int id, CancellationToken cancellationToken = default) =>
         DeleteAsync($"{BaseUri}/{id}", cancellationToken);
+  
+    public async Task<bool> IsHighRiskAsync(int id, CancellationToken cancellationToken = default) =>
+        await GetAsync<bool>($"{BaseUri}/{id}/high-risk", cancellationToken);
+
+    public async Task<RecordExportDataDto> GetRecordExportDataAsync(
+        int recordId,
+        CancellationToken cancellationToken = default) =>
+        await GetAsync<RecordExportDataDto>($"{BaseUri}/records/{recordId}/export-data", cancellationToken)
+        ?? throw new KeyNotFoundException($"Medical record {recordId} not found.");
+
+    public async Task<Prescription?> GetPrescriptionByRecordIdAsync(
+        int recordId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await GetAsync<Prescription>($"{BaseUri}/records/{recordId}/prescription", cancellationToken);
+        }
+        catch (InvalidOperationException e) when (e.Message.Contains(((int)HttpStatusCode.NotFound).ToString(), StringComparison.Ordinal))
+        {
+            return null;
+        }
+        catch (KeyNotFoundException)
+        {
+            return null;
+        }
+    }
 }

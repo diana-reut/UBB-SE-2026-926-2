@@ -1,4 +1,4 @@
-using Common.Data.Entity;
+﻿using Common.Data.Entity;
 using Common.Data.Integration;
 
 namespace HospitalManagement.Web.Services;

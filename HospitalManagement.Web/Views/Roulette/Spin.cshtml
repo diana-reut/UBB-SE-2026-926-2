@@ -1,0 +1,505 @@
+@model HospitalManagement.Web.Models.Consultations.DiscountRouletteViewModel
+
+@{
+    ViewData["Title"] = "Discount Roulette";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Discount Roulette</h1>
+        <p class="text-muted mb-0">Try your luck — spin the wheel!</p>
+    </div>
+    <a asp-controller="Consultation"
+       asp-action="Details"
+       asp-route-patientId="@Model.PatientId"
+       asp-route-recordId="@Model.RecordId"
+       class="btn btn-outline-secondary">Cancel</a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <div class="text-muted small">Base Price</div>
+                    <div class="fs-3 fw-bold text-success">@Model.BasePrice.ToString("C")</div>
+                </div>
+
+                <div class="roulette-wrapper mx-auto mb-4">
+                    <div class="roulette-pointer">▼</div>
+                    <div id="rouletteWheel" class="roulette-wheel"></div>
+                    <div id="sparkleLayer" class="sparkle-layer" aria-hidden="true"></div>
+                </div>
+
+                <div class="d-flex justify-content-around mb-4 small">
+                    <span class="badge" style="background:#FF4444">0%</span>
+                    <span class="badge" style="background:#FF8844">10%</span>
+                    <span class="badge text-dark" style="background:#FFCC44">25%</span>
+                    <span class="badge" style="background:#44CC44">50%</span>
+                    <span class="badge" style="background:#4444FF">100%</span>
+                </div>
+
+                <form id="spinForm"
+                      asp-controller="Roulette"
+                      asp-action="Spin"
+                      method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="patientId" value="@Model.PatientId" />
+                    <input type="hidden" name="recordId" value="@Model.RecordId" />
+                    <input type="hidden" name="basePrice" value="@Model.BasePrice" />
+                    <input type="hidden" id="discountField" name="discount" value="0" />
+                    <button id="spinButton" type="button" class="btn btn-warning btn-lg px-5 fw-bold">SPIN</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ─── Congrats modal ─────────────────────────────────────────────────────── *@
+<div class="modal fade" id="resultModal" tabindex="-1" aria-labelledby="resultModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background:linear-gradient(135deg,#1E2A38 0%,#2C3A4A 100%);color:white;border:2px solid #FFD700;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title w-100 text-center fw-bold" id="resultModalLabel" style="font-size:24px;">
+                    🎰 <span id="resultModalTitle">RESULT</span> 🎰
+                </h5>
+            </div>
+            <div class="modal-body text-center">
+                <div id="resultModalDiscount" class="display-3 fw-bold mb-3" style="color:#FFD700;">25%</div>
+                <p id="resultModalMessage" class="lead mb-3"></p>
+                <div class="text-muted small">
+                    New price: <span id="resultModalPrice" class="text-success fw-bold">$0.00</span>
+                </div>
+            </div>
+            <div class="modal-footer border-0 d-flex justify-content-center gap-2">
+                <button id="letItRideBtn" type="button" class="btn btn-danger fw-bold px-4">
+                    🎲 DOUBLE OR NOTHING
+                </button>
+                <button id="takeItBtn" type="button" class="btn btn-success fw-bold px-4">
+                    💰 Take It
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        .roulette-wrapper {
+            position: relative;
+            width: 280px;
+            height: 280px;
+        }
+
+        .roulette-pointer {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 28px;
+            color: #FFD700;
+            z-index: 3;
+            filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.6));
+        }
+
+        .roulette-wheel {
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            border: 4px solid #FFD700;
+            background: conic-gradient(
+                #FF4444 0deg 72deg,
+                #FF8844 72deg 144deg,
+                #FFCC44 144deg 216deg,
+                #44CC44 216deg 288deg,
+                #4444FF 288deg 360deg
+            );
+            transition: transform 3s cubic-bezier(0.17, 0.67, 0.18, 1);
+            transform: rotate(0deg);
+            position: relative;
+            z-index: 1;
+        }
+
+        .roulette-wheel.is-spinning {
+            box-shadow: 0 0 24px rgba(255, 215, 0, 0.6);
+        }
+
+        .roulette-wheel.is-gambling {
+            box-shadow: 0 0 32px rgba(255, 68, 68, 0.8), 0 0 60px rgba(255, 68, 68, 0.4);
+            animation: gamble-pulse 0.6s ease-in-out infinite alternate;
+        }
+
+        @@keyframes gamble-pulse {
+            from { transform-origin: 50% 50%; filter: brightness(1); }
+            to   { transform-origin: 50% 50%; filter: brightness(1.2) saturate(1.4); }
+        }
+
+        /* Full-screen flash on JACKPOT */
+        body.jackpot-flash {
+            animation: jackpot-flash 0.18s ease-out 6 alternate;
+        }
+        @@keyframes jackpot-flash {
+            from { background-color: transparent; }
+            to   { background-color: rgba(255, 215, 0, 0.35); }
+        }
+
+        /* Sparkle particles */
+        .sparkle-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .sparkle {
+            position: absolute;
+            font-size: 22px;
+            animation: sparkle-pop 1.2s ease-out forwards;
+            user-select: none;
+        }
+
+        @@keyframes sparkle-pop {
+            0%   { transform: translate(0, 0) scale(0) rotate(0deg);    opacity: 0; }
+            20%  { transform: translate(var(--dx), var(--dy)) scale(1) rotate(180deg); opacity: 1; }
+            100% { transform: translate(calc(var(--dx) * 2), calc(var(--dy) * 2)) scale(0.4) rotate(360deg); opacity: 0; }
+        }
+    </style>
+
+    <script>
+        (function () {
+            const DISCOUNT_OPTIONS = [0, 10, 25, 50, 100];
+
+            const btn = document.getElementById('spinButton');
+            const wheel = document.getElementById('rouletteWheel');
+            const form = document.getElementById('spinForm');
+            const discountField = document.getElementById('discountField');
+            const sparkleLayer = document.getElementById('sparkleLayer');
+
+            const modal = new bootstrap.Modal(document.getElementById('resultModal'), { backdrop: 'static', keyboard: false });
+            const modalDiscount = document.getElementById('resultModalDiscount');
+            const modalMessage  = document.getElementById('resultModalMessage');
+            const modalTitle    = document.getElementById('resultModalTitle');
+            const modalPrice    = document.getElementById('resultModalPrice');
+            const letItRideBtn  = document.getElementById('letItRideBtn');
+            const takeItBtn     = document.getElementById('takeItBtn');
+
+            const basePrice = parseFloat(@Model.BasePrice.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+            // Track cumulative wheel rotation so subsequent spins always go further clockwise.
+            let cumulativeRotation = 0;
+            // Has the user already used their double-or-nothing? Only one gamble allowed.
+            let hasGambled = false;
+
+            // ── Audio engine ─────────────────────────────────────────────────
+            // AudioContext must be created after a user gesture; lazy-init on
+            // first spin click.
+            let audioCtx = null;
+            function ensureAudio() {
+                if (audioCtx) return audioCtx;
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (_) { audioCtx = null; }
+                return audioCtx;
+            }
+            function tone(ctx, { freq, type = 'sine', startOffset = 0, duration = 0.2, gainStart = 0.2, gainEnd = 0.001, freqEnd = null }) {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type;
+                const t0 = ctx.currentTime + startOffset;
+                osc.frequency.setValueAtTime(freq, t0);
+                if (freqEnd) osc.frequency.exponentialRampToValueAtTime(freqEnd, t0 + duration);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                gain.gain.setValueAtTime(gainStart, t0);
+                gain.gain.exponentialRampToValueAtTime(gainEnd, t0 + duration);
+                osc.start(t0);
+                osc.stop(t0 + duration);
+            }
+
+            // Slot-machine-style clicks that get further apart as the wheel slows.
+            function playSpinTicks(durationSec) {
+                const ctx = ensureAudio(); if (!ctx) return;
+                const start = ctx.currentTime;
+                const end = start + durationSec;
+                let t = start;
+                while (t < end) {
+                    const progress = (t - start) / durationSec;
+                    // Tick interval: starts fast (~30ms) and stretches to ~250ms by the end.
+                    const interval = 0.03 + progress * progress * 0.22;
+                    tone(ctx, { freq: 1400 - progress * 600, type: 'square', startOffset: t - ctx.currentTime, duration: 0.025, gainStart: 0.07 });
+                    t += interval;
+                }
+            }
+
+            // Sad trombone for 0% — descending notes with pitch slide.
+            function playSadTrombone() {
+                const ctx = ensureAudio(); if (!ctx) return;
+                const notes = [
+                    { freq: 196.00, end: 185.00, dur: 0.25 },
+                    { freq: 185.00, end: 174.61, dur: 0.25 },
+                    { freq: 174.61, end: 164.81, dur: 0.45 },
+                    { freq: 130.81, end: 110.00, dur: 0.7 }
+                ];
+                let offset = 0;
+                notes.forEach(n => {
+                    tone(ctx, { freq: n.freq, freqEnd: n.end, type: 'sawtooth', startOffset: offset, duration: n.dur, gainStart: 0.18 });
+                    offset += n.dur;
+                });
+            }
+
+            // Small ding for modest wins (10, 20, 25).
+            function playDing() {
+                const ctx = ensureAudio(); if (!ctx) return;
+                tone(ctx, { freq: 1318.51, type: 'sine', duration: 0.55, gainStart: 0.25 });
+                tone(ctx, { freq: 1975.53, type: 'sine', startOffset: 0.08, duration: 0.45, gainStart: 0.15 });
+            }
+
+            // Cha-ching cash register for 50%.
+            function playChaChing() {
+                const ctx = ensureAudio(); if (!ctx) return;
+                tone(ctx, { freq: 1568, type: 'sine', duration: 0.35, gainStart: 0.3 });
+                tone(ctx, { freq: 2093, type: 'sine', startOffset: 0.05, duration: 0.4, gainStart: 0.2 });
+                tone(ctx, { freq: 130.81, type: 'sawtooth', startOffset: 0.18, duration: 0.18, gainStart: 0.22 });
+                tone(ctx, { freq: 98.00,  type: 'sawtooth', startOffset: 0.24, duration: 0.25, gainStart: 0.18 });
+            }
+
+            // JACKPOT fanfare for 100% — ascending arpeggio + sustained sparkle.
+            function playJackpot() {
+                const ctx = ensureAudio(); if (!ctx) return;
+                const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                notes.forEach((freq, i) => {
+                    tone(ctx, { freq, type: 'triangle', startOffset: i * 0.11, duration: 0.32, gainStart: 0.28 });
+                });
+                // Final sustain shimmer
+                tone(ctx, { freq: 2093, type: 'sine', startOffset: notes.length * 0.11, duration: 0.9, gainStart: 0.25 });
+                tone(ctx, { freq: 1568, type: 'sine', startOffset: notes.length * 0.11, duration: 0.9, gainStart: 0.2 });
+            }
+
+            // Tension rumble during the double-or-nothing spin.
+            function playAnticipation(durationSec) {
+                const ctx = ensureAudio(); if (!ctx) return;
+                const start = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(70, start);
+                osc.frequency.exponentialRampToValueAtTime(160, start + durationSec);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                gain.gain.setValueAtTime(0.04, start);
+                gain.gain.linearRampToValueAtTime(0.22, start + durationSec - 0.4);
+                gain.gain.exponentialRampToValueAtTime(0.001, start + durationSec);
+                osc.start(start);
+                osc.stop(start + durationSec);
+            }
+
+            function playButtonClick() {
+                const ctx = ensureAudio(); if (!ctx) return;
+                tone(ctx, { freq: 880, type: 'square', duration: 0.06, gainStart: 0.13 });
+            }
+
+            function playResultSound(discount) {
+                if (discount === 0)             playSadTrombone();
+                else if (discount === 100)      playJackpot();
+                else if (discount >= 50)        playChaChing();
+                else                            playDing();
+            }
+
+            // ── Trashy congratulation messages keyed by discount tier ────────
+            const messages = {
+                0:   [
+                    "No discount for you. Bills make the world go round 💸",
+                    "0%. RNG hates you specifically.",
+                    "Better luck next decade.",
+                    "The wheel has spoken: pay up, peasant.",
+                    "Free? In THIS economy?? Lmao",
+                    "You played yourself."
+                ],
+                10:  [
+                    "10% off — basically pocket change but we'll take it.",
+                    "Coffee money discount achieved ☕",
+                    "Light savings detected. Try not to spend it all in one place.",
+                    "10%. A modest win for a modest patient.",
+                    "Just enough to feel something."
+                ],
+                20:  [
+                    "20%! Doubled and not lost. Bold move.",
+                    "20% — gambling addiction speedrun complete.",
+                    "Your bravery is rewarded. Modestly.",
+                    "20% off. The casino is impressed."
+                ],
+                25:  [
+                    "25% off! Now go buy yourself something nice. Like dignity.",
+                    "A quarter off your suffering. We call that a win 🎉",
+                    "25%! Treat yourself to a sad gas-station sandwich.",
+                    "Casino energy: medium."
+                ],
+                50:  [
+                    "HALF PRICE! You absolute LEGEND 🎉🎉🎉",
+                    "50% off — the universe owed you one.",
+                    "BOGO on your health, baby 💪",
+                    "50%. Go touch grass, you've earned it."
+                ],
+                100: [
+                    "JACKPOT!!! 🎰🎰🎰 COMPLETELY FREE CARE",
+                    "100% OFF — the universe glitched in your favor.",
+                    "💎 LEGENDARY DROP 💎 Tell no one.",
+                    "FREE. Run before they change their minds.",
+                    "100%. We respect a hustler."
+                ]
+            };
+
+            function pickMessage(discount) {
+                const pool = messages[discount] || messages[0];
+                return pool[Math.floor(Math.random() * pool.length)];
+            }
+
+            function discountIndex(discount) {
+                // Map the doubled value 20 onto the 10% wedge visually
+                // (closest segment — there's no 20% wedge on the wheel).
+                if (discount === 20) return DISCOUNT_OPTIONS.indexOf(10);
+                return DISCOUNT_OPTIONS.indexOf(discount);
+            }
+
+            // Rotate so the pointer (top, 0°) lands on the midpoint of segment N.
+            // Segment N midpoint is at (N*72 + 36)° on the wheel; we need to rotate
+            // by (360 - that) clockwise — plus several extra full turns for drama.
+            function rotateToSegment(segmentIndex, animationMs) {
+                const segmentMidAngle = segmentIndex * 72 + 36;
+                const targetMod360 = (360 - segmentMidAngle) % 360;
+                const extraTurns = 5 + Math.floor(Math.random() * 3);
+                // Compute next absolute rotation that keeps going clockwise and
+                // ends at the right angle modulo 360.
+                const currentMod = ((cumulativeRotation % 360) + 360) % 360;
+                let delta = (targetMod360 - currentMod + 360) % 360;
+                delta += extraTurns * 360;
+                cumulativeRotation += delta;
+
+                if (animationMs) {
+                    wheel.style.transition = 'transform ' + (animationMs / 1000) + 's cubic-bezier(0.17, 0.67, 0.18, 1)';
+                }
+                wheel.style.transform = 'rotate(' + cumulativeRotation + 'deg)';
+            }
+
+            // ── Sparkles ─────────────────────────────────────────────────────
+            function emitSparkles(count) {
+                const emojis = ['✨', '⭐', '💫', '🌟'];
+                const rect = sparkleLayer.getBoundingClientRect();
+                for (let i = 0; i < count; i++) {
+                    const s = document.createElement('span');
+                    s.className = 'sparkle';
+                    s.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = 60 + Math.random() * 80;
+                    s.style.setProperty('--dx', Math.cos(angle) * distance + 'px');
+                    s.style.setProperty('--dy', Math.sin(angle) * distance + 'px');
+                    s.style.left = (rect.width / 2 - 11) + 'px';
+                    s.style.top  = (rect.height / 2 - 11) + 'px';
+                    s.style.animationDelay = (Math.random() * 0.3) + 's';
+                    sparkleLayer.appendChild(s);
+                    setTimeout(() => s.remove(), 1600);
+                }
+            }
+
+            // ── Modal display ────────────────────────────────────────────────
+            function showResultModal(discount, allowGamble) {
+                const finalPrice = basePrice * (1 - discount / 100);
+                modalDiscount.textContent = discount + '%';
+                modalMessage.textContent  = pickMessage(discount);
+                modalPrice.textContent    = '$' + finalPrice.toFixed(2);
+
+                if (discount === 0) {
+                    modalTitle.textContent = 'TOUGH LUCK';
+                    modalDiscount.style.color = '#FF4444';
+                } else if (discount === 100) {
+                    modalTitle.textContent = 'JACKPOT';
+                    modalDiscount.style.color = '#44CC44';
+                } else {
+                    modalTitle.textContent = 'NICE';
+                    modalDiscount.style.color = '#FFD700';
+                }
+
+                // Only allow gambling on the first result and only if there's
+                // something to lose / gain (no point doubling 0).
+                if (allowGamble && !hasGambled && discount > 0) {
+                    letItRideBtn.style.display = '';
+                } else {
+                    letItRideBtn.style.display = 'none';
+                }
+                modal.show();
+            }
+
+            // ── Spin flow ────────────────────────────────────────────────────
+            function pickDiscount() {
+                const cryptoArr = new Uint32Array(1);
+                (window.crypto || window.msCrypto).getRandomValues(cryptoArr);
+                return DISCOUNT_OPTIONS[cryptoArr[0] % DISCOUNT_OPTIONS.length];
+            }
+
+            function runSpin(discount, allowGamble, opts) {
+                const isGamble  = !!(opts && opts.isGamble);
+                const durationMs = isGamble ? 4000 : 3000;
+
+                btn.disabled = true;
+                btn.textContent = 'Spinning...';
+                wheel.classList.add('is-spinning');
+                if (isGamble) wheel.classList.add('is-gambling');
+
+                rotateToSegment(discountIndex(discount), durationMs);
+
+                // Sound: clicks for the duration, anticipation rumble on the gamble spin.
+                playSpinTicks(durationMs / 1000);
+                if (isGamble) playAnticipation(durationMs / 1000);
+
+                // Burst sparkles during the last part of the spin.
+                setTimeout(() => emitSparkles(isGamble ? 18 : 12), durationMs - 800);
+                setTimeout(() => emitSparkles(isGamble ? 28 : 20), durationMs - 200);
+
+                setTimeout(() => {
+                    wheel.classList.remove('is-spinning');
+                    wheel.classList.remove('is-gambling');
+                    if (discount > 0) emitSparkles(discount === 100 ? 60 : 30);
+                    if (discount === 100) document.body.classList.add('jackpot-flash');
+
+                    discountField.value = discount;
+                    playResultSound(discount);
+                    showResultModal(discount, allowGamble);
+
+                    if (discount === 100) {
+                        setTimeout(() => document.body.classList.remove('jackpot-flash'), 1500);
+                    }
+                }, durationMs + 100);
+            }
+
+            // First spin — always picked fresh.
+            btn.addEventListener('click', () => {
+                ensureAudio();          // bootstrap audio on this user gesture
+                playButtonClick();
+                const discount = pickDiscount();
+                runSpin(discount, /* allowGamble */ true, { isGamble: false });
+            });
+
+            // DOUBLE OR NOTHING: 50/50 — discount doubles (cap 100) or goes to 0.
+            letItRideBtn.addEventListener('click', () => {
+                playButtonClick();
+                hasGambled = true;
+                modal.hide();
+                const current = parseInt(discountField.value, 10);
+
+                // Coin flip
+                const win = Math.random() < 0.5;
+                const newDiscount = win ? Math.min(100, current * 2) : 0;
+
+                // Quick visual: spin again — slower + with anticipation rumble.
+                setTimeout(() => runSpin(newDiscount, /* allowGamble */ false, { isGamble: true }), 350);
+            });
+
+            // Take It: submit to server with the current discount.
+            takeItBtn.addEventListener('click', () => {
+                playButtonClick();
+                modal.hide();
+                setTimeout(() => form.submit(), 300);
+            });
+        })();
+    </script>
+}

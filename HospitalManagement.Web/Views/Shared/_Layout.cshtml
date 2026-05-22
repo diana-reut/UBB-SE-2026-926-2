@@ -45,10 +45,10 @@
                            asp-route-id="medical-staff">
                             Medical Staff
                         </a>
-                        <a class="app-nav-link @(string.Equals(currentController, "Pharmacist", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                        <a class="app-nav-link @((string.Equals(currentController, "Prescription", StringComparison.OrdinalIgnoreCase) || string.Equals(currentController, "Pharmacist", StringComparison.OrdinalIgnoreCase)) ? "active" : string.Empty)"
                            asp-area=""
-                           asp-controller="Pharmacist"
-                           asp-action="Prescriptions">
+                           asp-controller="Prescription"
+                           asp-action="Feed">
                             Pharmacy
                         </a>
                         <div class="app-nav-separator"></div>
