@@ -2,7 +2,6 @@ using HospitalManagement.Web.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls("http://localhost:5126");
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
@@ -46,6 +45,11 @@ builder.Services.AddHttpClient<IPrescriptionApiClient, PrescriptionApiClient>(cl
     ConfigureHospitalApiClient(builder.Configuration, client))
     .AddHttpMessageHandler<BearerTokenHandler>();
 builder.Services.AddSingleton<IErStaffService, ErStaffService>();
+
+builder.Services.AddHttpClient<IBloodCompatibilityApiClient, BloodCompatibilityApiClient>(client =>
+    ConfigureHospitalApiClient(builder.Configuration, client)).AddHttpMessageHandler<BearerTokenHandler>(); ;
+builder.Services.AddHttpClient<ITransplantApiClient, TransplantApiClient>(client =>
+    ConfigureHospitalApiClient(builder.Configuration, client)).AddHttpMessageHandler<BearerTokenHandler>(); ;
 
 var app = builder.Build();
 
