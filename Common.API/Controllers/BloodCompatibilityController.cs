@@ -3,7 +3,9 @@ using Common.API.Auth;
 using Common.API.Services;
 using Common.Data.Entity;
 using Common.Data.Entity.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace Common.API.Controllers;
 

@@ -57,27 +57,45 @@
     {
         <script>
             (() => {
-                function playAlertSound() {
+                // Two-tone alternating police siren built with Web Audio API.
+                // Plays for ~2.4s, then submits the confirm form.
+                function playPoliceSiren() {
                     try {
                         const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                        [0, 0.2, 0.4].forEach(offset => {
-                            const osc = ctx.createOscillator();
-                            const gain = ctx.createGain();
-                            osc.connect(gain);
-                            gain.connect(ctx.destination);
-                            osc.type = 'square';
-                            osc.frequency.value = 880;
-                            gain.gain.setValueAtTime(0.25, ctx.currentTime + offset);
-                            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + offset + 0.15);
-                            osc.start(ctx.currentTime + offset);
-                            osc.stop(ctx.currentTime + offset + 0.15);
-                        });
-                    } catch (_) {}
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sawtooth';
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        gain.gain.setValueAtTime(0.18, ctx.currentTime);
+
+                        // Alternate between two pitches (~750Hz and ~1100Hz)
+                        // every 0.4s, four cycles total => 2.4s of siren.
+                        const lowHz = 750;
+                        const highHz = 1100;
+                        const stepDuration = 0.4;
+                        const cycles = 3;
+                        const now = ctx.currentTime;
+                        osc.frequency.setValueAtTime(lowHz, now);
+                        for (let i = 0; i < cycles; i++) {
+                            const base = now + i * stepDuration * 2;
+                            osc.frequency.setValueAtTime(highHz, base);
+                            osc.frequency.setValueAtTime(lowHz, base + stepDuration);
+                        }
+                        const totalDuration = cycles * stepDuration * 2;
+                        // Fade out at the end so it doesn't click.
+                        gain.gain.setValueAtTime(0.18, now + totalDuration - 0.05);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + totalDuration);
+                        osc.start(now);
+                        osc.stop(now + totalDuration);
+                    } catch (_) { /* audio not allowed yet, ignore */ }
                 }
 
                 document.getElementById('sendPoliceBtn').addEventListener('click', () => {
-                    playAlertSound();
-                    setTimeout(() => document.getElementById('confirmForm').submit(), 650);
+                    playPoliceSiren();
+                    // Wait long enough that the user actually hears the siren
+                    // before the page navigates away.
+                    setTimeout(() => document.getElementById('confirmForm').submit(), 2500);
                 });
             })();
         </script>

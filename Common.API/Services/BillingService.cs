@@ -60,6 +60,22 @@ internal class BillingService : IBillingService
         return await Task.FromResult(basePrice - basePrice * discount / PercentageDivisor);
     }
 
+    public async Task<decimal> PersistDiscountAsync(int recordId, decimal basePrice, int discount)
+    {
+        decimal finalPrice = await ApplyDiscountAsync(basePrice, discount);
+
+        MedicalRecord? record = await _recordRepo.GetByIdAsync(recordId)
+            ?? throw new KeyNotFoundException($"Medical record with ID {recordId} not found.");
+
+        record.BasePrice = basePrice;
+        record.DiscountApplied = discount;
+        record.FinalPrice = finalPrice;
+
+        await _recordRepo.UpdateAsync(record);
+
+        return finalPrice;
+    }
+
     private static decimal CalculateBasePrice(
         MedicalRecord? record,
         MedicalHistory? history,

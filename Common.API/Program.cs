@@ -34,6 +34,7 @@ builder.Services.AddScoped<IERRoomService, ERRoomService>();
 
 builder.Services.AddScoped<ITriageRepository, TriageRepository>();
 builder.Services.AddScoped<ITriageService, TriageService>();
+builder.Services.AddScoped<ITriageDecisionService, TriageDecisionService>();
 
 builder.Services.AddScoped<ITriageParametersRepository, TriageParametersRepository>();
 builder.Services.AddScoped<ITriageParametersService, TriageParametersService>();

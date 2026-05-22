@@ -1,0 +1,119 @@
+﻿@model HospitalManagement.Web.Models.Patients.PatientProfileViewModel
+
+@{
+    ViewData["Title"] = "Patient Medical Profile";
+}
+
+@if (Model.IsHighRisk)
+{
+    <div class="alert alert-warning fw-semibold">
+        ⚠️ Warning: This patient is flagged as High Risk.
+    </div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Patient Medical Profile</h2>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary" disabled>Import from ER</button>
+        <button class="btn btn-secondary" disabled>Import from Staff</button>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    @* Left panel — general info + medical history *@
+    <div class="col-md-4">
+        <div class="card h-100 p-4">
+            <h5 class="fw-bold mb-3">General Information</h5>
+            <p class="fs-5 mb-1">@Model.FirstName</p>
+            <p class="fs-5 mb-1">@Model.LastName</p>
+            <p class="text-muted mb-4">@Model.Cnp</p>
+
+            <hr />
+
+            <h6 class="fw-semibold mb-3">Medical History</h6>
+            <p><span class="text-muted">Blood Type: </span>@Model.BloodType</p>
+            <p><span class="text-muted">RH Factor: </span>@Model.Rh</p>
+            <p><span class="text-muted">Allergies: </span><br /><span class="ms-2">@Model.FormattedAllergies</span></p>
+            <p><span class="text-muted">Chronic Conditions: </span><br /><span class="ms-2">@Model.FormattedChronicConditions</span></p>
+
+            <hr />
+
+            @* File Records expander *@
+            <div>
+                <button class="btn btn-outline-secondary w-100 text-start"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#fileRecords">
+                    File Records ▾
+                </button>
+                <div class="collapse mt-2 @(Model.SelectedRecordId.HasValue ? "show" : "")" id="fileRecords">
+                    @if (!Model.MedicalRecords.Any())
+                    {
+                        <p class="text-muted ms-2">No records.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-group">
+                            @foreach (var r in Model.MedicalRecords)
+                            {
+                                <li class="list-group-item @(Model.SelectedRecordId == r.Id ? "active" : "")"
+                                    style="cursor:pointer"
+                                    onclick="window.location='@Url.Action("Index", "PatientProfile", new { id = Model.Id, selectedRecordId = r.Id })'">
+                                    @r.ConsultationDate.ToShortDateString()
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Right panel — consultation details *@
+    <div class="col-md-8">
+        <div class="card h-100 p-4">
+            @if (Model.SelectedRecord is null)
+            {
+                <p class="text-muted">Select a record from File Records to view consultation details.</p>
+            }
+            else
+            {
+                <h5 class="fw-bold mb-4">Consultation Details</h5>
+                <dl class="row">
+                    <dt class="col-sm-4 text-muted">Patient Name</dt>
+                    <dd class="col-sm-8 fw-semibold">@Model.FullName</dd>
+
+                    <dt class="col-sm-4 text-muted">Date</dt>
+                    <dd class="col-sm-8">@Model.SelectedRecord.ConsultationDate.ToShortDateString()</dd>
+
+                    <dt class="col-sm-4 text-muted">Source</dt>
+                    <dd class="col-sm-8">@Model.SelectedRecord.SourceType</dd>
+
+                    <dt class="col-sm-4 text-muted">Staff ID</dt>
+                    <dd class="col-sm-8">@Model.SelectedRecord.StaffId</dd>
+
+                    <dt class="col-sm-4 text-muted">Reported Symptoms</dt>
+                    <dd class="col-sm-8">@Model.SelectedRecord.Symptoms</dd>
+
+                    <dt class="col-sm-4 text-muted">Diagnosis</dt>
+                    <dd class="col-sm-8 fw-semibold">@Model.SelectedRecord.Diagnosis</dd>
+                </dl>
+
+                <div class="d-flex gap-2 mt-3">
+                    @if (Model.SelectedRecord.PrescriptionId.HasValue)
+                    {
+                        <a href="@Url.Action("Feed", "Prescription", new { searchIdText = Model.SelectedRecord.PrescriptionId.ToString(), returnPatientId = Model.Id })"
+                           class="btn btn-primary">View Associated Prescription</a>
+                    }
+                    else
+                    {
+                        <button class="btn btn-primary" disabled>No Prescription</button>
+                    }
+                    <a href="@Url.Action("ExportRecord", "PatientProfile", new { recordId = Model.SelectedRecord.Id })"
+                       class="btn btn-primary">Export to PDF</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>

@@ -265,11 +265,15 @@
                         <button type="submit" class="btn btn-outline-dark w-100" @(Model.SelectedPatient.IsDeceased ? "disabled" : null)>Mark as Deceased</button>
                     </form>
 
-                    <button type="button"
-                            class="btn btn-outline-info w-100 mt-3"
-                            @(Model.SelectedPatient.IsDeceased ? null : "disabled")>
-                        Mark as Organ Donor
-                    </button>
+                    @if (Model.SelectedPatient.IsDeceased)
+                    {
+                        <a href="@Url.Action("Assign", "OrganDonor", new { patientId = Model.SelectedPatient.Id })"
+                           class="btn btn-outline-info w-100 mt-3">Mark as Organ Donor</a>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-outline-info w-100 mt-3" disabled>Mark as Organ Donor</button>
+                    }
                 }
             </div>
         </div>
@@ -302,7 +306,7 @@
                 row.addEventListener("click", () => {
                     clickTimer = window.setTimeout(() => {
                         window.location.href = row.dataset.selectUrl;
-                    }, 220);
+                    }, 400);
                 });
 
                 row.addEventListener("dblclick", () => {

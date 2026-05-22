@@ -4,477 +4,462 @@ using Common.Data.Entity.Enums;
 using Common.Data.Integration;
 using Common.Data.Repository;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Reflection;
 
 namespace Common.Tests.Repository;
 
 [TestClass]
 public sealed class PatientRepositoryTests
 {
-    private static EFHospitalDbContext CreateContext()
-    {
-        DbContextOptions<EFHospitalDbContext> options = new DbContextOptionsBuilder<EFHospitalDbContext>()
+    private static EFHospitalDbContext CreateContext() =>
+        new(new DbContextOptionsBuilder<EFHospitalDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .Options;
-
-        return new EFHospitalDbContext(options);
-    }
-
-    [TestMethod]
-    public async Task AddAsync_WhenPatientIsNull_Throws()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        var repository = new PatientRepository(context);
-
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<ArgumentNullException>(() => repository.AddAsync(null!));
-    }
-
-    [TestMethod]
-    public async Task AddAsync_AddsPatientAndPersistsChanges()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        var repository = new PatientRepository(context);
-        Patient patient = CreatePatient(1, "Ana", "Pop", "1960101012345");
-
-        await repository.AddAsync(patient);
-
-        Assert.AreEqual(1, await context.Patients.CountAsync());
-    }
-
-    [TestMethod]
-    public async Task UpdateAsync_WhenPatientIsNull_Throws()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        var repository = new PatientRepository(context);
-
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<ArgumentNullException>(() => repository.UpdateAsync(null!));
-    }
-
-    [TestMethod]
-    public async Task UpdateAsync_WhenPatientIsTracked_UpdatesCurrentValues()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        Patient patient = CreatePatient(1, "Ana", "Pop", "1960101012345");
-        context.Patients.Add(patient);
-        await context.SaveChangesAsync();
-        var repository = new PatientRepository(context);
-
-        await repository.UpdateAsync(new Patient
-        {
-            Id = 1,
-            FirstName = "Updated",
-            LastName = "Pop",
-            Cnp = "1960101012345",
-            Dob = patient.Dob,
-            Sex = Sex.M,
-            PhoneNo = "0711111111",
-            EmergencyContact = "Contact",
-            IsArchived = true,
-        });
-
-        Patient stored = await context.Patients.SingleAsync();
-        Assert.IsTrue(stored.FirstName == "Updated" && stored.IsArchived);
-    }
-
-    [TestMethod]
-    public async Task UpdateAsync_WhenPatientIsNotTracked_UpdatesEntity()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        context.Patients.Add(CreatePatient(1, "Ana", "Pop", "1960101012345"));
-        await context.SaveChangesAsync();
-        context.ChangeTracker.Clear();
-        var repository = new PatientRepository(context);
-
-        await repository.UpdateAsync(CreatePatient(1, "Mihai", "Pop", "1960101012345"));
-
-        Patient stored = await context.Patients.SingleAsync();
-        Assert.AreEqual("Mihai", stored.FirstName);
-    }
-
-    [TestMethod]
-    public async Task DeleteAsync_WhenPatientExists_RemovesPatient()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        context.Patients.Add(CreatePatient(1, "Ana", "Pop", "1960101012345"));
-        await context.SaveChangesAsync();
-        var repository = new PatientRepository(context);
-
-        await repository.DeleteAsync(1);
-
-        Assert.AreEqual(0, await context.Patients.CountAsync());
-    }
-
-    [TestMethod]
-    public async Task DeleteAsync_WhenPatientDoesNotExist_DoesNothing()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        var repository = new PatientRepository(context);
-
-        await repository.DeleteAsync(99);
-
-        Assert.AreEqual(0, await context.Patients.CountAsync());
-    }
-
-    [TestMethod]
-    public async Task ExistsAsync_ReturnsWhetherCnpExists()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        context.Patients.Add(CreatePatient(1, "Ana", "Pop", "1960101012345"));
-        await context.SaveChangesAsync();
-        var repository = new PatientRepository(context);
-
-        Assert.IsTrue(await repository.ExistsAsync("1960101012345") && !await repository.ExistsAsync("2990101012345"));
-    }
-
-    [TestMethod]
-    public async Task GetAllAsync_WhenArchivedExcluded_ReturnsOnlyActivePatientsWithHistory()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        Patient active = CreatePatient(1, "Ana", "Pop", "1960101012345");
-        Patient archived = CreatePatient(2, "Ioana", "Ionescu", "2960101012345", isArchived: true);
-        context.Patients.AddRange(active, archived);
-        context.MedicalHistory.Add(new MedicalHistory { Id = 10, PatientId = 1, BloodType = BloodType.A });
-        await context.SaveChangesAsync();
-        var repository = new PatientRepository(context);
-
-        List<Patient> result = await repository.GetAllAsync(false);
-
-        Assert.IsTrue(result.Count == 1 && result[0].Id == 1 && result[0].MedicalHistory is not null);
-    }
-
-    [TestMethod]
-    public async Task GetAllAsync_WhenArchivedIncluded_ReturnsActiveAndArchivedPatients()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        context.Patients.AddRange(
-            CreatePatient(1, "Ana", "Pop", "1960101012345"),
-            CreatePatient(2, "Ioana", "Ionescu", "2960101012345", isArchived: true));
-        await context.SaveChangesAsync();
-        var repository = new PatientRepository(context);
-
-        List<Patient> result = await repository.GetAllAsync(true);
-
-        Assert.AreEqual(2, result.Count);
-    }
-
-    [TestMethod]
-    public async Task GetArchivedAsync_ReturnsOnlyArchivedPatients()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        context.Patients.AddRange(
-            CreatePatient(1, "Ana", "Pop", "1960101012345"),
-            CreatePatient(2, "Ioana", "Ionescu", "2960101012345", isArchived: true));
-        await context.SaveChangesAsync();
-        var repository = new PatientRepository(context);
-
-        List<Patient> result = await repository.GetArchivedAsync();
-
-        Assert.IsTrue(result.Count == 1 && result[0].Id == 2);
-    }
-
-    [TestMethod]
-    public async Task GetByIdAsync_ReturnsPatientWithHistoryAndAllergies()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        Patient patient = CreatePatient(1, "Ana", "Pop", "1960101012345");
-        var allergy = new Allergy { Id = 7, AllergyName = "Peanut" };
-        var history = new MedicalHistory { Id = 10, PatientId = 1, BloodType = BloodType.A };
-        var patientAllergy = new PatientAllergy
-        {
-            AllergyId = 7,
-            MedicalHistoryId = 10,
-            Allergy = allergy,
-            MedicalHistory = history,
-            SeverityLevel = "severe",
-        };
-        history.PatientAllergies.Add(patientAllergy);
-        context.Patients.Add(patient);
-        context.Allergies.Add(allergy);
-        context.MedicalHistory.Add(history);
-        context.PatientAllergies.Add(patientAllergy);
-        await context.SaveChangesAsync();
-        var repository = new PatientRepository(context);
-
-        Patient? result = await repository.GetByIdAsync(1);
-
-        Assert.AreEqual("Peanut", result?.MedicalHistory?.PatientAllergies[0].Allergy.AllergyName);
-    }
-
-    [TestMethod]
-    public async Task GetByIdAsync_WhenPatientDoesNotExist_ReturnsNull()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        var repository = new PatientRepository(context);
-
-        Patient? result = await repository.GetByIdAsync(99);
-
-        Assert.IsNull(result);
-    }
-
-    [TestMethod]
-    public async Task SearchAsync_WhenFilterIsNull_Throws()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        var repository = new PatientRepository(context);
-
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<ArgumentNullException>(() => repository.SearchAsync(null!));
-    }
-
-    [TestMethod]
-    public async Task SearchAsync_AppliesAllSupportedFilters()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        int currentYear = DateTime.Now.Year;
-        context.Patients.AddRange(
-            CreatePatient(1, "Ana", "Popescu", "1960101012345", new DateTime(currentYear - 30, 1, 1), Sex.M),
-            CreatePatient(2, "Maria", "Ionescu", "2960101012345", new DateTime(currentYear - 50, 1, 1), Sex.F),
-            CreatePatient(3, "Ion", "Popa", "1960202012345", new DateTime(currentYear - 20, 1, 1), Sex.M));
-        context.MedicalHistory.AddRange(
-            new MedicalHistory { Id = 10, PatientId = 1, BloodType = BloodType.A, ChronicConditions = ["Asthma"] },
-            new MedicalHistory { Id = 20, PatientId = 2, BloodType = BloodType.B, ChronicConditions = ["Diabetes"] },
-            new MedicalHistory { Id = 30, PatientId = 3, BloodType = BloodType.A, ChronicConditions = [] });
-        await context.SaveChangesAsync();
-        var repository = new PatientRepository(context);
-
-        List<Patient> result = await repository.SearchAsync(new PatientFilter
-        {
-            NamePart = "Pop",
-            CNP = "196",
-            MinAge = 25,
-            MaxAge = 35,
-            BloodType = BloodType.A,
-            Sex = Sex.M,
-            HasChronicCond = true,
-        });
-
-        Assert.IsTrue(result.Count == 1 && result[0].Id == 1);
-    }
-
-    [TestMethod]
-    public async Task SearchAsync_WhenOptionalFiltersAreEmpty_ReturnsAllPatients()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        context.Patients.AddRange(
-            CreatePatient(1, "Ana", "Pop", "1960101012345"),
-            CreatePatient(2, "Maria", "Ionescu", "2960101012345"));
-        await context.SaveChangesAsync();
-        var repository = new PatientRepository(context);
-
-        List<Patient> result = await repository.SearchAsync(new PatientFilter
-        {
-            NamePart = " ",
-            CNP = " ",
-            HasChronicCond = false,
-        });
-
-        Assert.AreEqual(2, result.Count);
-    }
-
-    [TestMethod]
-    public async Task MarkAsDeceasedAsync_WhenPatientExists_SetsDodAndArchives()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        context.Patients.Add(CreatePatient(1, "Ana", "Pop", "1960101012345"));
-        await context.SaveChangesAsync();
-        DateTime dod = new(2024, 1, 1);
-        var repository = new PatientRepository(context);
-
-        await repository.MarkAsDeceasedAsync(1, dod);
-
-        Patient stored = await context.Patients.SingleAsync();
-        Assert.IsTrue(stored.Dod == dod && stored.IsArchived);
-    }
-
-    [TestMethod]
-    public async Task MarkAsDeceasedAsync_WhenPatientDoesNotExist_DoesNothing()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        var repository = new PatientRepository(context);
-
-        await repository.MarkAsDeceasedAsync(99, DateTime.Today);
-
-        Assert.AreEqual(0, await context.Patients.CountAsync());
-    }
-
-    [TestMethod]
-    public async Task GetCompatibleDonorsAsync_FiltersAndOrdersDonorsByCompatibilityScore()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        int currentYear = DateTime.Now.Year;
-        context.Patients.AddRange(
-            CreatePatient(1, "Exact", "Match", "1960101012345", new DateTime(currentYear - 40, 1, 1), Sex.M),
-            CreatePatient(2, "Universal", "Donor", "1960202012345", new DateTime(currentYear - 50, 1, 1), Sex.F),
-            CreatePatient(3, "Archived", "Donor", "1960303012345", new DateTime(currentYear - 40, 1, 1), Sex.M, true),
-            CreatePatient(4, "Chronic", "Donor", "1960404012345", new DateTime(currentYear - 40, 1, 1), Sex.M),
-            CreatePatient(5, "Allergy", "Donor", "1960505012345", new DateTime(currentYear - 40, 1, 1), Sex.M),
-            CreatePatient(6, "Wrong", "Blood", "1960606012345", new DateTime(currentYear - 40, 1, 1), Sex.M));
-        var allergy = new Allergy { Id = 1, AllergyName = "Peanut" };
-        var allergyHistory = new MedicalHistory { Id = 50, PatientId = 5, BloodType = BloodType.A, Rh = Rh.Positive };
-        var patientAllergy = new PatientAllergy
-        {
-            AllergyId = 1,
-            MedicalHistoryId = 50,
-            Allergy = allergy,
-            MedicalHistory = allergyHistory,
-            SeverityLevel = "Anaphylactic",
-        };
-        allergyHistory.PatientAllergies.Add(patientAllergy);
-        context.MedicalHistory.AddRange(
-            new MedicalHistory { Id = 10, PatientId = 1, BloodType = BloodType.A, Rh = Rh.Positive },
-            new MedicalHistory { Id = 20, PatientId = 2, BloodType = BloodType.O, Rh = Rh.Negative },
-            new MedicalHistory { Id = 30, PatientId = 3, BloodType = BloodType.A, Rh = Rh.Positive },
-            new MedicalHistory { Id = 40, PatientId = 4, BloodType = BloodType.A, Rh = Rh.Positive, ChronicConditions = ["Asthma"] },
-            allergyHistory,
-            new MedicalHistory { Id = 60, PatientId = 6, BloodType = BloodType.B, Rh = Rh.Positive });
-        context.Allergies.Add(allergy);
-        context.PatientAllergies.Add(patientAllergy);
-        await context.SaveChangesAsync();
-        var repository = new PatientRepository(context);
-
-        List<Patient> result = await repository.GetCompatibleDonorsAsync(
-            BloodType.A,
-            Rh.Positive,
-            Sex.M,
-            new DateTime(currentYear - 40, 1, 1),
-            18,
-            65);
-
-        CollectionAssert.AreEqual(new[] { 1, 2 }, result.Select(p => p.Id).ToArray());
-    }
-
-    [TestMethod]
-    public async Task GetCompatibleDonorsAsync_CoversAllBloodTypeAndRhCompatibilityBranches()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        int currentYear = DateTime.Now.Year;
-        DateTime donorDob = new(currentYear - 40, 1, 1);
-        context.Patients.AddRange(
-            CreatePatient(1, "Null", "Blood", "1960101012345", donorDob, Sex.F),
-            CreatePatient(2, "Null", "Rh", "1960202012345", donorDob, Sex.F),
-            CreatePatient(3, "A", "ToAB", "1960303012345", donorDob, Sex.F),
-            CreatePatient(4, "B", "ToAB", "1960404012345", donorDob, Sex.F),
-            CreatePatient(5, "AB", "ToAB", "1960505012345", donorDob, Sex.F),
-            CreatePatient(6, "APos", "ToNegative", "1960606012345", donorDob, Sex.F),
-            CreatePatient(7, "Large", "AgeGap", "1960707012345", new DateTime(currentYear - 95, 1, 1), Sex.M));
-        context.MedicalHistory.AddRange(
-            new MedicalHistory { Id = 10, PatientId = 1, BloodType = null, Rh = Rh.Negative },
-            new MedicalHistory { Id = 20, PatientId = 2, BloodType = BloodType.O, Rh = null },
-            new MedicalHistory { Id = 30, PatientId = 3, BloodType = BloodType.A, Rh = Rh.Negative },
-            new MedicalHistory { Id = 40, PatientId = 4, BloodType = BloodType.B, Rh = Rh.Negative },
-            new MedicalHistory { Id = 50, PatientId = 5, BloodType = BloodType.AB, Rh = Rh.Negative },
-            new MedicalHistory { Id = 60, PatientId = 6, BloodType = BloodType.A, Rh = Rh.Positive },
-            new MedicalHistory { Id = 70, PatientId = 7, BloodType = BloodType.O, Rh = Rh.Negative });
-        await context.SaveChangesAsync();
-        var repository = new PatientRepository(context);
-
-        List<Patient> abNegativeMatches = await repository.GetCompatibleDonorsAsync(
-            BloodType.AB,
-            Rh.Negative,
-            Sex.F,
-            donorDob,
-            18,
-            100);
-
-        List<Patient> oNegativeMatches = await repository.GetCompatibleDonorsAsync(
-            BloodType.O,
-            Rh.Negative,
-            Sex.F,
-            donorDob,
-            18,
-            100);
-
-        Assert.IsTrue(
-            abNegativeMatches.Select(p => p.Id).OrderBy(id => id).SequenceEqual(new[] { 3, 4, 5, 7 })
-            && oNegativeMatches.Select(p => p.Id).SequenceEqual(new[] { 7 }));
-    }
-
-    [DataTestMethod]
-    [DataRow(BloodType.A, BloodType.B)]
-    [DataRow(BloodType.A, BloodType.O)]
-    [DataRow(BloodType.B, BloodType.A)]
-    [DataRow(BloodType.B, BloodType.O)]
-    [DataRow(BloodType.AB, BloodType.A)]
-    [DataRow(BloodType.AB, BloodType.B)]
-    [DataRow(BloodType.AB, BloodType.O)]
-    public async Task GetCompatibleDonorsAsync_WhenBloodTypesAreIncompatible_ReturnsNoDonors(
-        BloodType donorBloodType,
-        BloodType recipientBloodType)
-    {
-        using EFHospitalDbContext context = CreateContext();
-        int currentYear = DateTime.Now.Year;
-        DateTime dob = new(currentYear - 40, 1, 1);
-        context.Patients.Add(CreatePatient(1, "Donor", "Patient", "1960101012345", dob, Sex.M));
-        context.MedicalHistory.Add(new MedicalHistory
-        {
-            Id = 10,
-            PatientId = 1,
-            BloodType = donorBloodType,
-            Rh = Rh.Negative,
-        });
-        await context.SaveChangesAsync();
-        var repository = new PatientRepository(context);
-
-        List<Patient> result = await repository.GetCompatibleDonorsAsync(
-            recipientBloodType,
-            Rh.Negative,
-            Sex.M,
-            dob,
-            18,
-            65);
-
-        Assert.AreEqual(0, result.Count);
-    }
-
-    [TestMethod]
-    public void PrivateCompatibilityHelpers_CoverRemainingBloodRhAndScoreBranches()
-    {
-        using EFHospitalDbContext context = CreateContext();
-        var repository = new PatientRepository(context);
-        MethodInfo scoreMethod = typeof(PatientRepository).GetMethod("CalculateTotalScore", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        MethodInfo bloodMatchMethod = typeof(PatientRepository).GetMethod("IsABloodMatch", BindingFlags.NonPublic | BindingFlags.Static)!;
-        MethodInfo rhMatchMethod = typeof(PatientRepository).GetMethod("IsARhMatch", BindingFlags.NonPublic | BindingFlags.Static)!;
-
-        int nullHistoryScore = (int)scoreMethod.Invoke(
-            repository,
-            [
-                CreatePatient(1, "No", "History", "1960101012345"),
-                BloodType.A,
-                Rh.Positive,
-                Sex.M,
-                DateTime.Now.Year - 1996
-            ])!;
-
-        Assert.IsTrue(
-            nullHistoryScore == 75
-            && (bool)bloodMatchMethod.Invoke(null, [BloodType.B, BloodType.B])!
-            && (bool)bloodMatchMethod.Invoke(null, [BloodType.B, BloodType.AB])!
-            && !(bool)bloodMatchMethod.Invoke(null, [BloodType.AB, BloodType.B])!
-            && (bool)rhMatchMethod.Invoke(null, [Rh.Positive, Rh.Positive])!
-            && !(bool)rhMatchMethod.Invoke(null, [Rh.Positive, Rh.Negative])!
-            && !(bool)rhMatchMethod.Invoke(null, [(Rh)999, Rh.Positive])!);
-    }
-
-    private static Patient CreatePatient(
-        int id,
-        string firstName,
-        string lastName,
-        string cnp,
+            .Options);
+
+    private static Patient MakePatient(
+        int id = 1,
+        string cnp = "1234567890123",
+        string firstName = "Jane",
+        string lastName = "Doe",
+        bool isArchived = false,
         DateTime? dob = null,
-        Sex sex = Sex.M,
-        bool isArchived = false)
-    {
-        return new Patient
+        Sex sex = Sex.F) =>
+        new()
         {
             Id = id,
             FirstName = firstName,
             LastName = lastName,
             Cnp = cnp,
-            Dob = dob ?? new DateTime(1996, 1, 1),
+            Dob = dob ?? new DateTime(1990, 1, 1),
             Sex = sex,
-            PhoneNo = "0711111111",
-            EmergencyContact = "Contact",
-            IsArchived = isArchived,
+            PhoneNo = "0712345678",
+            EmergencyContact = "John Doe",
+            IsArchived = isArchived
         };
+
+    private static MedicalHistory MakeHistory(int patientId, BloodType? bloodType = BloodType.A, Rh? rh = Rh.Positive, List<string>? conditions = null) =>
+        new()
+        {
+            PatientId = patientId,
+            BloodType = bloodType,
+            Rh = rh,
+            ChronicConditions = conditions ?? []
+        };
+
+    [TestMethod]
+    public async Task AddAsync_WhenPatientIsNull_ThrowsArgumentNullException()
+    {
+        await using var context = CreateContext();
+        var sut = new PatientRepository(context);
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() => sut.AddAsync(null!));
+    }
+
+    [TestMethod]
+    public async Task GetAllAsync_WhenIncludeArchivedIsFalse_ExcludesArchivedPatients()
+    {
+        await using var context = CreateContext();
+        context.Patients.AddRange(
+            MakePatient(1, isArchived: false),
+            MakePatient(2, cnp: "2234567890123", isArchived: true));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetAllAsync(false);
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public async Task AddAsync_WhenPatientIsValid_PersistsPatient()
+    {
+        await using var context = CreateContext();
+        var sut = new PatientRepository(context);
+
+        await sut.AddAsync(MakePatient());
+
+        Assert.AreEqual(1, context.Patients.Count());
+    }
+
+    [TestMethod]
+    public async Task UpdateAsync_WhenPatientExists_UpdatesPhoneNumber()
+    {
+        await using var context = CreateContext();
+        Patient patient = MakePatient();
+        context.Patients.Add(patient);
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+        patient.PhoneNo = "0799999999";
+
+        await sut.UpdateAsync(patient);
+
+        Assert.AreEqual("0799999999", context.Patients.Single().PhoneNo);
+    }
+
+    [TestMethod]
+    public async Task DeleteAsync_WhenPatientExists_RemovesPatient()
+    {
+        await using var context = CreateContext();
+        Patient patient = MakePatient();
+        context.Patients.Add(patient);
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        await sut.DeleteAsync(patient.Id);
+
+        Assert.AreEqual(0, context.Patients.Count());
+    }
+
+    [TestMethod]
+    public async Task ExistsAsync_WhenPatientExists_ReturnsTrue()
+    {
+        await using var context = CreateContext();
+        context.Patients.Add(MakePatient());
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        bool result = await sut.ExistsAsync("1234567890123");
+
+        Assert.IsTrue(result);
+    }
+
+    [TestMethod]
+    public async Task GetAllAsync_WhenIncludeArchivedIsTrue_ReturnsArchivedAndActivePatients()
+    {
+        await using var context = CreateContext();
+        context.Patients.AddRange(
+            MakePatient(1, isArchived: false),
+            MakePatient(2, cnp: "2234567890123", isArchived: true));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetAllAsync(true);
+
+        Assert.AreEqual(2, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetArchivedAsync_WhenArchivedPatientsExist_ReturnsArchivedPatients()
+    {
+        await using var context = CreateContext();
+        context.Patients.AddRange(
+            MakePatient(1, isArchived: false),
+            MakePatient(2, cnp: "2234567890123", isArchived: true));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetArchivedAsync();
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetByIdAsync_WhenMedicalHistoryExists_ReturnsPatientWithHistory()
+    {
+        await using var context = CreateContext();
+        Patient patient = MakePatient();
+        context.Patients.Add(patient);
+        await context.SaveChangesAsync();
+        context.MedicalHistory.Add(MakeHistory(patient.Id));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        Patient? result = await sut.GetByIdAsync(patient.Id);
+
+        Assert.IsNotNull(result!.MedicalHistory);
+    }
+
+    [TestMethod]
+    public async Task SearchAsync_WhenNamePartMatchesLastName_ReturnsMatchingPatient()
+    {
+        await using var context = CreateContext();
+        context.Patients.AddRange(
+            MakePatient(1, lastName: "Doe"),
+            MakePatient(2, cnp: "2234567890123", lastName: "Smith"));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.SearchAsync(new PatientFilter { NamePart = "Do" });
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public async Task SearchAsync_WhenBloodTypeMatches_ReturnsMatchingPatient()
+    {
+        await using var context = CreateContext();
+        Patient patient1 = MakePatient(1);
+        Patient patient2 = MakePatient(2, cnp: "2234567890123");
+        context.Patients.AddRange(patient1, patient2);
+        await context.SaveChangesAsync();
+        context.MedicalHistory.AddRange(
+            MakeHistory(patient1.Id, bloodType: BloodType.A),
+            MakeHistory(patient2.Id, bloodType: BloodType.B));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.SearchAsync(new PatientFilter { BloodType = BloodType.B });
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public async Task SearchAsync_WhenHasChronicConditionIsTrue_ReturnsOnlyPatientsWithConditions()
+    {
+        await using var context = CreateContext();
+        Patient patient1 = MakePatient(1);
+        Patient patient2 = MakePatient(2, cnp: "2234567890123");
+        context.Patients.AddRange(patient1, patient2);
+        await context.SaveChangesAsync();
+        context.MedicalHistory.AddRange(
+            MakeHistory(patient1.Id, conditions: ["Asthma"]),
+            MakeHistory(patient2.Id, conditions: []));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.SearchAsync(new PatientFilter { HasChronicCond = true });
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public async Task SearchAsync_WhenCnpPrefixMatches_ReturnsMatchingPatient()
+    {
+        await using var context = CreateContext();
+        context.Patients.AddRange(
+            MakePatient(1, cnp: "1234567890123"),
+            MakePatient(2, cnp: "2234567890123"));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.SearchAsync(new PatientFilter { CNP = "123" });
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public async Task SearchAsync_WhenFilterIsNull_ThrowsArgumentNullException()
+    {
+        await using var context = CreateContext();
+        var sut = new PatientRepository(context);
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() => sut.SearchAsync(null!));
+    }
+
+    [TestMethod]
+    public async Task SearchAsync_WhenMinAgeMatches_ReturnsOlderPatient()
+    {
+        await using var context = CreateContext();
+        context.Patients.AddRange(
+            MakePatient(1, dob: new DateTime(DateTime.Now.Year - 40, 1, 1)),
+            MakePatient(2, cnp: "2234567890123", dob: new DateTime(DateTime.Now.Year - 10, 1, 1)));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.SearchAsync(new PatientFilter { MinAge = 18 });
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public async Task SearchAsync_WhenMaxAgeMatches_ReturnsYoungerPatient()
+    {
+        await using var context = CreateContext();
+        context.Patients.AddRange(
+            MakePatient(1, dob: new DateTime(DateTime.Now.Year - 40, 1, 1)),
+            MakePatient(2, cnp: "2234567890123", dob: new DateTime(DateTime.Now.Year - 10, 1, 1)));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.SearchAsync(new PatientFilter { MaxAge = 18 });
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public async Task SearchAsync_WhenSexMatches_ReturnsMatchingPatient()
+    {
+        await using var context = CreateContext();
+        context.Patients.AddRange(
+            MakePatient(1, sex: Sex.F),
+            MakePatient(2, cnp: "2234567890123", sex: Sex.M));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.SearchAsync(new PatientFilter { Sex = Sex.M });
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public async Task MarkAsDeceasedAsync_WhenPatientExists_SetsArchivedTrue()
+    {
+        await using var context = CreateContext();
+        Patient patient = MakePatient();
+        context.Patients.Add(patient);
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        await sut.MarkAsDeceasedAsync(patient.Id, new DateTime(2026, 1, 1));
+
+        Assert.IsTrue(context.Patients.Single().IsArchived);
+    }
+
+    [TestMethod]
+    public async Task GetCompatibleDonorsAsync_WhenArchivedDonorExists_ExcludesArchivedDonor()
+    {
+        await using var context = CreateContext();
+        Patient archivedDonor = MakePatient(1, isArchived: true);
+        Patient activeDonor = MakePatient(2, cnp: "2234567890123");
+        context.Patients.AddRange(archivedDonor, activeDonor);
+        await context.SaveChangesAsync();
+        context.MedicalHistory.AddRange(
+            MakeHistory(archivedDonor.Id, bloodType: BloodType.O, rh: Rh.Negative),
+            MakeHistory(activeDonor.Id, bloodType: BloodType.O, rh: Rh.Negative));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetCompatibleDonorsAsync(BloodType.AB, Rh.Positive, Sex.F, new DateTime(1990, 1, 1), 18, 60);
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetCompatibleDonorsAsync_WhenDonorHasChronicCondition_ExcludesDonor()
+    {
+        await using var context = CreateContext();
+        Patient chronicDonor = MakePatient(1);
+        Patient healthyDonor = MakePatient(2, cnp: "2234567890123");
+        context.Patients.AddRange(chronicDonor, healthyDonor);
+        await context.SaveChangesAsync();
+        context.MedicalHistory.AddRange(
+            MakeHistory(chronicDonor.Id, bloodType: BloodType.O, rh: Rh.Negative, conditions: ["Asthma"]),
+            MakeHistory(healthyDonor.Id, bloodType: BloodType.O, rh: Rh.Negative));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetCompatibleDonorsAsync(BloodType.AB, Rh.Positive, Sex.F, new DateTime(1990, 1, 1), 18, 60);
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetCompatibleDonorsAsync_WhenAnaphylacticAllergyExists_ExcludesDonor()
+    {
+        await using var context = CreateContext();
+        Patient patient1 = MakePatient(1);
+        Patient patient2 = MakePatient(2, cnp: "2234567890123");
+        context.Patients.AddRange(patient1, patient2);
+        await context.SaveChangesAsync();
+        MedicalHistory history1 = MakeHistory(patient1.Id, bloodType: BloodType.O, rh: Rh.Negative);
+        MedicalHistory history2 = MakeHistory(patient2.Id, bloodType: BloodType.O, rh: Rh.Negative);
+        context.MedicalHistory.AddRange(history1, history2);
+        context.Allergies.Add(new Allergy { Id = 10, AllergyName = "Peanuts" });
+        await context.SaveChangesAsync();
+        context.PatientAllergies.Add(new PatientAllergy { MedicalHistoryId = history1.Id, AllergyId = 10, SeverityLevel = "Anaphylactic", Allergy = context.Allergies.Single(), MedicalHistory = history1 });
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetCompatibleDonorsAsync(BloodType.AB, Rh.Positive, Sex.F, new DateTime(1990, 1, 1), 18, 60);
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetCompatibleDonorsAsync_WhenExactBloodAndRhMatchExists_RanksExactMatchFirst()
+    {
+        await using var context = CreateContext();
+        Patient exactMatch = MakePatient(1, sex: Sex.F, dob: new DateTime(DateTime.Now.Year - 35, 1, 1));
+        Patient universalMatch = MakePatient(2, cnp: "2234567890123", sex: Sex.M, dob: new DateTime(DateTime.Now.Year - 50, 1, 1));
+        context.Patients.AddRange(exactMatch, universalMatch);
+        await context.SaveChangesAsync();
+        context.MedicalHistory.AddRange(
+            MakeHistory(exactMatch.Id, bloodType: BloodType.A, rh: Rh.Positive),
+            MakeHistory(universalMatch.Id, bloodType: BloodType.O, rh: Rh.Negative));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetCompatibleDonorsAsync(BloodType.A, Rh.Positive, Sex.F, new DateTime(DateTime.Now.Year - 34, 1, 1), 18, 60);
+
+        Assert.AreEqual(1, result[0].Id);
+    }
+
+    [TestMethod]
+    public async Task GetCompatibleDonorsAsync_WhenDonorBloodTypeIsAAndReceiverIsAB_IncludesDonor()
+    {
+        await using var context = CreateContext();
+        Patient donor = MakePatient(1);
+        context.Patients.Add(donor);
+        await context.SaveChangesAsync();
+        context.MedicalHistory.Add(MakeHistory(donor.Id, bloodType: BloodType.A, rh: Rh.Positive));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetCompatibleDonorsAsync(BloodType.AB, Rh.Positive, Sex.F, new DateTime(1990, 1, 1), 18, 60);
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetCompatibleDonorsAsync_WhenDonorBloodTypeIsBAndReceiverIsAB_IncludesDonor()
+    {
+        await using var context = CreateContext();
+        Patient donor = MakePatient(1);
+        context.Patients.Add(donor);
+        await context.SaveChangesAsync();
+        context.MedicalHistory.Add(MakeHistory(donor.Id, bloodType: BloodType.B, rh: Rh.Positive));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetCompatibleDonorsAsync(BloodType.AB, Rh.Positive, Sex.F, new DateTime(1990, 1, 1), 18, 60);
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetCompatibleDonorsAsync_WhenDonorBloodTypeIsABAndReceiverIsAB_IncludesDonor()
+    {
+        await using var context = CreateContext();
+        Patient donor = MakePatient(1);
+        context.Patients.Add(donor);
+        await context.SaveChangesAsync();
+        context.MedicalHistory.Add(MakeHistory(donor.Id, bloodType: BloodType.AB, rh: Rh.Positive));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetCompatibleDonorsAsync(BloodType.AB, Rh.Positive, Sex.F, new DateTime(1990, 1, 1), 18, 60);
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetCompatibleDonorsAsync_WhenDonorBloodTypeIsNull_ExcludesDonor()
+    {
+        await using var context = CreateContext();
+        Patient donor = MakePatient(1);
+        context.Patients.Add(donor);
+        await context.SaveChangesAsync();
+        context.MedicalHistory.Add(MakeHistory(donor.Id, bloodType: null, rh: Rh.Positive));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetCompatibleDonorsAsync(BloodType.AB, Rh.Positive, Sex.F, new DateTime(1990, 1, 1), 18, 60);
+
+        Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetCompatibleDonorsAsync_WhenDonorRhIsNull_ExcludesDonor()
+    {
+        await using var context = CreateContext();
+        Patient donor = MakePatient(1);
+        context.Patients.Add(donor);
+        await context.SaveChangesAsync();
+        context.MedicalHistory.Add(MakeHistory(donor.Id, bloodType: BloodType.O, rh: null));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetCompatibleDonorsAsync(BloodType.AB, Rh.Positive, Sex.F, new DateTime(1990, 1, 1), 18, 60);
+
+        Assert.AreEqual(0, result.Count);
     }
 }

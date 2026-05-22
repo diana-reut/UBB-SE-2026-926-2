@@ -1,0 +1,88 @@
+﻿@model HospitalManagement.Web.Models.MedicalStaff.MedicalStaffDashboardViewModel
+@{
+    ViewData["Title"] = "Medical Staff Dashboard";
+}
+<div class="container mt-4">
+    @* Search bar *@
+    <div class="d-flex justify-content-center gap-2 mb-4">
+        <form method="get" asp-action="Dashboard" class="d-flex gap-2">
+            <input asp-for="SearchQuery"
+                   class="form-control"
+                   style="width:400px"
+                   placeholder="Search patients by name or CNP..." />
+            <button type="submit" class="btn btn-primary" style="width:80px">Go</button>
+        </form>
+    </div>
+
+    @* Error message *@
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <p class="text-danger fw-semibold text-center">@Model.ErrorMessage</p>
+    }
+    @if (TempData["ErrorMessage"] is string error)
+    {
+        <p class="text-danger fw-semibold text-center">@error</p>
+    }
+
+    @* Results table + sidebar *@
+    @if (Model.HasSearched)
+    {
+        <div class="d-flex gap-4 align-items-start">
+
+            @* Table *@
+            <div class="flex-grow-1">
+                <table class="table table-hover">
+                    <thead class="table-secondary">
+                        <tr>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>CNP</th>
+                            <th>Date of Birth</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.SearchResults.Any())
+                        {
+                            <tr><td colspan="4" class="text-muted">No results.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var p in Model.SearchResults)
+                            {
+                                bool isSelected = Model.SelectedPatientId == p.Id;
+                                <tr class="@(isSelected ? "table-active" : "")"
+                                    style="cursor:pointer"
+                                    onclick="window.location='@Url.Action("Dashboard", new { searchQuery = Model.SearchQuery, selectedId = p.Id })'">
+                                    <td>@p.FirstName</td>
+                                    <td>@p.LastName</td>
+                                    <td>@p.Cnp</td>
+                                    <td>@p.Dob.ToShortDateString()</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @* Sidebar — only shown when a patient is selected *@
+            @if (Model.SelectedPatient is not null)
+            {
+                <div class="card p-3" style="min-width:260px;">
+                    <h6 class="fw-semibold mb-3">Patient Actions</h6>
+                    <a href="@Url.Action("Index", "PatientProfile", new { id = Model.SelectedPatient.Id })"
+                       class="btn btn-primary w-100 mb-2">View Profile</a>
+                    <a href="@Url.Action("Donors", "BloodCompatibility", new { patientId = Model.SelectedPatient.Id })"
+                       class="btn btn-primary w-100 mb-2">Compatible Blood Donors</a>
+                    <a href="@Url.Action("Request", "Transplant", new { patientId = Model.SelectedPatient.Id })"
+                       class="btn btn-primary w-100">Request Organ Transplant</a>
+                </div>
+            }
+
+        </div>
+    }
+
+    @* Ghost button *@
+    <div style="position:fixed;bottom:24px;left:270px;">
+        <button class="btn" style="background:darkred;color:white;" disabled>I saw a ghost</button>
+    </div>
+</div>

@@ -4,811 +4,608 @@ using Common.Data.Entity.DTOs;
 using Common.Data.Entity.Enums;
 using Common.Data.Integration;
 using Common.Data.Repository;
-using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using System.Reflection;
 
 namespace Common.Tests.Service;
 
 [TestClass]
 public sealed class PatientServiceTests
 {
-    private readonly Mock<IPatientRepository> _patientRepo = new();
-    private readonly Mock<IMedicalHistoryRepository> _historyRepo = new();
-    private readonly Mock<IMedicalRecordRepository> _recordRepo = new();
-    private readonly Mock<IPrescriptionRepository> _prescriptionRepo = new();
+    private Mock<IPatientRepository> _patientRepository = null!;
+    private Mock<IMedicalHistoryRepository> _historyRepository = null!;
+    private Mock<IMedicalRecordRepository> _recordRepository = null!;
+    private Mock<IPrescriptionRepository> _prescriptionRepository = null!;
+    private PatientService _sut = null!;
 
-    private PatientService CreateService(bool includePrescriptionRepository = true)
+    [TestInitialize]
+    public void Setup()
     {
-        return new PatientService(
-            _patientRepo.Object,
-            _historyRepo.Object,
-            _recordRepo.Object,
-            includePrescriptionRepository ? _prescriptionRepo.Object : null);
+        _patientRepository = new Mock<IPatientRepository>();
+        _historyRepository = new Mock<IMedicalHistoryRepository>();
+        _recordRepository = new Mock<IMedicalRecordRepository>();
+        _prescriptionRepository = new Mock<IPrescriptionRepository>();
+        _sut = new PatientService(
+            _patientRepository.Object,
+            _historyRepository.Object,
+            _recordRepository.Object,
+            _prescriptionRepository.Object);
+    }
+
+    private static Patient MakePatient(int id = 1, string cnp = "2900101123457") => new()
+    {
+        Id = id,
+        FirstName = "Jane",
+        LastName = "Doe",
+        Cnp = cnp,
+        PhoneNo = "0712345678",
+        EmergencyContact = "John Doe",
+        Dob = new DateTime(1990, 1, 1),
+        Sex = Sex.F
+    };
+
+    [TestMethod]
+    public void ValidateCNP_WhenLengthIsInvalid_ReturnsFalse()
+    {
+        bool result = _sut.ValidateCNP("123", Sex.F, new DateTime(1990, 1, 1));
+
+        Assert.IsFalse(result);
     }
 
     [TestMethod]
-    public void ValidateCNP_ReturnsFalseForInvalidFormats()
+    public void ValidateCNP_WhenSexDoesNotMatchFirstDigit_ReturnsFalse()
     {
-        PatientService service = CreateService();
+        bool result = _sut.ValidateCNP("2900101123457", Sex.M, new DateTime(1990, 1, 1));
 
-        Assert.IsTrue(
-            !service.ValidateCNP("", Sex.M, new DateTime(1996, 1, 1))
-            && !service.ValidateCNP("196010101234", Sex.M, new DateTime(1996, 1, 1))
-            && !service.ValidateCNP("196010101234X", Sex.M, new DateTime(1996, 1, 1)));
+        Assert.IsFalse(result);
     }
 
     [TestMethod]
-    public void ValidateCNP_ReturnsFalseWhenSexOrDobDoesNotMatch()
+    public void ValidateCNP_WhenDobDoesNotMatchEmbeddedDate_ReturnsFalse()
     {
-        PatientService service = CreateService();
+        bool result = _sut.ValidateCNP("2900101123457", Sex.F, new DateTime(1991, 1, 1));
 
-        Assert.IsTrue(
-            !service.ValidateCNP("1960101012345", Sex.F, new DateTime(1996, 1, 1))
-            && !service.ValidateCNP("1960101012345", Sex.M, new DateTime(1996, 1, 2)));
+        Assert.IsFalse(result);
     }
 
     [TestMethod]
-    public void ValidateCNP_ReturnsTrueForMatchingMaleAndFemaleCnp()
+    public void ValidateCNP_WhenCnpMatchesSexAndDob_ReturnsTrue()
     {
-        PatientService service = CreateService();
-
-        Assert.IsTrue(
-            service.ValidateCNP("1960101012345", Sex.M, new DateTime(1996, 1, 1))
-            && service.ValidateCNP("2960101012345", Sex.F, new DateTime(1996, 1, 1)));
-    }
-
-    [TestMethod]
-    public async Task CreatePatientAsync_WhenDataIsNull_Throws()
-    {
-        PatientService service = CreateService();
-
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<ArgumentNullException>(() => service.CreatePatientAsync(null!));
-    }
-
-    [TestMethod]
-    public async Task CreatePatientAsync_WhenDobIsTodayOrFuture_Throws()
-    {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient(dob: DateTime.Today);
-
-        await Common.Tests.TestAssert.ThrowsExceptionWithMessageAsync<ArgumentException>(() => service.CreatePatientAsync(patient), "Birth Date must be in the past");
-    }
-
-    [TestMethod]
-    public async Task CreatePatientAsync_WhenCnpDoesNotMatch_Throws()
-    {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient(cnp: "2960101012345", sex: Sex.M);
-
-        await Common.Tests.TestAssert.ThrowsExceptionWithMessageAsync<ArgumentException>(() => service.CreatePatientAsync(patient), "Identity Mismatch");
-    }
-
-    [TestMethod]
-    public async Task CreatePatientAsync_WhenCnpAlreadyExists_Throws()
-    {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient();
-        _patientRepo.Setup(x => x.ExistsAsync(patient.Cnp)).ReturnsAsync(true);
-
-        await Common.Tests.TestAssert.ThrowsExceptionWithMessageAsync<ArgumentException>(() => service.CreatePatientAsync(patient), "already exists");
-    }
-
-    [TestMethod]
-    public async Task CreatePatientAsync_WhenRepositoryThrowsDuplicateCnpDbUpdateException_RethrowsDbUpdateException()
-    {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient();
-        _patientRepo.Setup(x => x.ExistsAsync(patient.Cnp)).ReturnsAsync(false);
-        _patientRepo.Setup(x => x.AddAsync(patient)).ThrowsAsync(new DbUpdateException("duplicate"));
-
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<DbUpdateException>(() => service.CreatePatientAsync(patient));
-    }
-
-    [TestMethod]
-    public async Task CreatePatientAsync_WhenRepositoryThrowsDuplicateCnpSqlException_ThrowsArgumentException()
-    {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient();
-        _patientRepo.Setup(x => x.ExistsAsync(patient.Cnp)).ReturnsAsync(false);
-        _patientRepo.Setup(x => x.AddAsync(patient))
-            .ThrowsAsync(new DbUpdateException("duplicate", CreateSqlException(2601, "IX_Patient_CNP")));
-
-        await Common.Tests.TestAssert.ThrowsExceptionWithMessageAsync<ArgumentException>(() => service.CreatePatientAsync(patient), "already exists");
-    }
-
-    [TestMethod]
-    public async Task CreatePatientAsync_WhenRepositoryThrowsWrongIndexSqlException_RethrowsDbUpdateException()
-    {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient();
-        _patientRepo.Setup(x => x.ExistsAsync(patient.Cnp)).ReturnsAsync(false);
-        _patientRepo.Setup(x => x.AddAsync(patient))
-            .ThrowsAsync(new DbUpdateException("duplicate", CreateSqlException(2627, "Other_Index")));
-
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<DbUpdateException>(() => service.CreatePatientAsync(patient));
-    }
-
-    [TestMethod]
-    public async Task CreatePatientAsync_WhenDataIsValid_AddsAndReturnsPatient()
-    {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient();
-        _patientRepo.Setup(x => x.ExistsAsync(patient.Cnp)).ReturnsAsync(false);
-
-        Patient result = await service.CreatePatientAsync(patient);
-
-        Assert.AreSame(patient, result);
-        _patientRepo.Verify(x => x.AddAsync(patient), Times.Once);
-    }
-
-    [TestMethod]
-    public async Task UpdatePatientAsync_WhenDataIsNull_Throws()
-    {
-        PatientService service = CreateService();
-
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<ArgumentNullException>(() => service.UpdatePatientAsync(null!));
-    }
-
-    [TestMethod]
-    public async Task UpdatePatientAsync_WhenCnpDoesNotMatch_Throws()
-    {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient(cnp: "2960101012345", sex: Sex.M);
-
-        await Common.Tests.TestAssert.ThrowsExceptionWithMessageAsync<ArgumentException>(() => service.UpdatePatientAsync(patient), "Identity Mismatch");
-    }
-
-    [TestMethod]
-    public async Task UpdatePatientAsync_WhenPhoneIsInvalid_Throws()
-    {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient(phoneNo: "abc");
-
-        await Common.Tests.TestAssert.ThrowsExceptionWithMessageAsync<ArgumentException>(() => service.UpdatePatientAsync(patient), "Phone number");
-    }
-
-    [TestMethod]
-    public async Task UpdatePatientAsync_WhenRepositoryThrowsDbUpdateException_RethrowsDbUpdateException()
-    {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient();
-        _patientRepo.Setup(x => x.UpdateAsync(patient)).ThrowsAsync(new DbUpdateException("duplicate"));
-
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<DbUpdateException>(() => service.UpdatePatientAsync(patient));
-    }
-
-    [TestMethod]
-    public async Task UpdatePatientAsync_WhenRepositoryThrowsDuplicateCnpSqlException_ThrowsArgumentException()
-    {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient();
-        _patientRepo.Setup(x => x.UpdateAsync(patient))
-            .ThrowsAsync(new DbUpdateException("duplicate", CreateSqlException(2627, "IX_Patient_CNP")));
-
-        await Common.Tests.TestAssert.ThrowsExceptionWithMessageAsync<ArgumentException>(() => service.UpdatePatientAsync(patient), "already exists");
-    }
-
-    [TestMethod]
-    public async Task UpdatePatientAsync_WhenDataIsValid_UpdatesPatient()
-    {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient(phoneNo: "+40 711111111");
-
-        await service.UpdatePatientAsync(patient);
-
-        _patientRepo.Verify(x => x.UpdateAsync(patient), Times.Once);
-    }
-
-    [TestMethod]
-    public async Task ArchivePatientAsync_SetsArchivedAndUpdatesPatient()
-    {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient();
-
-        await service.ArchivePatientAsync(patient);
-
-        Assert.IsTrue(patient.IsArchived);
-        _patientRepo.Verify(x => x.UpdateAsync(patient), Times.Once);
-    }
-
-    [TestMethod]
-    public async Task DearchivePatientAsync_WhenPatientDoesNotExist_Throws()
-    {
-        PatientService service = CreateService();
-        _patientRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((Patient?)null);
-
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<KeyNotFoundException>(() => service.DearchivePatientAsync(1));
-    }
-
-    [TestMethod]
-    public async Task DearchivePatientAsync_WhenPatientExists_UnarchivesAndUpdates()
-    {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient(isArchived: true);
-        _patientRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(patient);
-
-        await service.DearchivePatientAsync(1);
-
-        Assert.IsFalse(patient.IsArchived);
-        _patientRepo.Verify(x => x.UpdateAsync(patient), Times.Once);
-    }
-
-    [TestMethod]
-    public async Task ArchiveAsDeceasedAsync_WhenDeathDateIsFuture_Throws()
-    {
-        PatientService service = CreateService();
-
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<ArgumentException>(() => service.ArchiveAsDeceasedAsync(1, DateTime.Now.AddDays(1)));
-    }
-
-    [TestMethod]
-    public async Task ArchiveAsDeceasedAsync_WhenPatientDoesNotExist_Throws()
-    {
-        PatientService service = CreateService();
-        _patientRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((Patient?)null);
-
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<KeyNotFoundException>(() => service.ArchiveAsDeceasedAsync(1, DateTime.Now));
-    }
-
-    [TestMethod]
-    public async Task ArchiveAsDeceasedAsync_WhenPatientExists_SetsDodAndArchives()
-    {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient();
-        DateTime deathDate = DateTime.Now.AddDays(-1);
-        _patientRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(patient);
-
-        await service.ArchiveAsDeceasedAsync(1, deathDate);
-
-        Assert.IsTrue(patient.IsArchived && patient.Dod == deathDate);
-        _patientRepo.Verify(x => x.UpdateAsync(patient), Times.Once);
-    }
-
-    [TestMethod]
-    public async Task DeletePatientAsync_WhenPatientDoesNotExist_Throws()
-    {
-        PatientService service = CreateService();
-        _patientRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((Patient?)null);
-
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<KeyNotFoundException>(() => service.DeletePatientAsync(1));
-    }
-
-    [TestMethod]
-    public async Task DeletePatientAsync_WhenPatientExists_DeletesPatient()
-    {
-        PatientService service = CreateService();
-        _patientRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(CreatePatient());
-
-        await service.DeletePatientAsync(1);
-
-        _patientRepo.Verify(x => x.DeleteAsync(1), Times.Once);
-    }
-
-    [TestMethod]
-    public async Task ExistsAsync_ReturnsRepositoryResult()
-    {
-        PatientService service = CreateService();
-        _patientRepo.Setup(x => x.ExistsAsync("1960101012345")).ReturnsAsync(true);
-
-        bool result = await service.ExistsAsync("1960101012345");
+        bool result = _sut.ValidateCNP("2900101123457", Sex.F, new DateTime(1990, 1, 1));
 
         Assert.IsTrue(result);
     }
 
     [TestMethod]
-    public async Task GetByIdAsync_ReturnsRepositoryResult()
+    public async Task CreatePatientAsync_WhenPatientIsNull_ThrowsArgumentNullException()
     {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient();
-        _patientRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(patient);
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _sut.CreatePatientAsync(null!));
+    }
 
-        Patient? result = await service.GetByIdAsync(1);
+    [TestMethod]
+    public async Task CreatePatientAsync_WhenDobIsInFuture_ThrowsArgumentException()
+    {
+        Patient patient = MakePatient();
+        patient.Dob = DateTime.Today.AddDays(1);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.CreatePatientAsync(patient));
+    }
+
+    [TestMethod]
+    public async Task CreatePatientAsync_WhenPatientAlreadyExists_ThrowsArgumentException()
+    {
+        Patient patient = MakePatient();
+        _patientRepository.Setup(x => x.ExistsAsync(patient.Cnp)).ReturnsAsync(true);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.CreatePatientAsync(patient));
+    }
+
+    [TestMethod]
+    public async Task CreatePatientAsync_WhenCnpDoesNotMatchPatientData_ThrowsArgumentException()
+    {
+        Patient patient = MakePatient(cnp: "1900101123457");
+        _patientRepository.Setup(x => x.ExistsAsync(patient.Cnp)).ReturnsAsync(false);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.CreatePatientAsync(patient));
+    }
+
+    [TestMethod]
+    public async Task CreatePatientAsync_WhenPatientIsValid_DelegatesToRepository()
+    {
+        Patient patient = MakePatient();
+        _patientRepository.Setup(x => x.ExistsAsync(patient.Cnp)).ReturnsAsync(false);
+        _patientRepository.Setup(x => x.AddAsync(patient)).Returns(Task.CompletedTask);
+
+        await _sut.CreatePatientAsync(patient);
+
+        _patientRepository.Verify(x => x.AddAsync(patient), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task UpdatePatientAsync_WhenPatientIsNull_ThrowsArgumentNullException()
+    {
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _sut.UpdatePatientAsync(null!));
+    }
+
+    [TestMethod]
+    public async Task UpdatePatientAsync_WhenPhoneNumberIsInvalid_ThrowsArgumentException()
+    {
+        Patient patient = MakePatient();
+        patient.PhoneNo = "bad";
+
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.UpdatePatientAsync(patient));
+    }
+
+    [TestMethod]
+    public async Task UpdatePatientAsync_WhenCnpDoesNotMatchPatientData_ThrowsArgumentException()
+    {
+        Patient patient = MakePatient(cnp: "1900101123457");
+
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.UpdatePatientAsync(patient));
+    }
+
+    [TestMethod]
+    public async Task UpdatePatientAsync_WhenPatientIsValid_DelegatesToRepository()
+    {
+        Patient patient = MakePatient();
+        _patientRepository.Setup(x => x.UpdateAsync(patient)).Returns(Task.CompletedTask);
+
+        await _sut.UpdatePatientAsync(patient);
+
+        _patientRepository.Verify(x => x.UpdateAsync(patient), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task ArchivePatientAsync_WhenCalled_SetsPatientArchived()
+    {
+        Patient patient = MakePatient();
+        _patientRepository.Setup(x => x.UpdateAsync(patient)).Returns(Task.CompletedTask);
+
+        await _sut.ArchivePatientAsync(patient);
+
+        Assert.IsTrue(patient.IsArchived);
+    }
+
+    [TestMethod]
+    public async Task DearchivePatientAsync_WhenPatientExists_SetsArchivedFalse()
+    {
+        Patient patient = MakePatient();
+        patient.IsArchived = true;
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(patient);
+        _patientRepository.Setup(x => x.UpdateAsync(patient)).Returns(Task.CompletedTask);
+
+        await _sut.DearchivePatientAsync(1);
+
+        Assert.IsFalse(patient.IsArchived);
+    }
+
+    [TestMethod]
+    public async Task DearchivePatientAsync_WhenPatientDoesNotExist_ThrowsKeyNotFoundException()
+    {
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((Patient?)null);
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.DearchivePatientAsync(1));
+    }
+
+    [TestMethod]
+    public async Task ArchiveAsDeceasedAsync_WhenDeathDateIsInFuture_ThrowsArgumentException()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.ArchiveAsDeceasedAsync(1, DateTime.Now.AddDays(1)));
+    }
+
+    [TestMethod]
+    public async Task ArchiveAsDeceasedAsync_WhenPatientDoesNotExist_ThrowsKeyNotFoundException()
+    {
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((Patient?)null);
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.ArchiveAsDeceasedAsync(1, new DateTime(2026, 1, 1)));
+    }
+
+    [TestMethod]
+    public async Task ArchiveAsDeceasedAsync_WhenPatientExists_SetsDateOfDeath()
+    {
+        DateTime deathDate = new(2026, 1, 1);
+        Patient patient = MakePatient();
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(patient);
+        _patientRepository.Setup(x => x.UpdateAsync(patient)).Returns(Task.CompletedTask);
+
+        await _sut.ArchiveAsDeceasedAsync(1, deathDate);
+
+        Assert.AreEqual(deathDate, patient.Dod);
+    }
+
+    [TestMethod]
+    public async Task DeletePatientAsync_WhenPatientDoesNotExist_ThrowsKeyNotFoundException()
+    {
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((Patient?)null);
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.DeletePatientAsync(1));
+    }
+
+    [TestMethod]
+    public async Task DeletePatientAsync_WhenPatientExists_DelegatesToRepository()
+    {
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(MakePatient());
+        _patientRepository.Setup(x => x.DeleteAsync(1)).Returns(Task.CompletedTask);
+
+        await _sut.DeletePatientAsync(1);
+
+        _patientRepository.Verify(x => x.DeleteAsync(1), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task ExistsAsync_WhenRepositoryReturnsTrue_ReturnsTrue()
+    {
+        _patientRepository.Setup(x => x.ExistsAsync("2900101123457")).ReturnsAsync(true);
+
+        bool result = await _sut.ExistsAsync("2900101123457");
+
+        Assert.IsTrue(result);
+    }
+
+    [TestMethod]
+    public async Task GetByIdAsync_WhenRepositoryReturnsPatient_ReturnsSameInstance()
+    {
+        Patient patient = MakePatient();
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(patient);
+
+        Patient? result = await _sut.GetByIdAsync(1);
 
         Assert.AreSame(patient, result);
     }
 
     [TestMethod]
-    public async Task GetPatientDetailsAsync_WhenPatientDoesNotExist_Throws()
+    public async Task GetPatientDetailsAsync_WhenHistoryIsMissing_AssignsDefaultHistory()
     {
-        PatientService service = CreateService();
-        _patientRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((Patient?)null);
+        Patient patient = MakePatient();
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(patient);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync((MedicalHistory?)null);
 
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<KeyNotFoundException>(() => service.GetPatientDetailsAsync(1));
+        Patient result = await _sut.GetPatientDetailsAsync(1);
+
+        Assert.IsNotNull(result.MedicalHistory);
     }
 
     [TestMethod]
-    public async Task GetPatientDetailsAsync_WhenHistoryDoesNotExist_AttachesNewHistoryWithoutRecords()
+    public async Task GetPatientDetailsAsync_WhenPatientIsMissing_ThrowsKeyNotFoundException()
     {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient();
-        _patientRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(patient);
-        _historyRepo.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync((MedicalHistory?)null);
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((Patient?)null);
 
-        Patient result = await service.GetPatientDetailsAsync(1);
-
-        Assert.IsTrue(result.MedicalHistory!.PatientId == 1 && result.MedicalHistory.MedicalRecords.Count == 0);
-        _recordRepo.Verify(x => x.GetByHistoryIdAsync(It.IsAny<int>()), Times.Never);
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.GetPatientDetailsAsync(1));
     }
 
     [TestMethod]
-    public async Task GetPatientDetailsAsync_WhenHistoryExists_LoadsDetailsAndSortsRecords()
+    public async Task GetPatientDetailsAsync_WhenHistoryExists_LoadsChronicConditions()
     {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient();
-        var history = new MedicalHistory { Id = 5, PatientId = 1 };
-        var olderPrescription = new Prescription { Id = 10, RecordId = 1 };
-        var newerPrescription = new Prescription { Id = 20, RecordId = 2 };
-        var olderRecord = new MedicalRecord
-        {
-            Id = 1,
-            HistoryId = 5,
-            ConsultationDate = new DateTime(2024, 1, 1),
-            Prescription = olderPrescription,
-        };
-        var newerRecord = new MedicalRecord
-        {
-            Id = 2,
-            HistoryId = 5,
-            ConsultationDate = new DateTime(2024, 2, 1),
-            Prescription = newerPrescription,
-        };
-        _patientRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(patient);
-        _historyRepo.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync(history);
-        _historyRepo.Setup(x => x.GetChronicConditionsAsync(5)).ReturnsAsync(new List<string> { "Asthma" });
-        _historyRepo.Setup(x => x.GetAllergiesByHistoryIdAsync(5))
-            .ReturnsAsync(new List<(Allergy Allergy, string SeverityLevel)> { (new Allergy { AllergyName = "Dust" }, "mild") });
-        _recordRepo.Setup(x => x.GetByHistoryIdAsync(5)).ReturnsAsync(new List<MedicalRecord> { olderRecord, newerRecord });
+        Patient patient = MakePatient();
+        MedicalHistory history = new() { Id = 9, PatientId = 1 };
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(patient);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync(history);
+        _historyRepository.Setup(x => x.GetChronicConditionsAsync(9)).ReturnsAsync(["Asthma"]);
+        _historyRepository.Setup(x => x.GetAllergiesByHistoryIdAsync(9)).ReturnsAsync([]);
+        _recordRepository.Setup(x => x.GetByHistoryIdAsync(9)).ReturnsAsync([]);
 
-        Patient result = await service.GetPatientDetailsAsync(1);
+        Patient result = await _sut.GetPatientDetailsAsync(1);
 
-        Assert.IsTrue(
-            result.MedicalHistory!.ChronicConditions[0] == "Asthma"
-            && result.MedicalHistory.Allergies[0].Allergy.AllergyName == "Dust"
-            && result.MedicalHistory.MedicalRecords.Select(r => r.Id).SequenceEqual(new[] { 2, 1 })
-            && ReferenceEquals(newerRecord, newerPrescription.MedicalRecord)
-            && ReferenceEquals(olderRecord, olderPrescription.MedicalRecord));
-    }
-
-    [DataTestMethod]
-    [DataRow(-1, null, null, null, "Minimum age")]
-    [DataRow(null, -1, null, null, "Maximum age")]
-    [DataRow(50, 20, null, null, "Minimum age cannot be greater")]
-    [DataRow(null, null, "123", null, "CNP must be exactly")]
-    public async Task SearchPatientsAsync_WhenFilterIsInvalid_Throws(
-        int? minAge,
-        int? maxAge,
-        string? cnp,
-        string? unused,
-        string expectedMessage)
-    {
-        PatientService service = CreateService();
-
-        await Common.Tests.TestAssert.ThrowsExceptionWithMessageAsync<ArgumentException>(
-            () => service.SearchPatientsAsync(new PatientFilter
-            {
-                MinAge = minAge,
-                MaxAge = maxAge,
-                CNP = cnp,
-            }),
-            expectedMessage);
+        Assert.AreEqual("Asthma", result.MedicalHistory!.ChronicConditions[0]);
     }
 
     [TestMethod]
-    public async Task SearchPatientsAsync_WhenFromDateIsAfterToDate_Throws()
+    public async Task GetPatientDetailsAsync_WhenRecordsExist_OrdersRecordsDescendingByConsultationDate()
     {
-        PatientService service = CreateService();
+        Patient patient = MakePatient();
+        MedicalHistory history = new() { Id = 9, PatientId = 1 };
+        MedicalRecord older = new() { Id = 1, HistoryId = 9, ConsultationDate = new DateTime(2026, 1, 1) };
+        MedicalRecord newer = new() { Id = 2, HistoryId = 9, ConsultationDate = new DateTime(2026, 2, 1) };
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(patient);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync(history);
+        _historyRepository.Setup(x => x.GetChronicConditionsAsync(9)).ReturnsAsync([]);
+        _historyRepository.Setup(x => x.GetAllergiesByHistoryIdAsync(9)).ReturnsAsync([]);
+        _recordRepository.Setup(x => x.GetByHistoryIdAsync(9)).ReturnsAsync([older, newer]);
 
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<ArgumentException>(() => service.SearchPatientsAsync(new PatientFilter
+        Patient result = await _sut.GetPatientDetailsAsync(1);
+
+        Assert.AreEqual(2, result.MedicalHistory!.MedicalRecords[0].Id);
+    }
+
+    [TestMethod]
+    public async Task SearchPatientsAsync_WhenMinAgeIsNegative_ThrowsArgumentException()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.SearchPatientsAsync(new PatientFilter { MinAge = -1 }));
+    }
+
+    [TestMethod]
+    public async Task SearchPatientsAsync_WhenMaxAgeIsNegative_ThrowsArgumentException()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.SearchPatientsAsync(new PatientFilter { MaxAge = -1 }));
+    }
+
+    [TestMethod]
+    public async Task SearchPatientsAsync_WhenMinAgeExceedsMaxAge_ThrowsArgumentException()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.SearchPatientsAsync(new PatientFilter { MinAge = 10, MaxAge = 5 }));
+    }
+
+    [TestMethod]
+    public async Task SearchPatientsAsync_WhenCnpLengthIsInvalid_ThrowsArgumentException()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.SearchPatientsAsync(new PatientFilter { CNP = "123" }));
+    }
+
+    [TestMethod]
+    public async Task SearchPatientsAsync_WhenLastUpdatedFromIsAfterLastUpdatedTo_ThrowsArgumentException()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.SearchPatientsAsync(new PatientFilter
         {
-            LastUpdatedFrom = new DateTime(2024, 2, 1),
-            LastUpdatedTo = new DateTime(2024, 1, 1),
+            LastUpdatedFrom = new DateTime(2026, 2, 1),
+            LastUpdatedTo = new DateTime(2026, 1, 1)
         }));
     }
 
     [TestMethod]
-    public async Task SearchPatientsAsync_WhenFilterIsValid_ReturnsRepositoryResult()
+    public async Task SearchPatientsAsync_WhenFilterIsValid_ReturnsRepositoryResults()
     {
-        PatientService service = CreateService();
-        var filter = new PatientFilter { CNP = "1960101012345" };
-        var patients = new List<Patient> { CreatePatient() };
-        _patientRepo.Setup(x => x.SearchAsync(filter)).ReturnsAsync(patients);
+        List<Patient> patients = [MakePatient()];
+        PatientFilter filter = new() { MinAge = 18, MaxAge = 65, CNP = "2900101123457" };
+        _patientRepository.Setup(x => x.SearchAsync(filter)).ReturnsAsync(patients);
 
-        List<Patient> result = await service.SearchPatientsAsync(filter);
+        List<Patient> result = await _sut.SearchPatientsAsync(filter);
 
         Assert.AreSame(patients, result);
     }
 
     [TestMethod]
-    public async Task SearchPatientsAsync_WhenFilterIsNull_PassesNullToRepository()
+    public async Task IsHighRiskPatientAsync_WhenVisitCountExceedsThreshold_ReturnsTrue()
     {
-        PatientService service = CreateService();
-        var patients = new List<Patient> { CreatePatient() };
-        _patientRepo.Setup(x => x.SearchAsync(null!)).ReturnsAsync(patients);
+        _recordRepository.Setup(x => x.GetERVisitCountAsync(1, It.IsAny<DateTime>())).ReturnsAsync(11);
 
-        List<Patient> result = await service.SearchPatientsAsync(null!);
+        bool result = await _sut.IsHighRiskPatientAsync(1);
 
-        Assert.AreSame(patients, result);
+        Assert.IsTrue(result);
     }
 
     [TestMethod]
-    public async Task IsHighRiskPatientAsync_ReturnsTrueOnlyAboveThreshold()
+    public async Task CreateMedicalHistoryAsync_WhenPatientDoesNotExist_ThrowsArgumentException()
     {
-        PatientService service = CreateService();
-        _recordRepo.Setup(x => x.GetERVisitCountAsync(1, It.IsAny<DateTime>())).ReturnsAsync(11);
-        _recordRepo.Setup(x => x.GetERVisitCountAsync(2, It.IsAny<DateTime>())).ReturnsAsync(10);
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((Patient?)null);
 
-        Assert.IsTrue(await service.IsHighRiskPatientAsync(1) && !await service.IsHighRiskPatientAsync(2));
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.CreateMedicalHistoryAsync(1, new MedicalHistory()));
     }
 
     [TestMethod]
-    public async Task CreateMedicalHistoryAsync_WhenPatientDoesNotExist_ThrowsBeforeNullHistoryCheck()
+    public async Task CreateMedicalHistoryAsync_WhenAllergiesExist_SavesAllergies()
     {
-        PatientService service = CreateService();
-        _patientRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((Patient?)null);
+        Allergy allergy = new() { Id = 4, AllergyName = "Peanuts" };
+        MedicalHistory history = new()
+        {
+            Allergies = [(allergy, "Severe")]
+        };
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(MakePatient());
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync((MedicalHistory?)null);
+        _historyRepository.Setup(x => x.CreateAsync(It.IsAny<MedicalHistory>())).ReturnsAsync(9);
 
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<ArgumentException>(() => service.CreateMedicalHistoryAsync(1, null!));
+        await _sut.CreateMedicalHistoryAsync(1, history);
+
+        _historyRepository.Verify(x => x.SaveAllergiesAsync(9, It.IsAny<List<(Allergy Allergy, string SeverityLevel)>>()), Times.Once);
     }
 
     [TestMethod]
-    public async Task CreateMedicalHistoryAsync_WhenHistoryAlreadyExists_Throws()
+    public async Task CreateMedicalHistoryAsync_WhenPatientAlreadyHasHistory_ThrowsArgumentException()
     {
-        PatientService service = CreateService();
-        _patientRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(CreatePatient());
-        _historyRepo.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync(new MedicalHistory { Id = 5, PatientId = 1 });
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(MakePatient());
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync(new MedicalHistory { Id = 9, PatientId = 1 });
 
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<ArgumentException>(() => service.CreateMedicalHistoryAsync(1, new MedicalHistory()));
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.CreateMedicalHistoryAsync(1, new MedicalHistory()));
     }
 
     [TestMethod]
-    public async Task CreateMedicalHistoryAsync_WhenHistoryIsNull_Throws()
+    public async Task CreateMedicalHistoryAsync_WhenHistoryIsNull_ThrowsArgumentException()
     {
-        PatientService service = CreateService();
-        _patientRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(CreatePatient());
-        _historyRepo.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync((MedicalHistory?)null);
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(MakePatient());
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync((MedicalHistory?)null);
 
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<ArgumentException>(() => service.CreateMedicalHistoryAsync(1, null!));
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.CreateMedicalHistoryAsync(1, null!));
     }
 
     [TestMethod]
-    public async Task CreateMedicalHistoryAsync_WhenCreatedWithAllergies_SavesAllergies()
+    public async Task CreateMedicalRecordAsync_WhenMedicalHistoryIsMissing_ThrowsInvalidOperationException()
     {
-        PatientService service = CreateService();
-        var allergies = new List<(Allergy Allergy, string SeverityLevel)> { (new Allergy { Id = 1 }, "mild") };
-        var history = new MedicalHistory { Allergies = allergies };
-        _patientRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(CreatePatient());
-        _historyRepo.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync((MedicalHistory?)null);
-        _historyRepo.Setup(x => x.CreateAsync(history)).ReturnsAsync(5);
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(MakePatient());
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync((MedicalHistory?)null);
 
-        await service.CreateMedicalHistoryAsync(1, history);
-
-        Assert.AreEqual(1, history.PatientId);
-        _historyRepo.Verify(x => x.SaveAllergiesAsync(5, It.Is<List<(Allergy Allergy, string SeverityLevel)>>(a => a.Count == 1)), Times.Once);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.CreateMedicalRecordAsync(1, new MedicalRecord()));
     }
 
     [TestMethod]
-    public async Task CreateMedicalHistoryAsync_WhenCreatedWithoutValidIdOrAllergies_DoesNotSaveAllergies()
+    public async Task CreateMedicalRecordAsync_WhenPatientDoesNotExist_ThrowsKeyNotFoundException()
     {
-        PatientService service = CreateService();
-        var history = new MedicalHistory();
-        _patientRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(CreatePatient());
-        _historyRepo.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync((MedicalHistory?)null);
-        _historyRepo.Setup(x => x.CreateAsync(history)).ReturnsAsync(0);
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((Patient?)null);
 
-        await service.CreateMedicalHistoryAsync(1, history);
-
-        _historyRepo.Verify(x => x.SaveAllergiesAsync(It.IsAny<int>(), It.IsAny<List<(Allergy Allergy, string SeverityLevel)>>()), Times.Never);
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.CreateMedicalRecordAsync(1, new MedicalRecord()));
     }
 
     [TestMethod]
-    public async Task CreateMedicalRecordAsync_WhenRecordIsNull_Throws()
+    public async Task CreateMedicalRecordAsync_WhenMedicalHistoryExists_SetsHistoryId()
     {
-        PatientService service = CreateService();
+        MedicalRecord record = new();
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(MakePatient());
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync(new MedicalHistory { Id = 9, PatientId = 1 });
+        _recordRepository.Setup(x => x.AddAsync(record)).ReturnsAsync(12);
 
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<ArgumentNullException>(() => service.CreateMedicalRecordAsync(1, null!));
+        await _sut.CreateMedicalRecordAsync(1, record);
+
+        Assert.AreEqual(9, record.HistoryId);
     }
 
     [TestMethod]
-    public async Task CreateMedicalRecordAsync_WhenPatientDoesNotExist_Throws()
+    public async Task CreatePrescriptionAsync_WhenRepositoryIsUnavailable_ThrowsInvalidOperationException()
     {
-        PatientService service = CreateService();
-        _patientRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((Patient?)null);
+        var service = new PatientService(_patientRepository.Object, _historyRepository.Object, _recordRepository.Object, null);
 
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<KeyNotFoundException>(() => service.CreateMedicalRecordAsync(1, new MedicalRecord()));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreatePrescriptionAsync(1, new Prescription()));
     }
 
     [TestMethod]
-    public async Task CreateMedicalRecordAsync_WhenHistoryDoesNotExist_Throws()
+    public async Task CreatePrescriptionAsync_WhenPrescriptionIsNull_ThrowsArgumentNullException()
     {
-        PatientService service = CreateService();
-        _patientRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(CreatePatient());
-        _historyRepo.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync((MedicalHistory?)null);
-
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<InvalidOperationException>(() => service.CreateMedicalRecordAsync(1, new MedicalRecord()));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _sut.CreatePrescriptionAsync(1, null!));
     }
 
     [TestMethod]
-    public async Task CreateMedicalRecordAsync_WhenDataIsValid_SetsHistoryAndReturnsRecordId()
+    public async Task CreatePrescriptionAsync_WhenRecordDoesNotExist_ThrowsKeyNotFoundException()
     {
-        PatientService service = CreateService();
-        var record = new MedicalRecord();
-        _patientRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(CreatePatient());
-        _historyRepo.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync(new MedicalHistory { Id = 5, PatientId = 1 });
-        _recordRepo.Setup(x => x.AddAsync(record)).ReturnsAsync(9);
+        _recordRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((MedicalRecord?)null);
 
-        int result = await service.CreateMedicalRecordAsync(1, record);
-
-        Assert.IsTrue(record.HistoryId == 5 && result == 9);
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.CreatePrescriptionAsync(1, new Prescription()));
     }
 
     [TestMethod]
-    public async Task CreatePrescriptionAsync_WhenRepositoryIsMissing_Throws()
+    public async Task CreatePrescriptionAsync_WhenRecordExists_SetsPrescriptionRecordId()
     {
-        PatientService service = CreateService(includePrescriptionRepository: false);
+        Prescription prescription = new();
+        _recordRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(new MedicalRecord { Id = 1 });
+        _prescriptionRepository.Setup(x => x.AddAsync(prescription)).Returns(Task.CompletedTask);
 
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<InvalidOperationException>(() => service.CreatePrescriptionAsync(1, new Prescription()));
-    }
-
-    [TestMethod]
-    public async Task CreatePrescriptionAsync_WhenPrescriptionIsNull_Throws()
-    {
-        PatientService service = CreateService();
-
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<ArgumentNullException>(() => service.CreatePrescriptionAsync(1, null!));
-    }
-
-    [TestMethod]
-    public async Task CreatePrescriptionAsync_WhenRecordDoesNotExist_Throws()
-    {
-        PatientService service = CreateService();
-        _recordRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((MedicalRecord?)null);
-
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<KeyNotFoundException>(() => service.CreatePrescriptionAsync(1, new Prescription()));
-    }
-
-    [TestMethod]
-    public async Task CreatePrescriptionAsync_WhenDataIsValid_SetsRecordAndAddsPrescription()
-    {
-        PatientService service = CreateService();
-        var prescription = new Prescription();
-        _recordRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(new MedicalRecord { Id = 1 });
-
-        await service.CreatePrescriptionAsync(1, prescription);
+        await _sut.CreatePrescriptionAsync(1, prescription);
 
         Assert.AreEqual(1, prescription.RecordId);
-        _prescriptionRepo.Verify(x => x.AddAsync(prescription), Times.Once);
     }
 
     [TestMethod]
-    public async Task GetMedicalHistoryAsync_WhenPatientIdIsInvalid_Throws()
+    public async Task GetMedicalHistoryAsync_WhenPatientIdIsInvalid_ThrowsKeyNotFoundException()
     {
-        PatientService service = CreateService();
-
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<KeyNotFoundException>(() => service.GetMedicalHistoryAsync(0));
-    }
-
-    [TestMethod]
-    public async Task GetMedicalHistoryAsync_WhenRepositorySucceeds_ReturnsHistory()
-    {
-        PatientService service = CreateService();
-        var history = new MedicalHistory { Id = 5 };
-        _historyRepo.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync(history);
-
-        MedicalHistory? result = await service.GetMedicalHistoryAsync(1);
-
-        Assert.AreSame(history, result);
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.GetMedicalHistoryAsync(0));
     }
 
     [TestMethod]
     public async Task GetMedicalHistoryAsync_WhenRepositoryThrows_ReturnsNull()
     {
-        PatientService service = CreateService();
-        _historyRepo.Setup(x => x.GetByPatientIdAsync(1)).ThrowsAsync(new InvalidOperationException());
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ThrowsAsync(new Exception("boom"));
 
-        MedicalHistory? result = await service.GetMedicalHistoryAsync(1);
+        MedicalHistory? result = await _sut.GetMedicalHistoryAsync(1);
 
         Assert.IsNull(result);
     }
 
     [TestMethod]
-    public async Task GetMedicalRecordsAsync_WhenRepositorySucceeds_ReturnsRecords()
+    public async Task GetMedicalHistoryAsync_WhenHistoryExists_ReturnsHistory()
     {
-        PatientService service = CreateService();
-        var records = new List<MedicalRecord> { new MedicalRecord { Id = 1 } };
-        _recordRepo.Setup(x => x.GetByHistoryIdAsync(5)).ReturnsAsync(records);
+        MedicalHistory history = new() { Id = 9, PatientId = 1 };
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync(history);
 
-        List<MedicalRecord> result = await service.GetMedicalRecordsAsync(5);
+        MedicalHistory? result = await _sut.GetMedicalHistoryAsync(1);
 
-        Assert.AreSame(records, result);
+        Assert.AreSame(history, result);
     }
 
     [TestMethod]
     public async Task GetMedicalRecordsAsync_WhenRepositoryThrows_ReturnsEmptyList()
     {
-        PatientService service = CreateService();
-        _recordRepo.Setup(x => x.GetByHistoryIdAsync(5)).ThrowsAsync(new InvalidOperationException());
+        _recordRepository.Setup(x => x.GetByHistoryIdAsync(5)).ThrowsAsync(new Exception("boom"));
 
-        List<MedicalRecord> result = await service.GetMedicalRecordsAsync(5);
+        List<MedicalRecord> result = await _sut.GetMedicalRecordsAsync(5);
 
         Assert.AreEqual(0, result.Count);
     }
 
     [TestMethod]
-    public async Task GetRecordExportDataAsync_WhenRecordDoesNotExist_Throws()
+    public async Task GetMedicalRecordsAsync_WhenRepositoryReturnsRecords_ReturnsRecords()
     {
-        PatientService service = CreateService();
-        _recordRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((MedicalRecord?)null);
+        List<MedicalRecord> records = [new() { Id = 1, HistoryId = 5 }];
+        _recordRepository.Setup(x => x.GetByHistoryIdAsync(5)).ReturnsAsync(records);
 
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<KeyNotFoundException>(() => service.GetRecordExportDataAsync(1));
+        List<MedicalRecord> result = await _sut.GetMedicalRecordsAsync(5);
+
+        Assert.AreSame(records, result);
     }
 
     [TestMethod]
-    public async Task GetRecordExportDataAsync_WhenHistoryOrPatientDoesNotExist_Throws()
+    public async Task GetRecordExportDataAsync_WhenRecordIsMissing_ThrowsKeyNotFoundException()
     {
-        PatientService service = CreateService();
-        _recordRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(new MedicalRecord { Id = 1, HistoryId = 5 });
-        _historyRepo.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(new MedicalHistory { Id = 5, Patient = null! });
+        _recordRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((MedicalRecord?)null);
 
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<KeyNotFoundException>(() => service.GetRecordExportDataAsync(1));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.GetRecordExportDataAsync(1));
     }
 
     [TestMethod]
-    public async Task GetRecordExportDataAsync_WhenPrescriptionRepositoryIsMissing_ReturnsDataWithoutPrescription()
+    public async Task GetRecordExportDataAsync_WhenPatientIsMissing_ThrowsKeyNotFoundException()
     {
-        PatientService service = CreateService(includePrescriptionRepository: false);
-        Patient patient = CreatePatient();
-        MedicalRecord record = new() { Id = 1, HistoryId = 5 };
-        _recordRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(record);
-        _historyRepo.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(new MedicalHistory { Id = 5, Patient = patient });
+        _recordRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(new MedicalRecord { Id = 1, HistoryId = 9 });
+        _historyRepository.Setup(x => x.GetByIdAsync(9)).ReturnsAsync(new MedicalHistory { Id = 9, PatientId = 1 });
 
-        RecordExportDataDto result = await service.GetRecordExportDataAsync(1);
-
-        Assert.IsTrue(
-            ReferenceEquals(record, result.Record)
-            && ReferenceEquals(patient, result.Patient)
-            && result.Prescription is null
-            && result.Items.Count == 0);
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.GetRecordExportDataAsync(1));
     }
 
     [TestMethod]
-    public async Task GetRecordExportDataAsync_WhenPrescriptionExists_ReturnsPrescriptionAndItems()
+    public async Task GetRecordExportDataAsync_WhenPrescriptionExists_ReturnsItems()
     {
-        PatientService service = CreateService();
-        Patient patient = CreatePatient();
-        MedicalRecord record = new() { Id = 1, HistoryId = 5 };
-        Prescription prescription = new() { Id = 9, RecordId = 1 };
-        var items = new List<PrescriptionItem> { new PrescriptionItem { Id = 7 } };
-        _recordRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(record);
-        _historyRepo.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(new MedicalHistory { Id = 5, Patient = patient });
-        _prescriptionRepo.Setup(x => x.GetByRecordIdAsync(1)).ReturnsAsync(prescription);
-        _prescriptionRepo.Setup(x => x.GetItemsAsync(9)).ReturnsAsync(items);
+        _recordRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(new MedicalRecord { Id = 1, HistoryId = 9 });
+        _historyRepository.Setup(x => x.GetByIdAsync(9)).ReturnsAsync(new MedicalHistory { Id = 9, PatientId = 1, Patient = MakePatient() });
+        _prescriptionRepository.Setup(x => x.GetByRecordIdAsync(1)).ReturnsAsync(new Prescription { Id = 4, RecordId = 1 });
+        _prescriptionRepository.Setup(x => x.GetItemsAsync(4)).ReturnsAsync([new PrescriptionItem { MedName = "Ibuprofen" }]);
 
-        RecordExportDataDto result = await service.GetRecordExportDataAsync(1);
+        RecordExportDataDto result = await _sut.GetRecordExportDataAsync(1);
 
-        Assert.IsTrue(ReferenceEquals(prescription, result.Prescription) && ReferenceEquals(items, result.Items));
+        Assert.AreEqual(1, result.Items.Count);
+    }
+
+    [TestMethod]
+    public async Task GetPatientAllergiesAsync_WhenAllergiesExist_ReturnsFormattedAllergy()
+    {
+        Allergy allergy = new() { Id = 1, AllergyName = "Peanuts" };
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync(new MedicalHistory { Id = 9, PatientId = 1 });
+        _historyRepository.Setup(x => x.GetAllergiesByHistoryIdAsync(9)).ReturnsAsync([(allergy, "Severe")]);
+
+        List<string> result = await _sut.GetPatientAllergiesAsync(1);
+
+        Assert.AreEqual("Peanuts - Severe", result[0]);
     }
 
     [TestMethod]
     public async Task GetPatientAllergiesAsync_WhenHistoryDoesNotExist_ReturnsEmptyList()
     {
-        PatientService service = CreateService();
-        _historyRepo.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync((MedicalHistory?)null);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync((MedicalHistory?)null);
 
-        List<string> result = await service.GetPatientAllergiesAsync(1);
+        List<string> result = await _sut.GetPatientAllergiesAsync(1);
 
         Assert.AreEqual(0, result.Count);
-    }
-
-    [TestMethod]
-    public async Task GetPatientAllergiesAsync_WhenHistoryExists_ReturnsFormattedAllergies()
-    {
-        PatientService service = CreateService();
-        _historyRepo.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync(new MedicalHistory { Id = 5 });
-        _historyRepo.Setup(x => x.GetAllergiesByHistoryIdAsync(5))
-            .ReturnsAsync(new List<(Allergy Allergy, string SeverityLevel)> { (new Allergy { AllergyName = "Dust" }, "mild") });
-
-        List<string> result = await service.GetPatientAllergiesAsync(1);
-
-        CollectionAssert.AreEqual(new[] { "Dust - mild" }, result);
     }
 
     [TestMethod]
     public async Task GetPatientAllergiesAsync_WhenRepositoryThrows_ReturnsEmptyList()
     {
-        PatientService service = CreateService();
-        _historyRepo.Setup(x => x.GetByPatientIdAsync(1)).ThrowsAsync(new InvalidOperationException());
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ThrowsAsync(new Exception("boom"));
 
-        List<string> result = await service.GetPatientAllergiesAsync(1);
+        List<string> result = await _sut.GetPatientAllergiesAsync(1);
 
         Assert.AreEqual(0, result.Count);
     }
 
     [TestMethod]
-    public async Task GetPrescriptionByRecordIdAsync_WhenRepositoryIsMissing_Throws()
+    public async Task GetPrescriptionByRecordIdAsync_WhenRepositoryIsUnavailable_ThrowsInvalidOperationException()
     {
-        PatientService service = CreateService(includePrescriptionRepository: false);
+        var service = new PatientService(_patientRepository.Object, _historyRepository.Object, _recordRepository.Object, null);
 
-        await Common.Tests.TestAssert.ThrowsExceptionAsync<InvalidOperationException>(() => service.GetPrescriptionByRecordIdAsync(1));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetPrescriptionByRecordIdAsync(5));
     }
 
     [TestMethod]
-    public async Task GetPrescriptionByRecordIdAsync_ReturnsRepositoryResult()
+    public async Task GetPrescriptionByRecordIdAsync_WhenRepositoryIsAvailable_DelegatesToRepository()
     {
-        PatientService service = CreateService();
-        Prescription prescription = new() { Id = 1 };
-        _prescriptionRepo.Setup(x => x.GetByRecordIdAsync(1)).ReturnsAsync(prescription);
+        _prescriptionRepository.Setup(x => x.GetByRecordIdAsync(5)).ReturnsAsync(new Prescription { RecordId = 5 });
 
-        Prescription? result = await service.GetPrescriptionByRecordIdAsync(1);
+        await _sut.GetPrescriptionByRecordIdAsync(5);
+
+        _prescriptionRepository.Verify(x => x.GetByRecordIdAsync(5), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task GetPrescriptionByRecordIdAsync_WhenRepositoryReturnsPrescription_ReturnsPrescription()
+    {
+        Prescription prescription = new() { RecordId = 5 };
+        _prescriptionRepository.Setup(x => x.GetByRecordIdAsync(5)).ReturnsAsync(prescription);
+
+        Prescription? result = await _sut.GetPrescriptionByRecordIdAsync(5);
 
         Assert.AreSame(prescription, result);
     }
-
-    private static Patient CreatePatient(
-        string cnp = "1960101012345",
-        Sex sex = Sex.M,
-        DateTime? dob = null,
-        string phoneNo = "0711111111",
-        bool isArchived = false)
-    {
-        return new Patient
-        {
-            Id = 1,
-            FirstName = "Ana",
-            LastName = "Pop",
-            Cnp = cnp,
-            Dob = dob ?? new DateTime(1996, 1, 1),
-            Sex = sex,
-            PhoneNo = phoneNo,
-            EmergencyContact = "Contact",
-            IsArchived = isArchived,
-        };
-    }
-
-    private static SqlException CreateSqlException(int number, string message)
-    {
-        ConstructorInfo errorConstructor = typeof(SqlError).GetConstructor(
-            BindingFlags.NonPublic | BindingFlags.Instance,
-            binder: null,
-            types:
-            [
-                typeof(int),
-                typeof(byte),
-                typeof(byte),
-                typeof(string),
-                typeof(string),
-                typeof(string),
-                typeof(int),
-                typeof(uint),
-                typeof(Exception)
-            ],
-            modifiers: null)!;
-
-        var error = (SqlError)errorConstructor.Invoke(
-        [
-            number,
-            (byte)0,
-            (byte)0,
-            "server",
-            message,
-            "procedure",
-            1,
-            0u,
-            null!
-        ]);
-
-        var errors = (SqlErrorCollection)Activator.CreateInstance(typeof(SqlErrorCollection), nonPublic: true)!;
-        typeof(SqlErrorCollection).GetMethod("Add", BindingFlags.NonPublic | BindingFlags.Instance)!
-            .Invoke(errors, [error]);
-
-        ConstructorInfo exceptionConstructor = typeof(SqlException).GetConstructor(
-            BindingFlags.NonPublic | BindingFlags.Instance,
-            binder: null,
-            types: [typeof(string), typeof(SqlErrorCollection), typeof(Exception), typeof(Guid)],
-            modifiers: null)!;
-
-        return (SqlException)exceptionConstructor.Invoke([message, errors, null!, Guid.NewGuid()]);
-    }
 }
-

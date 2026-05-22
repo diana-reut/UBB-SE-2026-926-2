@@ -9,7 +9,7 @@
         <h1 class="mb-1">Addict Candidates</h1>
         <p class="text-muted mb-0">Patients flagged for potential substance dependency.</p>
     </div>
-    <a asp-action="Prescriptions" class="btn btn-outline-secondary">Back to Prescriptions</a>
+    <a asp-controller="Prescription" asp-action="Feed" class="btn btn-outline-secondary">Back to Prescriptions</a>
 </div>
 
 @if (TempData["SuccessMessage"] is string successMessage)
@@ -43,18 +43,11 @@ else
                         <td>@candidate.Id</td>
                         <td>@candidate.FullName</td>
                         <td>
-                            @if (candidate.IsPoliceNotified)
-                            {
-                                <span class="badge bg-danger">Reported to Police</span>
-                            }
-                            else
-                            {
-                                <form asp-action="BuildPoliceReport" method="post" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="patientId" value="@candidate.Id" />
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Build Police Report</button>
-                                </form>
-                            }
+                            <form asp-action="BuildPoliceReport" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="patientId" value="@candidate.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Build Police Report</button>
+                            </form>
                         </td>
                     </tr>
                 }

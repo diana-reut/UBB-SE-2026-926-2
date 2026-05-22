@@ -1,8 +1,12 @@
 using Common.Data.Entity;
-using HospitalManagement.Web.Models.PatientProfile;
+using Common.Data.Entity.DTOs;
 using HospitalManagement.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MigratedPatientProfileModel = HospitalManagement.Web.Models.PatientProfile.PatientProfileModel;
+using MigratedPatientProfileViewModel = HospitalManagement.Web.Models.PatientProfile.PatientProfileViewModel;
+using PatientsMedicalRecordViewModel = HospitalManagement.Web.Models.Patients.MedicalRecordViewModel;
+using PatientsPatientProfileViewModel = HospitalManagement.Web.Models.Patients.PatientProfileViewModel;
 
 namespace HospitalManagement.Web.Controllers;
 
@@ -21,9 +25,68 @@ public class PatientProfileController : Controller
     }
 
     [HttpGet]
+    public async Task<IActionResult> Index(int id, int? selectedRecordId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            Patient patient = await patientApiClient.GetPatientDetailsAsync(id, cancellationToken);
+            List<string> allergies = await patientApiClient.GetPatientAllergiesAsync(id, cancellationToken);
+            bool isHighRisk = await patientApiClient.IsHighRiskAsync(id, cancellationToken);
+
+            var model = new PatientsPatientProfileViewModel
+            {
+                Id = patient.Id,
+                FirstName = patient.FirstName,
+                LastName = patient.LastName,
+                Cnp = patient.Cnp,
+                BloodType = patient.MedicalHistory?.BloodType?.ToString() ?? "N/A",
+                Rh = patient.MedicalHistory?.Rh?.ToString() ?? "N/A",
+                FormattedAllergies = allergies.Count > 0 ? string.Join(", ", allergies) : "None",
+                FormattedChronicConditions = patient.MedicalHistory?.ChronicConditions is { Count: > 0 }
+                    ? string.Join(", ", patient.MedicalHistory.ChronicConditions)
+                    : "None",
+                IsHighRisk = isHighRisk,
+                MedicalRecords = patient.MedicalHistory?.MedicalRecords?
+                    .OrderByDescending(r => r.ConsultationDate)
+                    .Select(r => new PatientsMedicalRecordViewModel
+                    {
+                        Id = r.Id,
+                        ConsultationDate = r.ConsultationDate,
+                        SourceType = r.SourceType.ToString(),
+                        StaffId = r.StaffId,
+                        Symptoms = r.Symptoms ?? "N/A",
+                        Diagnosis = r.Diagnosis ?? "N/A",
+                    }).ToList() ?? [],
+                SelectedRecordId = selectedRecordId,
+            };
+
+            foreach (PatientsMedicalRecordViewModel record in model.MedicalRecords)
+            {
+                try
+                {
+                    Prescription? prescription = await patientApiClient
+                        .GetPrescriptionByRecordIdAsync(record.Id, cancellationToken);
+                    record.PrescriptionId = prescription?.Id;
+                }
+                catch
+                {
+                    record.PrescriptionId = null;
+                }
+            }
+
+            return View("~/Views/Patients/PatientProfile.cshtml", model);
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = "Could not load patient profile: " + ex.Message;
+            return RedirectToAction("Dashboard", "MedicalStaff");
+        }
+    }
+
+    [HttpGet]
     public async Task<IActionResult> Details(int id)
     {
-        PatientProfileModel model;
+        MigratedPatientProfileModel model;
         try
         {
             model = await BuildProfileModelAsync(id, HttpContext.RequestAborted);
@@ -34,16 +97,24 @@ public class PatientProfileController : Controller
             return RedirectToAction("Index", "Admin");
         }
 
-        PatientProfileViewModel vm = PatientProfileViewModel.FromModel(model);
-        if (TempData["SuccessMessage"] is string success) vm.SuccessMessage = success;
-        if (TempData["ErrorMessage"] is string error) vm.ErrorMessage = error;
+        MigratedPatientProfileViewModel vm = MigratedPatientProfileViewModel.FromModel(model);
+        if (TempData["SuccessMessage"] is string success)
+        {
+            vm.SuccessMessage = success;
+        }
+
+        if (TempData["ErrorMessage"] is string error)
+        {
+            vm.ErrorMessage = error;
+        }
+
         return View(vm);
     }
 
     [HttpGet]
     public async Task<IActionResult> SelectRecord(int patientId, int recordId)
     {
-        PatientProfileModel model;
+        MigratedPatientProfileModel model;
         try
         {
             model = await BuildProfileModelAsync(patientId, HttpContext.RequestAborted);
@@ -61,7 +132,9 @@ public class PatientProfileController : Controller
             try
             {
                 model.BasePrice = await billingApiClient.ComputeBasePriceAsync(
-                    patientId, recordId, HttpContext.RequestAborted);
+                    patientId,
+                    recordId,
+                    HttpContext.RequestAborted);
                 model.FinalPrice = record.FinalPrice > 0 ? record.FinalPrice : model.BasePrice;
                 model.DiscountApplied = record.DiscountApplied;
             }
@@ -73,13 +146,13 @@ public class PatientProfileController : Controller
             }
         }
 
-        return View("Details", PatientProfileViewModel.FromModel(model));
+        return View("Details", MigratedPatientProfileViewModel.FromModel(model));
     }
 
     [HttpGet]
     public async Task<IActionResult> ViewPrescription(int patientId, int recordId)
     {
-        PatientProfileModel model;
+        MigratedPatientProfileModel model;
         try
         {
             model = await BuildProfileModelAsync(patientId, HttpContext.RequestAborted);
@@ -100,6 +173,7 @@ public class PatientProfileController : Controller
                 TempData["ErrorMessage"] = "This consultation does not have an associated prescription.";
                 return RedirectToAction(nameof(SelectRecord), new { patientId, recordId });
             }
+
             model.SelectedPrescription = prescription;
         }
         catch (HttpRequestException ex)
@@ -113,7 +187,63 @@ public class PatientProfileController : Controller
             return RedirectToAction(nameof(SelectRecord), new { patientId, recordId });
         }
 
-        return View("Details", PatientProfileViewModel.FromModel(model));
+        return View("Details", MigratedPatientProfileViewModel.FromModel(model));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportRecord(int recordId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            RecordExportDataDto exportData = await patientApiClient.GetRecordExportDataAsync(recordId, cancellationToken);
+
+            byte[] pdfBytes;
+            using (var stream = new MemoryStream())
+            {
+                var writer = new iText.Kernel.Pdf.PdfWriter(stream);
+                var pdf = new iText.Kernel.Pdf.PdfDocument(writer);
+                var doc = new iText.Layout.Document(pdf);
+
+                doc.Add(new iText.Layout.Element.Paragraph(
+                    $"Patient: {exportData.Patient.FirstName} {exportData.Patient.LastName}").SetFontSize(16));
+                doc.Add(new iText.Layout.Element.Paragraph($"CNP: {exportData.Patient.Cnp}"));
+                doc.Add(new iText.Layout.Element.Paragraph(
+                    $"Consultation Date: {exportData.Record.ConsultationDate:dd-MM-yyyy HH:mm}"));
+                doc.Add(new iText.Layout.Element.Paragraph("\n"));
+                doc.Add(new iText.Layout.Element.Paragraph("Section 1: Clinical Findings").SetFontSize(14));
+                doc.Add(new iText.Layout.Element.Paragraph($"Symptoms: {exportData.Record.Symptoms ?? "N/A"}"));
+                doc.Add(new iText.Layout.Element.Paragraph($"Diagnosis: {exportData.Record.Diagnosis ?? "N/A"}"));
+                doc.Add(new iText.Layout.Element.Paragraph("\n"));
+                doc.Add(new iText.Layout.Element.Paragraph("Section 2: Prescribed Treatment").SetFontSize(14));
+
+                if (exportData.Prescription is null || exportData.Items.Count == 0)
+                {
+                    doc.Add(new iText.Layout.Element.Paragraph("No prescription issued for this consultation."));
+                }
+                else
+                {
+                    doc.Add(new iText.Layout.Element.Paragraph(
+                        $"Doctor Notes: {exportData.Prescription.DoctorNotes ?? "None"}"));
+                    doc.Add(new iText.Layout.Element.Paragraph("Medications:"));
+                    foreach (var item in exportData.Items)
+                    {
+                        doc.Add(new iText.Layout.Element.Paragraph($"  - {item.MedName}: {item.Quantity}"));
+                    }
+                }
+
+                doc.Close();
+                pdfBytes = stream.ToArray();
+            }
+
+            string fileName =
+                $"MedicalRecord_{exportData.Patient.FirstName}{exportData.Patient.LastName}_{exportData.Record.ConsultationDate:yyyyMMdd}.pdf";
+            return File(pdfBytes, "application/pdf", fileName);
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = "Export failed: " + ex.Message;
+            return RedirectToAction(nameof(Index), new { id = 0 });
+        }
     }
 
     [HttpPost]
@@ -125,12 +255,18 @@ public class PatientProfileController : Controller
             TempData["ErrorMessage"] = "Discount must be between 0 and 100%.";
             return RedirectToAction(nameof(SelectRecord), new { patientId, recordId });
         }
+
         try
         {
             decimal basePrice = await billingApiClient.ComputeBasePriceAsync(
-                patientId, recordId, HttpContext.RequestAborted);
+                patientId,
+                recordId,
+                HttpContext.RequestAborted);
             decimal finalPrice = await billingApiClient.ApplyDiscountAsync(
-                basePrice, discountPercent, HttpContext.RequestAborted);
+                recordId,
+                basePrice,
+                discountPercent,
+                HttpContext.RequestAborted);
 
             TempData["SuccessMessage"] = $"Discount of {discountPercent}% applied. Final price: {finalPrice:C}.";
         }
@@ -142,6 +278,7 @@ public class PatientProfileController : Controller
         {
             TempData["ErrorMessage"] = $"Could not apply discount: {ex.Message}";
         }
+
         return RedirectToAction(nameof(SelectRecord), new { patientId, recordId });
     }
 
@@ -163,11 +300,13 @@ public class PatientProfileController : Controller
         {
             TempData["ErrorMessage"] = $"Export failed: {ex.Message}";
         }
+
         return RedirectToAction(nameof(SelectRecord), new { patientId, recordId });
     }
 
-    private async Task<PatientProfileModel> BuildProfileModelAsync(
-        int patientId, CancellationToken cancellationToken)
+    private async Task<MigratedPatientProfileModel> BuildProfileModelAsync(
+        int patientId,
+        CancellationToken cancellationToken)
     {
         Patient patient = await patientApiClient.GetPatientDetailsAsync(patientId, cancellationToken);
         patient.MedicalHistory ??= new MedicalHistory();
@@ -179,7 +318,7 @@ public class PatientProfileController : Controller
         List<string> allergies = await patientApiClient.GetPatientAllergiesAsync(patientId, cancellationToken);
         var history = patient.MedicalHistory;
 
-        return new PatientProfileModel
+        return new MigratedPatientProfileModel
         {
             PatientId = patientId,
             FirstName = patient.FirstName,
@@ -188,7 +327,8 @@ public class PatientProfileController : Controller
             BloodType = history.BloodType?.ToString(),
             Rh = history.Rh?.ToString(),
             ChronicConditionsFormatted = history.ChronicConditions is { Count: > 0 }
-                ? string.Join(", ", history.ChronicConditions) : "None",
+                ? string.Join(", ", history.ChronicConditions)
+                : "None",
             Allergies = allergies,
             MedicalRecords = records.OrderByDescending(r => r.ConsultationDate).ToList(),
             CachedAt = DateTime.UtcNow,

@@ -1,6 +1,5 @@
 using Common.Data.Entity;
 using Common.Data.Entity.Enums;
-using Common.Data.Entity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System;
