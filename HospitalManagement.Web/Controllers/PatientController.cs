@@ -4,9 +4,11 @@ using Common.Data.Entity.DTOs;
 using HospitalManagement.Web.Models.Patient;
 using HospitalManagement.Web.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HospitalManagement.Web.Controllers;
 
+[Authorize]
 public class PatientController : Controller
 {
     private readonly IPatientApiClient patientApiClient;
