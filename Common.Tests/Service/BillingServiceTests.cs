@@ -979,5 +979,27 @@ public async Task ApplyDiscountAsync_WithThirtyThreePercentDiscount_ReturnsExpec
         _historyRepo.Verify(x => x.GetAllergiesByHistoryIdAsync(88), Times.Once);
     }
 
+    [TestMethod]
+    public async Task PersistDiscountAsync_WhenMedicalRecordIsMissing_ThrowsKeyNotFoundException()
+    {
+        BillingService service = CreateService();
+        _recordRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((MedicalRecord?)null);
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => service.PersistDiscountAsync(1, 200m, 10));
+    }
+
+    [TestMethod]
+    public async Task PersistDiscountAsync_WhenMedicalRecordExists_UpdatesStoredBillingFields()
+    {
+        BillingService service = CreateService();
+        MedicalRecord record = new() { Id = 1 };
+        _recordRepo.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(record);
+        _recordRepo.Setup(x => x.UpdateAsync(record)).Returns(Task.CompletedTask);
+
+        await service.PersistDiscountAsync(1, 200m, 10);
+
+        _recordRepo.Verify(x => x.UpdateAsync(It.Is<MedicalRecord>(r => r.BasePrice == 200m && r.DiscountApplied == 10 && r.FinalPrice == 180m)), Times.Once);
+    }
+
 
 }
