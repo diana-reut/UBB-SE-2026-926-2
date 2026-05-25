@@ -4,7 +4,10 @@ using Common.Data.Entity.DTOs;
 using Common.Data.Entity.Enums;
 using Common.Data.Integration;
 using Common.Data.Repository;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Moq;
+using System.Reflection;
 
 namespace Common.Tests.Service;
 
@@ -42,6 +45,52 @@ public sealed class PatientServiceTests
         Dob = new DateTime(1990, 1, 1),
         Sex = Sex.F
     };
+
+    private static DbUpdateException MakeDuplicateCnpUpdateException(
+        int number = 2601,
+        string message = "IX_Patient_CNP")
+    {
+        SqlErrorCollection errors = (SqlErrorCollection)Activator.CreateInstance(
+            typeof(SqlErrorCollection),
+            nonPublic: true)!;
+        ConstructorInfo sqlErrorConstructor = typeof(SqlError)
+            .GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)
+            .OrderByDescending(constructor => constructor.GetParameters().Length)
+            .First();
+        object?[] arguments = sqlErrorConstructor.GetParameters()
+            .Select(parameter => parameter.ParameterType == typeof(int) ? (object?)number
+                : parameter.ParameterType == typeof(byte) ? (object?)(byte)0
+                : parameter.ParameterType == typeof(string) ? message
+                : parameter.ParameterType == typeof(Exception) ? null
+                : parameter.HasDefaultValue ? parameter.DefaultValue
+                : parameter.ParameterType.IsValueType ? Activator.CreateInstance(parameter.ParameterType)
+                : null)
+            .ToArray();
+        var error = (SqlError)sqlErrorConstructor.Invoke(arguments);
+        typeof(SqlErrorCollection)
+            .GetMethod("Add", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(errors, [error]);
+        MethodInfo createException = typeof(SqlException)
+            .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
+            .First(method => method.Name == "CreateException"
+                && method.GetParameters().Length >= 2
+                && method.GetParameters()[0].ParameterType == typeof(SqlErrorCollection));
+        object?[] createArguments = createException.GetParameters()
+            .Select(parameter => parameter.ParameterType == typeof(SqlErrorCollection) ? errors
+                : parameter.ParameterType == typeof(string) ? "11.0.0"
+                : parameter.HasDefaultValue ? parameter.DefaultValue
+                : parameter.ParameterType.IsValueType ? Activator.CreateInstance(parameter.ParameterType)
+                : null)
+            .ToArray();
+        var sqlException = (SqlException)createException.Invoke(null, createArguments)!;
+
+        return new DbUpdateException("Duplicate CNP.", sqlException);
+    }
+
+    private static bool InvokeIsDuplicateCnpException(DbUpdateException exception) =>
+        (bool)typeof(PatientService)
+            .GetMethod("IsDuplicateCnpException", BindingFlags.Static | BindingFlags.NonPublic)!
+            .Invoke(null, [exception])!;
 
     [TestMethod]
     public void ValidateCNP_WhenLengthIsInvalid_ReturnsFalse()
@@ -152,6 +201,24 @@ public sealed class PatientServiceTests
         await _sut.UpdatePatientAsync(patient);
 
         _patientRepository.Verify(x => x.UpdateAsync(patient), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task UpdatePatientAsync_WhenPhoneNumberIsWhitespace_ThrowsArgumentException()
+    {
+        Patient patient = MakePatient();
+        patient.PhoneNo = "   ";
+
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.UpdatePatientAsync(patient));
+    }
+
+    [TestMethod]
+    public async Task UpdatePatientAsync_WhenRepositoryThrowsDuplicateCnp_ThrowsArgumentException()
+    {
+        Patient patient = MakePatient();
+        _patientRepository.Setup(x => x.UpdateAsync(patient)).ThrowsAsync(MakeDuplicateCnpUpdateException());
+
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.UpdatePatientAsync(patient));
     }
 
     [TestMethod]
@@ -389,6 +456,54 @@ public sealed class PatientServiceTests
     }
 
     [TestMethod]
+    public async Task CreateMedicalHistoryAsync_WhenHistoryIdIsInvalid_DoesNotSaveAllergies()
+    {
+        MedicalHistory history = new()
+        {
+            Allergies = [(new Allergy { Id = 4, AllergyName = "Peanuts" }, "Severe")]
+        };
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(MakePatient());
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync((MedicalHistory?)null);
+        _historyRepository.Setup(x => x.CreateAsync(It.IsAny<MedicalHistory>())).ReturnsAsync(0);
+
+        await _sut.CreateMedicalHistoryAsync(1, history);
+
+        _historyRepository.Verify(x => x.SaveAllergiesAsync(It.IsAny<int>(), It.IsAny<List<(Allergy Allergy, string SeverityLevel)>>()), Times.Never);
+    }
+
+    [TestMethod]
+    public async Task CreateMedicalHistoryAsync_WhenAllergiesAreNull_DoesNotSaveAllergies()
+    {
+        MedicalHistory history = new()
+        {
+            Allergies = null!
+        };
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(MakePatient());
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync((MedicalHistory?)null);
+        _historyRepository.Setup(x => x.CreateAsync(It.IsAny<MedicalHistory>())).ReturnsAsync(9);
+
+        await _sut.CreateMedicalHistoryAsync(1, history);
+
+        _historyRepository.Verify(x => x.SaveAllergiesAsync(It.IsAny<int>(), It.IsAny<List<(Allergy Allergy, string SeverityLevel)>>()), Times.Never);
+    }
+
+    [TestMethod]
+    public async Task CreateMedicalHistoryAsync_WhenAllergiesAreEmpty_DoesNotSaveAllergies()
+    {
+        MedicalHistory history = new()
+        {
+            Allergies = []
+        };
+        _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(MakePatient());
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync((MedicalHistory?)null);
+        _historyRepository.Setup(x => x.CreateAsync(It.IsAny<MedicalHistory>())).ReturnsAsync(9);
+
+        await _sut.CreateMedicalHistoryAsync(1, history);
+
+        _historyRepository.Verify(x => x.SaveAllergiesAsync(It.IsAny<int>(), It.IsAny<List<(Allergy Allergy, string SeverityLevel)>>()), Times.Never);
+    }
+
+    [TestMethod]
     public async Task CreateMedicalHistoryAsync_WhenPatientAlreadyHasHistory_ThrowsArgumentException()
     {
         _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(MakePatient());
@@ -536,6 +651,15 @@ public sealed class PatientServiceTests
     }
 
     [TestMethod]
+    public async Task GetRecordExportDataAsync_WhenHistoryIsMissing_ThrowsKeyNotFoundException()
+    {
+        _recordRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(new MedicalRecord { Id = 1, HistoryId = 9 });
+        _historyRepository.Setup(x => x.GetByIdAsync(9)).ReturnsAsync((MedicalHistory?)null);
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.GetRecordExportDataAsync(1));
+    }
+
+    [TestMethod]
     public async Task GetRecordExportDataAsync_WhenPrescriptionExists_ReturnsItems()
     {
         _recordRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(new MedicalRecord { Id = 1, HistoryId = 9 });
@@ -546,6 +670,30 @@ public sealed class PatientServiceTests
         RecordExportDataDto result = await _sut.GetRecordExportDataAsync(1);
 
         Assert.AreEqual(1, result.Items.Count);
+    }
+
+    [TestMethod]
+    public async Task GetRecordExportDataAsync_WhenPrescriptionRepositoryIsUnavailable_ReturnsNullPrescription()
+    {
+        var service = new PatientService(_patientRepository.Object, _historyRepository.Object, _recordRepository.Object, null);
+        _recordRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(new MedicalRecord { Id = 1, HistoryId = 9 });
+        _historyRepository.Setup(x => x.GetByIdAsync(9)).ReturnsAsync(new MedicalHistory { Id = 9, PatientId = 1, Patient = MakePatient() });
+
+        RecordExportDataDto result = await service.GetRecordExportDataAsync(1);
+
+        Assert.IsNull(result.Prescription);
+    }
+
+    [TestMethod]
+    public async Task GetRecordExportDataAsync_WhenPrescriptionIsMissing_ReturnsEmptyItems()
+    {
+        _recordRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(new MedicalRecord { Id = 1, HistoryId = 9 });
+        _historyRepository.Setup(x => x.GetByIdAsync(9)).ReturnsAsync(new MedicalHistory { Id = 9, PatientId = 1, Patient = MakePatient() });
+        _prescriptionRepository.Setup(x => x.GetByRecordIdAsync(1)).ReturnsAsync((Prescription?)null);
+
+        RecordExportDataDto result = await _sut.GetRecordExportDataAsync(1);
+
+        Assert.AreEqual(0, result.Items.Count);
     }
 
     [TestMethod]
@@ -607,5 +755,29 @@ public sealed class PatientServiceTests
         Prescription? result = await _sut.GetPrescriptionByRecordIdAsync(5);
 
         Assert.AreSame(prescription, result);
+    }
+
+    [TestMethod]
+    public void IsDuplicateCnpException_WhenInnerExceptionIsNotSqlException_ReturnsFalse()
+    {
+        bool result = InvokeIsDuplicateCnpException(new DbUpdateException("Boom.", new InvalidOperationException()));
+
+        Assert.IsFalse(result);
+    }
+
+    [TestMethod]
+    public void IsDuplicateCnpException_WhenSqlNumberIs2627_ReturnsTrue()
+    {
+        bool result = InvokeIsDuplicateCnpException(MakeDuplicateCnpUpdateException(2627));
+
+        Assert.IsTrue(result);
+    }
+
+    [TestMethod]
+    public void IsDuplicateCnpException_WhenSqlMessageDoesNotContainIndex_ReturnsFalse()
+    {
+        bool result = InvokeIsDuplicateCnpException(MakeDuplicateCnpUpdateException(message: "Other index"));
+
+        Assert.IsFalse(result);
     }
 }

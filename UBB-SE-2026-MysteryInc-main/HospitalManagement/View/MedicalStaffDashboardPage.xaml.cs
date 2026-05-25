@@ -17,6 +17,14 @@ internal sealed partial class MedicalStaffDashboardPage : Page
         DataContext = ViewModel;
     }
 
+    private void Page_Loaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+    {
+        if (ViewModel.SearchCommand.CanExecute(null))
+        {
+            ViewModel.SearchCommand.Execute(null);
+        }
+    }
+
     private async void PatientList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
     {
         if (sender is ListView listView && listView.SelectedItem is Patient selectedPatient)

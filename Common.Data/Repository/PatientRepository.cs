@@ -160,7 +160,7 @@ public class PatientRepository : IPatientRepository
             .ToListAsync();
 
         return donors
-            .Where(p => IsABloodMatch(p.MedicalHistory?.BloodType, bloodType) && IsARhMatch(p.MedicalHistory?.Rh, rh))
+            .Where(p => IsABloodMatch(p.MedicalHistory!.BloodType, bloodType) && IsARhMatch(p.MedicalHistory.Rh, rh))
             .Select(p => new
             {
                 Patient = p,
@@ -176,7 +176,7 @@ public class PatientRepository : IPatientRepository
         int score = 0;
         int donorAge = DateTime.Now.Year - donor.Dob.Year;
 
-        if (donor.MedicalHistory?.BloodType == targetBlood && donor.MedicalHistory.Rh == targetRh)
+        if (donor.MedicalHistory!.BloodType == targetBlood && donor.MedicalHistory.Rh == targetRh)
         {
             score += 50;
         }
@@ -226,6 +226,11 @@ public class PatientRepository : IPatientRepository
             return false;
         }
 
-        return donor == Rh.Negative || (donor == Rh.Positive && receiver == Rh.Positive);
+        if (donor == Rh.Negative)
+        {
+            return true;
+        }
+
+        return receiver == Rh.Positive;
     }
 }

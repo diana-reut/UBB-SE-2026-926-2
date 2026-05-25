@@ -38,11 +38,10 @@
                            asp-action="Index">
                             Admin Dashboard
                         </a>
-                        <a class="app-nav-link @(string.Equals(currentController, "Modules", StringComparison.OrdinalIgnoreCase) && string.Equals(currentModule, "medical-staff", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                        <a class="app-nav-link @(string.Equals(currentController, "MedicalStaff", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
                            asp-area=""
-                           asp-controller="Modules"
-                           asp-action="Index"
-                           asp-route-id="medical-staff">
+                           asp-controller="MedicalStaff"
+                           asp-action="Dashboard">
                             Medical Staff
                         </a>
                         <a class="app-nav-link @((string.Equals(currentController, "Prescription", StringComparison.OrdinalIgnoreCase) || string.Equals(currentController, "Pharmacist", StringComparison.OrdinalIgnoreCase)) ? "active" : string.Empty)"
