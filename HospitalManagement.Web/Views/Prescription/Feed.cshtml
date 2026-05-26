@@ -12,11 +12,16 @@
             <div style="font-size:13px;font-weight:700;color:#4A90A4;letter-spacing:3px;">PRESCRIPTIONS FEED</div>
             <div style="font-size:26px;font-weight:700;color:#1E2A38;">Chronological Overview</div>
         </div>
-        <a asp-controller="Pharmacist" asp-action="Addicts"
-           class="btn"
-           style="background:#FFE779;color:#1E2A38;font-weight:700;border-radius:8px;padding:8px 16px;border:1px solid #E6CE5B;">
-            ⚠ See All Addicts
-        </a>
+        <div class="d-flex gap-2">
+            <a asp-controller="Pharmacist" asp-action="Addicts"
+               class="btn"
+               style="background:#FFE779;color:#1E2A38;font-weight:700;border-radius:8px;padding:8px 16px;border:1px solid #E6CE5B;">
+                ⚠ See All Addicts
+            </a>
+            <a asp-controller="Ghost" asp-action="Index" class="btn admin-ghost-button">
+                I saw a ghost!
+            </a>
+        </div>
     </div>
 
     @* Back button if coming from patient profile *@
