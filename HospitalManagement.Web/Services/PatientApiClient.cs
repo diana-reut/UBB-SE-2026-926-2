@@ -90,7 +90,7 @@ public class PatientApiClient : HospitalApiClientBase, IPatientApiClient
 
     public Task DeletePatientAsync(int id, CancellationToken cancellationToken = default) =>
         DeleteAsync($"{BaseUri}/{id}", cancellationToken);
-  
+
     public async Task<bool> IsHighRiskAsync(int id, CancellationToken cancellationToken = default) =>
         await GetAsync<bool>($"{BaseUri}/{id}/high-risk", cancellationToken);
 

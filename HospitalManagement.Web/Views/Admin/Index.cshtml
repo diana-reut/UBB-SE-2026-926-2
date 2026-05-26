@@ -53,18 +53,25 @@
                        class="btn @(Model.IsArchivedMode ? "btn-dark" : "btn-outline-dark")">
                         Archived Patients
                     </a>
-                    <a asp-controller="Modules"
+                    <a asp-controller="Statistics"
                        asp-action="Index"
-                       asp-route-id="statistics"
                        class="btn btn-outline-dark">
                         Statistics
+                    </a>
+                    <a asp-controller="MedicalStaff"
+                       asp-action="Dashboard"
+                       class="btn btn-outline-dark">
+                        Medical Staff
                     </a>
                     <a asp-action="CreatePatient" class="btn btn-primary">
                         Add New Patient
                     </a>
-                    <button type="button" class="btn btn-warning admin-ghost-button">
-                        I saw a ghost!
-                    </button>
+                    <form asp-controller="Ghost" asp-action="ReportSighting" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-warning admin-ghost-button">
+                            I saw a ghost!
+                        </button>
+                    </form>
                 </div>
             }
 

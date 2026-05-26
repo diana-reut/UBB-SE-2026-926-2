@@ -92,6 +92,7 @@ public partial class App : Application
         _ = services.AddTransient<IExportService, ExportService>();
         _ = services.AddTransient<IImportService, ImportService>();
         _ = services.AddSingleton<IGhostService, GhostService>();
+        _ = services.AddTransient<AuthTokenForwardingHandler>();
         _ = services.AddHttpClient<IStatisticsProxy, StatisticsProxy>((client) =>
         {
             var uriString = AppConfiguration["ApiSettings:BaseUri"];
@@ -104,7 +105,7 @@ public partial class App : Application
             client.BaseAddress = new Uri(uriString);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.Timeout = TimeSpan.FromSeconds(30);
-        });
+        }).AddHttpMessageHandler<AuthTokenForwardingHandler>();
 
         _ = services.AddHttpClient<IPrescriptionProxy, PrescriptionProxy>((client) =>
         {
@@ -145,7 +146,7 @@ public partial class App : Application
             client.BaseAddress = new Uri(uriString);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.Timeout = TimeSpan.FromSeconds(30);
-        });
+        }).AddHttpMessageHandler<AuthTokenForwardingHandler>();
         _ = services.AddHttpClient("ERPatientProxy", (client) =>
         {
             string? uriString = AppConfiguration["ApiSettings:BaseUri"];

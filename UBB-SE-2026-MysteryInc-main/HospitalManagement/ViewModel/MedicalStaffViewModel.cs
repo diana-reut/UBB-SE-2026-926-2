@@ -141,20 +141,19 @@ internal partial class MedicalStaffViewModel : INotifyPropertyChanged
         ErrorMessage = "";
         SearchResults.Clear();
 
-        if (string.IsNullOrWhiteSpace(SearchQuery))
-        {
-            return;
-        }
-
         var dto = new SearchPatientsDto();
 
-        if (SearchQuery.Length == 13 && SearchQuery.All(char.IsDigit))
+        if (!string.IsNullOrWhiteSpace(SearchQuery))
         {
-            dto.Cnp = SearchQuery;
-        }
-        else
-        {
-            dto.NamePart = SearchQuery;
+            string trimmedQuery = SearchQuery.Trim();
+            if (trimmedQuery.Length == 13 && trimmedQuery.All(char.IsDigit))
+            {
+                dto.Cnp = trimmedQuery;
+            }
+            else
+            {
+                dto.NamePart = trimmedQuery;
+            }
         }
 
         try
@@ -163,7 +162,9 @@ internal partial class MedicalStaffViewModel : INotifyPropertyChanged
 
             if (results is null || results.Count == 0)
             {
-                ErrorMessage = "There are no patients with this name or CNP.";
+                ErrorMessage = string.IsNullOrWhiteSpace(SearchQuery)
+                    ? "There are no patients."
+                    : "There are no patients with this name or CNP.";
             }
             else
             {

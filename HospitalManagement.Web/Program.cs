@@ -8,7 +8,6 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.Cookie.Name = "HospitalManagement.Web.Session";
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
@@ -27,17 +26,28 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.IsEssential = true;
     });
 
+builder.Services.AddTransient<AuthTokenForwardingHandler>();
+builder.Services.AddTransient<BearerTokenHandler>();
+
 builder.Services.AddHttpClient<IAuthenticationApiClient, AuthenticationApiClient>(client =>
     ConfigureHospitalApiClient(builder.Configuration, client));
 builder.Services.AddHttpClient<IPatientApiClient, PatientApiClient>(client =>
-    ConfigureHospitalApiClient(builder.Configuration, client));
+    ConfigureHospitalApiClient(builder.Configuration, client))
+    .AddHttpMessageHandler<AuthTokenForwardingHandler>();
 builder.Services.AddHttpClient<IAllergyApiClient, AllergyApiClient>(client =>
     ConfigureHospitalApiClient(builder.Configuration, client));
 builder.Services.AddHttpClient<IBillingApiClient, BillingApiClient>(client =>
-    ConfigureHospitalApiClient(builder.Configuration, client));
+    ConfigureHospitalApiClient(builder.Configuration, client))
+    .AddHttpMessageHandler<AuthTokenForwardingHandler>();
+builder.Services.AddHttpClient<IGhostApiClient, GhostApiClient>(client =>
+    ConfigureHospitalApiClient(builder.Configuration, client))
+    .AddHttpMessageHandler<AuthTokenForwardingHandler>();
+builder.Services.AddHttpClient<IStatisticsApiClient, StatisticsApiClient>(client =>
+    ConfigureHospitalApiClient(builder.Configuration, client))
+    .AddHttpMessageHandler<AuthTokenForwardingHandler>();
+
 builder.Services.AddHttpClient<IErWorkflowApiClient, ErWorkflowApiClient>(client =>
     ConfigureHospitalApiClient(builder.Configuration, client));
-builder.Services.AddTransient<BearerTokenHandler>();
 builder.Services.AddHttpClient<IAddictDetectionApiClient, AddictDetectionApiClient>(client =>
     ConfigureHospitalApiClient(builder.Configuration, client))
     .AddHttpMessageHandler<BearerTokenHandler>();

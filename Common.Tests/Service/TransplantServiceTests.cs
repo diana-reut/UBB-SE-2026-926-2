@@ -44,6 +44,27 @@ public sealed class TransplantServiceTests
         Sex = Sex.F
     };
 
+    private static Patient MakeDeceasedDonor(int id = 1) => new()
+    {
+        Id = id,
+        FirstName = "Don",
+        LastName = "Or",
+        Cnp = "1234567890123",
+        PhoneNo = "0700",
+        EmergencyContact = "John",
+        Dob = new DateTime(1980, 1, 1),
+        Sex = Sex.M,
+        Dod = new DateTime(2026, 1, 1),
+        IsDonor = true
+    };
+
+    private static MedicalHistory MakeHistory(BloodType? bloodType = BloodType.O, Rh? rh = Rh.Positive) => new()
+    {
+        BloodType = bloodType,
+        Rh = rh,
+        ChronicConditions = []
+    };
+
     [TestMethod]
     public async Task CreateWaitlistRequestAsync_WhenReceiverDoesNotExist_ThrowsArgumentException()
     {
@@ -164,6 +185,356 @@ public sealed class TransplantServiceTests
     }
 
     [TestMethod]
+    public async Task GetTopMatchesForDonorAsync_WhenDonorDoesNotExist_ThrowsInvalidOperationException()
+    {
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync((Patient?)null);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.GetTopMatchesForDonorAsync(5, "Kidney"));
+    }
+
+    [TestMethod]
+    public async Task GetTopMatchesForDonorAsync_WhenDonorIsNotRegistered_ThrowsInvalidOperationException()
+    {
+        Patient donor = MakeDeceasedDonor(5);
+        donor.IsDonor = false;
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(donor);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.GetTopMatchesForDonorAsync(5, "Kidney"));
+    }
+
+    [TestMethod]
+    public async Task GetTopMatchesForDonorAsync_WhenReceiverDoesNotExist_SkipsRequest()
+    {
+        Patient donor = MakeDeceasedDonor(5);
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(donor);
+        _patientRepository.Setup(x => x.GetByIdAsync(7)).ReturnsAsync((Patient?)null);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(5)).ReturnsAsync(MakeHistory());
+        _transplantRepository.Setup(x => x.GetWaitingByOrganAsync("Kidney")).ReturnsAsync([
+            new Transplant { TransplantId = 1, ReceiverId = 7, OrganType = "Kidney" }
+        ]);
+
+        List<Transplant> result = await _sut.GetTopMatchesForDonorAsync(5, "Kidney");
+
+        Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetTopMatchesForDonorAsync_WhenReceiverBloodTypeIsMissing_SkipsRequest()
+    {
+        Patient donor = MakeDeceasedDonor(5);
+        Patient receiver = MakePatient(7);
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(donor);
+        _patientRepository.Setup(x => x.GetByIdAsync(7)).ReturnsAsync(receiver);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(5)).ReturnsAsync(MakeHistory());
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(7)).ReturnsAsync(MakeHistory(bloodType: null));
+        _transplantRepository.Setup(x => x.GetWaitingByOrganAsync("Kidney")).ReturnsAsync([
+            new Transplant { TransplantId = 1, ReceiverId = 7, OrganType = "Kidney" }
+        ]);
+
+        List<Transplant> result = await _sut.GetTopMatchesForDonorAsync(5, "Kidney");
+
+        Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetTopMatchesForDonorAsync_WhenReceiverRhIsMissing_SkipsRequest()
+    {
+        Patient donor = MakeDeceasedDonor(5);
+        Patient receiver = MakePatient(7);
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(donor);
+        _patientRepository.Setup(x => x.GetByIdAsync(7)).ReturnsAsync(receiver);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(5)).ReturnsAsync(MakeHistory());
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(7)).ReturnsAsync(MakeHistory(rh: null));
+        _transplantRepository.Setup(x => x.GetWaitingByOrganAsync("Kidney")).ReturnsAsync([
+            new Transplant { TransplantId = 1, ReceiverId = 7, OrganType = "Kidney" }
+        ]);
+
+        List<Transplant> result = await _sut.GetTopMatchesForDonorAsync(5, "Kidney");
+
+        Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetTopMatchesForDonorAsync_WhenReceiverHistoryIsMissing_SkipsRequest()
+    {
+        Patient donor = MakeDeceasedDonor(5);
+        Patient receiver = MakePatient(7);
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(donor);
+        _patientRepository.Setup(x => x.GetByIdAsync(7)).ReturnsAsync(receiver);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(5)).ReturnsAsync(MakeHistory());
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(7)).ReturnsAsync((MedicalHistory?)null);
+        _transplantRepository.Setup(x => x.GetWaitingByOrganAsync("Kidney")).ReturnsAsync([
+            new Transplant { TransplantId = 1, ReceiverId = 7, OrganType = "Kidney" }
+        ]);
+
+        List<Transplant> result = await _sut.GetTopMatchesForDonorAsync(5, "Kidney");
+
+        Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetTopMatchesForDonorAsync_WhenBloodDoesNotMatch_SkipsRequest()
+    {
+        Patient donor = MakeDeceasedDonor(5);
+        Patient receiver = MakePatient(7);
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(donor);
+        _patientRepository.Setup(x => x.GetByIdAsync(7)).ReturnsAsync(receiver);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(5)).ReturnsAsync(MakeHistory(BloodType.A));
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(7)).ReturnsAsync(MakeHistory(BloodType.B));
+        _compatibilityService.Setup(x => x.IsBloodMatch(BloodType.A, BloodType.B)).Returns(false);
+        _transplantRepository.Setup(x => x.GetWaitingByOrganAsync("Kidney")).ReturnsAsync([
+            new Transplant { TransplantId = 1, ReceiverId = 7, OrganType = "Kidney" }
+        ]);
+
+        List<Transplant> result = await _sut.GetTopMatchesForDonorAsync(5, "Kidney");
+
+        Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetTopMatchesForDonorAsync_WhenDonorBloodTypeIsMissing_SkipsRequest()
+    {
+        Patient donor = MakeDeceasedDonor(5);
+        Patient receiver = MakePatient(7);
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(donor);
+        _patientRepository.Setup(x => x.GetByIdAsync(7)).ReturnsAsync(receiver);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(5)).ReturnsAsync(MakeHistory(bloodType: null));
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(7)).ReturnsAsync(MakeHistory(BloodType.B));
+        _compatibilityService.Setup(x => x.IsBloodMatch(null, BloodType.B)).Returns(false);
+        _transplantRepository.Setup(x => x.GetWaitingByOrganAsync("Kidney")).ReturnsAsync([
+            new Transplant { TransplantId = 1, ReceiverId = 7, OrganType = "Kidney" }
+        ]);
+
+        List<Transplant> result = await _sut.GetTopMatchesForDonorAsync(5, "Kidney");
+
+        Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetTopMatchesForDonorAsync_WhenDonorHistoryIsMissingAtBloodCheck_SkipsRequest()
+    {
+        Patient donor = MakeDeceasedDonor(5);
+        Patient receiver = MakePatient(7);
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(donor);
+        _patientRepository.Setup(x => x.GetByIdAsync(7)).ReturnsAsync(receiver);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(5)).ReturnsAsync((MedicalHistory?)null);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(7)).ReturnsAsync(MakeHistory(BloodType.B));
+        _compatibilityService.Setup(x => x.IsBloodMatch(null, BloodType.B)).Returns(false);
+        _transplantRepository.Setup(x => x.GetWaitingByOrganAsync("Kidney")).ReturnsAsync([
+            new Transplant { TransplantId = 1, ReceiverId = 7, OrganType = "Kidney" }
+        ]);
+
+        List<Transplant> result = await _sut.GetTopMatchesForDonorAsync(5, "Kidney");
+
+        Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetTopMatchesForDonorAsync_WhenRhDoesNotMatch_SkipsRequest()
+    {
+        Patient donor = MakeDeceasedDonor(5);
+        Patient receiver = MakePatient(7);
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(donor);
+        _patientRepository.Setup(x => x.GetByIdAsync(7)).ReturnsAsync(receiver);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(5)).ReturnsAsync(MakeHistory(BloodType.O, Rh.Positive));
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(7)).ReturnsAsync(MakeHistory(BloodType.O, Rh.Negative));
+        _compatibilityService.Setup(x => x.IsBloodMatch(BloodType.O, BloodType.O)).Returns(true);
+        _compatibilityService.Setup(x => x.IsRhMatch(Rh.Positive, Rh.Negative)).Returns(false);
+        _transplantRepository.Setup(x => x.GetWaitingByOrganAsync("Kidney")).ReturnsAsync([
+            new Transplant { TransplantId = 1, ReceiverId = 7, OrganType = "Kidney" }
+        ]);
+
+        List<Transplant> result = await _sut.GetTopMatchesForDonorAsync(5, "Kidney");
+
+        Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetTopMatchesForDonorAsync_WhenDonorRhIsMissing_SkipsRequest()
+    {
+        Patient donor = MakeDeceasedDonor(5);
+        Patient receiver = MakePatient(7);
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(donor);
+        _patientRepository.Setup(x => x.GetByIdAsync(7)).ReturnsAsync(receiver);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(5)).ReturnsAsync(MakeHistory(BloodType.O, rh: null));
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(7)).ReturnsAsync(MakeHistory(BloodType.O, Rh.Negative));
+        _compatibilityService.Setup(x => x.IsBloodMatch(BloodType.O, BloodType.O)).Returns(true);
+        _compatibilityService.Setup(x => x.IsRhMatch(null, Rh.Negative)).Returns(false);
+        _transplantRepository.Setup(x => x.GetWaitingByOrganAsync("Kidney")).ReturnsAsync([
+            new Transplant { TransplantId = 1, ReceiverId = 7, OrganType = "Kidney" }
+        ]);
+
+        List<Transplant> result = await _sut.GetTopMatchesForDonorAsync(5, "Kidney");
+
+        Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetTopMatchesForDonorAsync_WhenDonorHistoryIsMissingAtRhCheck_SkipsRequest()
+    {
+        Patient donor = MakeDeceasedDonor(5);
+        Patient receiver = MakePatient(7);
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(donor);
+        _patientRepository.Setup(x => x.GetByIdAsync(7)).ReturnsAsync(receiver);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(5)).ReturnsAsync((MedicalHistory?)null);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(7)).ReturnsAsync(MakeHistory(BloodType.O, Rh.Negative));
+        _compatibilityService.Setup(x => x.IsBloodMatch(null, BloodType.O)).Returns(true);
+        _compatibilityService.Setup(x => x.IsRhMatch(null, Rh.Negative)).Returns(false);
+        _transplantRepository.Setup(x => x.GetWaitingByOrganAsync("Kidney")).ReturnsAsync([
+            new Transplant { TransplantId = 1, ReceiverId = 7, OrganType = "Kidney" }
+        ]);
+
+        List<Transplant> result = await _sut.GetTopMatchesForDonorAsync(5, "Kidney");
+
+        Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetTopMatchesForDonorAsync_WhenMoreThanFiveMatchesExist_ReturnsFive()
+    {
+        Patient donor = MakeDeceasedDonor(5);
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(donor);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(5)).ReturnsAsync(MakeHistory());
+        _compatibilityService.Setup(x => x.IsBloodMatch(It.IsAny<BloodType?>(), It.IsAny<BloodType>())).Returns(true);
+        _compatibilityService.Setup(x => x.IsRhMatch(It.IsAny<Rh?>(), It.IsAny<Rh>())).Returns(true);
+        _compatibilityService.Setup(x => x.CalculateScore(It.IsAny<Patient>(), It.IsAny<Patient>())).Returns(50);
+        _recordRepository.Setup(x => x.GetERVisitCountAsync(It.IsAny<int>(), It.IsAny<DateTime>())).ReturnsAsync(4);
+        _transplantRepository.Setup(x => x.GetWaitingByOrganAsync("Kidney")).ReturnsAsync(
+            Enumerable.Range(1, 6)
+                .Select(id => new Transplant { TransplantId = id, ReceiverId = id + 10, OrganType = "Kidney", RequestDate = DateTime.UtcNow.AddDays(id) })
+                .ToList());
+        foreach (int receiverId in Enumerable.Range(11, 6))
+        {
+            _patientRepository.Setup(x => x.GetByIdAsync(receiverId)).ReturnsAsync(MakePatient(receiverId));
+            _historyRepository.Setup(x => x.GetByPatientIdAsync(receiverId)).ReturnsAsync(MakeHistory());
+        }
+
+        List<Transplant> result = await _sut.GetTopMatchesForDonorAsync(5, "Kidney");
+
+        Assert.AreEqual(5, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetTopMatchesForDonorAsync_WhenReceiverIsUrgent_AddsMaxScoreModifier()
+    {
+        Patient donor = MakeDeceasedDonor(5);
+        Patient receiver = MakePatient(7);
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(donor);
+        _patientRepository.Setup(x => x.GetByIdAsync(7)).ReturnsAsync(receiver);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(5)).ReturnsAsync(MakeHistory());
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(7)).ReturnsAsync(MakeHistory());
+        _compatibilityService.Setup(x => x.IsBloodMatch(It.IsAny<BloodType?>(), It.IsAny<BloodType>())).Returns(true);
+        _compatibilityService.Setup(x => x.IsRhMatch(It.IsAny<Rh?>(), It.IsAny<Rh>())).Returns(true);
+        _compatibilityService.Setup(x => x.CalculateScore(donor, receiver)).Returns(50);
+        _recordRepository.Setup(x => x.GetERVisitCountAsync(7, It.IsAny<DateTime>())).ReturnsAsync(10);
+        _transplantRepository.Setup(x => x.GetWaitingByOrganAsync("Kidney")).ReturnsAsync([
+            new Transplant { TransplantId = 1, ReceiverId = 7, OrganType = "Kidney" }
+        ]);
+
+        List<Transplant> result = await _sut.GetTopMatchesForDonorAsync(5, "Kidney");
+
+        Assert.AreEqual(70, result[0].CompatibilityScore);
+    }
+
+    [TestMethod]
+    public async Task GetTopMatchesForDonorAsync_WhenOrganTypeHasWhitespace_TrimsBeforeLookup()
+    {
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(MakeDeceasedDonor(5));
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(5)).ReturnsAsync(MakeHistory());
+        _transplantRepository.Setup(x => x.GetWaitingByOrganAsync("Kidney")).ReturnsAsync([]);
+
+        await _sut.GetTopMatchesForDonorAsync(5, " Kidney ");
+
+        _transplantRepository.Verify(x => x.GetWaitingByOrganAsync("Kidney"), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task GetTopMatchesAsDisplayModelsAsync_WhenReceiverExists_ReturnsReceiverName()
+    {
+        Patient donor = MakeDeceasedDonor(5);
+        Patient receiver = MakePatient(7);
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(donor);
+        _patientRepository.Setup(x => x.GetByIdAsync(7)).ReturnsAsync(receiver);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(5)).ReturnsAsync(MakeHistory());
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(7)).ReturnsAsync(MakeHistory(BloodType.A));
+        _compatibilityService.Setup(x => x.IsBloodMatch(It.IsAny<BloodType?>(), It.IsAny<BloodType>())).Returns(true);
+        _compatibilityService.Setup(x => x.IsRhMatch(It.IsAny<Rh?>(), It.IsAny<Rh>())).Returns(true);
+        _transplantRepository.Setup(x => x.GetWaitingByOrganAsync("Kidney")).ReturnsAsync([
+            new Transplant { TransplantId = 1, ReceiverId = 7, OrganType = "Kidney" }
+        ]);
+
+        List<TransplantMatch> result = await _sut.GetTopMatchesAsDisplayModelsAsync(5, "Kidney");
+
+        Assert.AreEqual("Jane Doe", result[0].ReceiverName);
+    }
+
+    [TestMethod]
+    public async Task GetTopMatchesAsDisplayModelsAsync_WhenReceiverDisappears_ReturnsUnknownName()
+    {
+        Patient donor = MakeDeceasedDonor(5);
+        Patient receiver = MakePatient(7);
+        _patientRepository.SetupSequence(x => x.GetByIdAsync(7))
+            .ReturnsAsync(receiver)
+            .ReturnsAsync((Patient?)null);
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(donor);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(5)).ReturnsAsync(MakeHistory());
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(7)).ReturnsAsync(MakeHistory(BloodType.A));
+        _compatibilityService.Setup(x => x.IsBloodMatch(It.IsAny<BloodType?>(), It.IsAny<BloodType>())).Returns(true);
+        _compatibilityService.Setup(x => x.IsRhMatch(It.IsAny<Rh?>(), It.IsAny<Rh>())).Returns(true);
+        _transplantRepository.Setup(x => x.GetWaitingByOrganAsync("Kidney")).ReturnsAsync([
+            new Transplant { TransplantId = 1, ReceiverId = 7, OrganType = "Kidney" }
+        ]);
+
+        List<TransplantMatch> result = await _sut.GetTopMatchesAsDisplayModelsAsync(5, "Kidney");
+
+        Assert.AreEqual("Unknown", result[0].ReceiverName);
+    }
+
+    [TestMethod]
+    public async Task GetTopMatchesAsDisplayModelsAsync_WhenReceiverHistoryDisappears_ReturnsUnknownBloodType()
+    {
+        Patient donor = MakeDeceasedDonor(5);
+        Patient receiver = MakePatient(7);
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(donor);
+        _patientRepository.Setup(x => x.GetByIdAsync(7)).ReturnsAsync(receiver);
+        _historyRepository.SetupSequence(x => x.GetByPatientIdAsync(7))
+            .ReturnsAsync(MakeHistory(BloodType.A))
+            .ReturnsAsync((MedicalHistory?)null);
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(5)).ReturnsAsync(MakeHistory());
+        _compatibilityService.Setup(x => x.IsBloodMatch(It.IsAny<BloodType?>(), It.IsAny<BloodType>())).Returns(true);
+        _compatibilityService.Setup(x => x.IsRhMatch(It.IsAny<Rh?>(), It.IsAny<Rh>())).Returns(true);
+        _transplantRepository.Setup(x => x.GetWaitingByOrganAsync("Kidney")).ReturnsAsync([
+            new Transplant { TransplantId = 1, ReceiverId = 7, OrganType = "Kidney" }
+        ]);
+
+        List<TransplantMatch> result = await _sut.GetTopMatchesAsDisplayModelsAsync(5, "Kidney");
+
+        Assert.AreEqual("Unknown", result[0].BloodType);
+    }
+
+    [TestMethod]
+    public async Task GetTopMatchesAsDisplayModelsAsync_WhenReceiverBloodTypeDisappears_ReturnsUnknownBloodType()
+    {
+        Patient donor = MakeDeceasedDonor(5);
+        Patient receiver = MakePatient(7);
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(donor);
+        _patientRepository.Setup(x => x.GetByIdAsync(7)).ReturnsAsync(receiver);
+        _historyRepository.SetupSequence(x => x.GetByPatientIdAsync(7))
+            .ReturnsAsync(MakeHistory(BloodType.A))
+            .ReturnsAsync(MakeHistory(bloodType: null));
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(5)).ReturnsAsync(MakeHistory());
+        _compatibilityService.Setup(x => x.IsBloodMatch(It.IsAny<BloodType?>(), It.IsAny<BloodType>())).Returns(true);
+        _compatibilityService.Setup(x => x.IsRhMatch(It.IsAny<Rh?>(), It.IsAny<Rh>())).Returns(true);
+        _transplantRepository.Setup(x => x.GetWaitingByOrganAsync("Kidney")).ReturnsAsync([
+            new Transplant { TransplantId = 1, ReceiverId = 7, OrganType = "Kidney" }
+        ]);
+
+        List<TransplantMatch> result = await _sut.GetTopMatchesAsDisplayModelsAsync(5, "Kidney");
+
+        Assert.AreEqual("Unknown", result[0].BloodType);
+    }
+
+    [TestMethod]
     public async Task IsUrgentAsync_WhenErVisitCountMeetsThreshold_ReturnsTrue()
     {
         _recordRepository.Setup(x => x.GetERVisitCountAsync(5, It.IsAny<DateTime>())).ReturnsAsync(10);
@@ -199,6 +570,27 @@ public sealed class TransplantServiceTests
             PatientId = 5,
             ChronicConditions = []
         });
+
+        string? result = await _sut.GetChronicWarningAsync(5);
+
+        Assert.IsNull(result);
+    }
+
+    [TestMethod]
+    public async Task GetChronicWarningAsync_WhenPatientDoesNotExist_ReturnsNull()
+    {
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync((Patient?)null);
+
+        string? result = await _sut.GetChronicWarningAsync(5);
+
+        Assert.IsNull(result);
+    }
+
+    [TestMethod]
+    public async Task GetChronicWarningAsync_WhenHistoryDoesNotExist_ReturnsNull()
+    {
+        _patientRepository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(MakePatient(5));
+        _historyRepository.Setup(x => x.GetByPatientIdAsync(5)).ReturnsAsync((MedicalHistory?)null);
 
         string? result = await _sut.GetChronicWarningAsync(5);
 

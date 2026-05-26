@@ -1,0 +1,46 @@
+@model HospitalManagement.Web.Models.Statistics.StatisticsViewModel
+@{
+    ViewData["Title"] = "Statistics";
+}
+
+<div class="d-flex gap-4">
+    <aside style="width: 260px;">
+        <h1 class="h4 mb-3">Hospital Statistics</h1>
+        <div class="list-group">
+            @foreach (var option in Model.Options)
+            {
+                <a asp-action="Index"
+                   asp-route-type="@option.Key"
+                   class="list-group-item list-group-item-action @(option.IsSelected ? "active" : string.Empty)">
+                    @option.Label
+                </a>
+            }
+        </div>
+    </aside>
+
+    <section class="flex-grow-1">
+        <h2 class="h3 mb-3">@Model.Title</h2>
+
+        @if (Model.ErrorMessage is not null)
+        {
+            <div class="alert alert-danger">@Model.ErrorMessage</div>
+        }
+        else if (Model.IsDemographics)
+        {
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <h3 class="h5">Gender Distribution</h3>
+                    @await Html.PartialAsync("_StatisticBars", Model.PrimaryData)
+                </div>
+                <div class="col-lg-6">
+                    <h3 class="h5">Age Groups</h3>
+                    @await Html.PartialAsync("_StatisticBars", Model.SecondaryData)
+                </div>
+            </div>
+        }
+        else
+        {
+            @await Html.PartialAsync("_StatisticBars", Model.PrimaryData)
+        }
+    </section>
+</div>

@@ -4,6 +4,7 @@ using Common.Data.Entity.Enums;
 using Common.Data.Integration;
 using Common.Data.Repository;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 namespace Common.Tests.Repository;
 
@@ -44,6 +45,16 @@ public sealed class PatientRepositoryTests
             Rh = rh,
             ChronicConditions = conditions ?? []
         };
+
+    private static int InvokeCalculateTotalScore(PatientRepository repository, Patient donor, BloodType bloodType, Rh rh, Sex sex, int age) =>
+        (int)typeof(PatientRepository)
+            .GetMethod("CalculateTotalScore", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(repository, [donor, bloodType, rh, sex, age])!;
+
+    private static bool InvokeIsRhMatch(Rh? donor, Rh receiver) =>
+        (bool)typeof(PatientRepository)
+            .GetMethod("IsARhMatch", BindingFlags.Static | BindingFlags.NonPublic)!
+            .Invoke(null, [donor, receiver])!;
 
     [TestMethod]
     public async Task AddAsync_WhenPatientIsNull_ThrowsArgumentNullException()
@@ -93,6 +104,22 @@ public sealed class PatientRepositoryTests
         await sut.UpdateAsync(patient);
 
         Assert.AreEqual("0799999999", context.Patients.Single().PhoneNo);
+    }
+
+    [TestMethod]
+    public async Task UpdateAsync_WhenPatientIsDetached_UpdatesPhoneNumber()
+    {
+        await using var context = CreateContext();
+        Patient patient = MakePatient();
+        context.Patients.Add(patient);
+        await context.SaveChangesAsync();
+        context.Entry(patient).State = EntityState.Detached;
+        patient.PhoneNo = "0788888888";
+        var sut = new PatientRepository(context);
+
+        await sut.UpdateAsync(patient);
+
+        Assert.AreEqual("0788888888", context.Patients.Single().PhoneNo);
     }
 
     [TestMethod]
@@ -384,6 +411,22 @@ public sealed class PatientRepositoryTests
     }
 
     [TestMethod]
+    public async Task GetCompatibleDonorsAsync_WhenOnlyUniversalBloodMatchExists_IncludesDonor()
+    {
+        await using var context = CreateContext();
+        Patient donor = MakePatient(1, dob: new DateTime(DateTime.Now.Year - 45, 1, 1));
+        context.Patients.Add(donor);
+        await context.SaveChangesAsync();
+        context.MedicalHistory.Add(MakeHistory(donor.Id, bloodType: BloodType.O, rh: Rh.Negative));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetCompatibleDonorsAsync(BloodType.AB, Rh.Positive, Sex.M, new DateTime(DateTime.Now.Year - 20, 1, 1), 18, 60);
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
     public async Task GetCompatibleDonorsAsync_WhenDonorBloodTypeIsAAndReceiverIsAB_IncludesDonor()
     {
         await using var context = CreateContext();
@@ -413,6 +456,86 @@ public sealed class PatientRepositoryTests
         List<Patient> result = await sut.GetCompatibleDonorsAsync(BloodType.AB, Rh.Positive, Sex.F, new DateTime(1990, 1, 1), 18, 60);
 
         Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetCompatibleDonorsAsync_WhenDonorBloodTypeIsBAndReceiverIsB_IncludesDonor()
+    {
+        await using var context = CreateContext();
+        Patient donor = MakePatient(1);
+        context.Patients.Add(donor);
+        await context.SaveChangesAsync();
+        context.MedicalHistory.Add(MakeHistory(donor.Id, bloodType: BloodType.B, rh: Rh.Positive));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetCompatibleDonorsAsync(BloodType.B, Rh.Positive, Sex.F, new DateTime(1990, 1, 1), 18, 60);
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetCompatibleDonorsAsync_WhenDonorBloodTypeIsAAndReceiverIsB_ExcludesDonor()
+    {
+        await using var context = CreateContext();
+        Patient donor = MakePatient(1);
+        context.Patients.Add(donor);
+        await context.SaveChangesAsync();
+        context.MedicalHistory.Add(MakeHistory(donor.Id, bloodType: BloodType.A, rh: Rh.Positive));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetCompatibleDonorsAsync(BloodType.B, Rh.Positive, Sex.F, new DateTime(1990, 1, 1), 18, 60);
+
+        Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetCompatibleDonorsAsync_WhenDonorBloodTypeIsABAndReceiverIsA_ExcludesDonor()
+    {
+        await using var context = CreateContext();
+        Patient donor = MakePatient(1);
+        context.Patients.Add(donor);
+        await context.SaveChangesAsync();
+        context.MedicalHistory.Add(MakeHistory(donor.Id, bloodType: BloodType.AB, rh: Rh.Positive));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetCompatibleDonorsAsync(BloodType.A, Rh.Positive, Sex.F, new DateTime(1990, 1, 1), 18, 60);
+
+        Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetCompatibleDonorsAsync_WhenPositiveDonorAndNegativeReceiver_ExcludesDonor()
+    {
+        await using var context = CreateContext();
+        Patient donor = MakePatient(1);
+        context.Patients.Add(donor);
+        await context.SaveChangesAsync();
+        context.MedicalHistory.Add(MakeHistory(donor.Id, bloodType: BloodType.O, rh: Rh.Positive));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetCompatibleDonorsAsync(BloodType.AB, Rh.Negative, Sex.F, new DateTime(1990, 1, 1), 18, 60);
+
+        Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetCompatibleDonorsAsync_WhenBloodMatchesAndRhDoesNot_ExcludesDonor()
+    {
+        await using var context = CreateContext();
+        Patient donor = MakePatient(1);
+        context.Patients.Add(donor);
+        await context.SaveChangesAsync();
+        context.MedicalHistory.Add(MakeHistory(donor.Id, bloodType: BloodType.A, rh: Rh.Positive));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetCompatibleDonorsAsync(BloodType.A, Rh.Negative, Sex.F, new DateTime(1990, 1, 1), 18, 60);
+
+        Assert.AreEqual(0, result.Count);
     }
 
     [TestMethod]
@@ -461,5 +584,58 @@ public sealed class PatientRepositoryTests
         List<Patient> result = await sut.GetCompatibleDonorsAsync(BloodType.AB, Rh.Positive, Sex.F, new DateTime(1990, 1, 1), 18, 60);
 
         Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
+    public async Task GetCompatibleDonorsAsync_WhenNegativeDonorAndPositiveReceiver_IncludesDonor()
+    {
+        await using var context = CreateContext();
+        Patient donor = MakePatient(1);
+        context.Patients.Add(donor);
+        await context.SaveChangesAsync();
+        context.MedicalHistory.Add(MakeHistory(donor.Id, bloodType: BloodType.O, rh: Rh.Negative));
+        await context.SaveChangesAsync();
+        var sut = new PatientRepository(context);
+
+        List<Patient> result = await sut.GetCompatibleDonorsAsync(BloodType.AB, Rh.Positive, Sex.F, new DateTime(1990, 1, 1), 18, 60);
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public async Task CalculateTotalScore_WhenBloodMatchesAndRhDoesNot_UsesPartialCompatibilityScore()
+    {
+        await using var context = CreateContext();
+        Patient donor = MakePatient(1, dob: new DateTime(DateTime.Now.Year - 30, 1, 1));
+        donor.MedicalHistory = MakeHistory(donor.Id, bloodType: BloodType.A, rh: Rh.Negative);
+        var sut = new PatientRepository(context);
+
+        int score = InvokeCalculateTotalScore(sut, donor, BloodType.A, Rh.Positive, Sex.F, 30);
+
+        Assert.AreEqual(75, score);
+    }
+
+    [TestMethod]
+    public void IsARhMatch_WhenPositiveDonorAndPositiveReceiver_ReturnsTrue()
+    {
+        bool result = InvokeIsRhMatch(Rh.Positive, Rh.Positive);
+
+        Assert.IsTrue(result);
+    }
+
+    [TestMethod]
+    public void IsARhMatch_WhenPositiveDonorAndNegativeReceiver_ReturnsFalse()
+    {
+        bool result = InvokeIsRhMatch(Rh.Positive, Rh.Negative);
+
+        Assert.IsFalse(result);
+    }
+
+    [TestMethod]
+    public void IsARhMatch_WhenNegativeDonorAndPositiveReceiver_ReturnsTrue()
+    {
+        bool result = InvokeIsRhMatch(Rh.Negative, Rh.Positive);
+
+        Assert.IsTrue(result);
     }
 }

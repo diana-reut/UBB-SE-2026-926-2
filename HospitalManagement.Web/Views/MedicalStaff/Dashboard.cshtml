@@ -12,6 +12,9 @@
                    placeholder="Search patients by name or CNP..." />
             <button type="submit" class="btn btn-primary" style="width:80px">Go</button>
         </form>
+        <a asp-controller="Ghost" asp-action="Index" class="btn admin-ghost-button">
+            I saw a ghost!
+        </a>
     </div>
 
     @* Error message *@
@@ -81,8 +84,4 @@
         </div>
     }
 
-    @* Ghost button *@
-    <div style="position:fixed;bottom:24px;left:270px;">
-        <button class="btn" style="background:darkred;color:white;" disabled>I saw a ghost</button>
-    </div>
 </div>

@@ -240,10 +240,12 @@ public class PatientService : IPatientService
         history.PatientId = patientId;
         int historyId = await _historyRepo.CreateAsync(history);
 
-        if (historyId >= MinValidId && history.Allergies?.Count > 0)
+        if (historyId < MinValidId || history.Allergies is null || history.Allergies.Count == 0)
         {
-            await _historyRepo.SaveAllergiesAsync(historyId, history.Allergies);
+            return;
         }
+
+        await _historyRepo.SaveAllergiesAsync(historyId, history.Allergies);
     }
 
     public async Task<int> CreateMedicalRecordAsync(int patientId, MedicalRecord record)
