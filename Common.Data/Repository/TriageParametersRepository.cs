@@ -6,24 +6,24 @@ namespace Common.Data.Repository;
 
 public class TriageParametersRepository : ITriageParametersRepository
 {
-    private readonly EFHospitalDbContext _context;
+    private readonly EFHospitalDbContext context;
 
     public TriageParametersRepository(EFHospitalDbContext context)
     {
-        _context = context;
+        this.context = context;
     }
 
     public Task<List<Triage_Parameters>> GetAllAsync() =>
-        _context.TriageParameters.AsNoTracking().ToListAsync();
+        context.TriageParameters.AsNoTracking().ToListAsync();
 
     public Task<Triage_Parameters?> GetByIdAsync(int id) =>
-        _context.TriageParameters.AsNoTracking().FirstOrDefaultAsync(p => p.TriageId == id);
+        context.TriageParameters.AsNoTracking().FirstOrDefaultAsync(p => p.TriageId == id);
 
     public async Task<Triage_Parameters> CreateAsync(Triage_Parameters parameters)
     {
         parameters.ValidateParameters();
 
-        Triage_Parameters? existingParameters = await _context.TriageParameters
+        Triage_Parameters? existingParameters = await context.TriageParameters
             .FirstOrDefaultAsync(p => p.TriageId == parameters.TriageId);
         if (existingParameters is not null)
         {
@@ -32,18 +32,18 @@ public class TriageParametersRepository : ITriageParametersRepository
             existingParameters.Bleeding = parameters.Bleeding;
             existingParameters.Injury_Type = parameters.Injury_Type;
             existingParameters.Pain_Level = parameters.Pain_Level;
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
             return existingParameters;
         }
 
-        await _context.TriageParameters.AddAsync(parameters);
-        await _context.SaveChangesAsync();
+        await context.TriageParameters.AddAsync(parameters);
+        await context.SaveChangesAsync();
         return parameters;
     }
 
     public async Task<bool> UpdateAsync(int id, Triage_Parameters parameters)
     {
-        Triage_Parameters? existingParameters = await _context.TriageParameters.FirstOrDefaultAsync(p => p.TriageId == id);
+        Triage_Parameters? existingParameters = await context.TriageParameters.FirstOrDefaultAsync(p => p.TriageId == id);
         if (existingParameters is null)
         {
             return false;
@@ -54,20 +54,20 @@ public class TriageParametersRepository : ITriageParametersRepository
         existingParameters.Bleeding = parameters.Bleeding;
         existingParameters.Injury_Type = parameters.Injury_Type;
         existingParameters.Pain_Level = parameters.Pain_Level;
-        await _context.SaveChangesAsync();
+        await context.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> DeleteAsync(int id)
     {
-        Triage_Parameters? parameters = await _context.TriageParameters.FirstOrDefaultAsync(p => p.TriageId == id);
+        Triage_Parameters? parameters = await context.TriageParameters.FirstOrDefaultAsync(p => p.TriageId == id);
         if (parameters is null)
         {
             return false;
         }
 
-        _context.TriageParameters.Remove(parameters);
-        await _context.SaveChangesAsync();
+        context.TriageParameters.Remove(parameters);
+        await context.SaveChangesAsync();
         return true;
     }
 }

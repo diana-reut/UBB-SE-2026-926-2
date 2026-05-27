@@ -11,7 +11,7 @@ public class PrescriptionFeedViewModel
     public int CurrentPage { get; set; } = 1;
     public int? InitialPrescriptionId { get; set; }
     public int? ReturnPatientId { get; set; }
-    public List<PrescriptionCardViewModel> Prescriptions { get; set; } = [];
+    public List<PrescriptionCardViewModel> Prescriptions { get; set; } = new ();
 }
 
 public class PrescriptionCardViewModel
@@ -21,7 +21,7 @@ public class PrescriptionCardViewModel
     public string DoctorName { get; set; } = string.Empty;
     public string DoctorNotes { get; set; } = string.Empty;
     public DateTime Date { get; set; }
-    public List<PrescriptionItemViewModel> Items { get; set; } = [];
+    public List<PrescriptionItemViewModel> Items { get; set; } = new ();
     public string MedName { get; set; } = string.Empty;
     public string Quantity { get; set; } = string.Empty;
 }

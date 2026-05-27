@@ -13,13 +13,13 @@ namespace Common.API.Controllers
     [AuthorizeRole("Admin", "Medic")]
     public class PrescriptionController : ControllerBase
     {
-        private readonly IPrescriptionService _prescriptionService;
-        private readonly ILogger<PrescriptionController> _logger;
+        private readonly IPrescriptionService prescriptionService;
+        private readonly ILogger<PrescriptionController> logger;
 
         public PrescriptionController(IPrescriptionService prescriptionService, ILogger<PrescriptionController> logger) : base()
         {
-            _prescriptionService = prescriptionService;
-            _logger = logger;
+            this.prescriptionService = prescriptionService;
+            this.logger = logger;
         }
 
         [HttpGet("latest")]
@@ -27,12 +27,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _prescriptionService.GetLatestPrescriptionsAsync(dto.N, dto.Page);
+                var result = await prescriptionService.GetLatestPrescriptionsAsync(dto.N, dto.Page);
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogWarning(e, "Failed to fetch latest prescriptions.");
+                logger.LogWarning(e, "Failed to fetch latest prescriptions.");
                 return Problem(
                     detail: "Failed to fetch latest prescriptions.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -45,12 +45,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _prescriptionService.ApplyFilterAsync(filter ?? new PrescriptionFilter());
+                var result = await prescriptionService.ApplyFilterAsync(filter ?? new PrescriptionFilter());
                 return Ok(result);
             }
             catch (MyNotImplementedException e)
             {
-                _logger.LogWarning(e, "Prescription filter operation is currently unavailable.");
+                logger.LogWarning(e, "Prescription filter operation is currently unavailable.");
                 return Problem(
                     detail: e.Message,
                     statusCode: (int)HttpStatusCode.ServiceUnavailable,
@@ -58,7 +58,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogWarning(e, "Failed to fetch prescriptions.");
+                logger.LogWarning(e, "Failed to fetch prescriptions.");
                 return Problem(
                     detail: "Failed to fetch prescriptions.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -71,12 +71,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _prescriptionService.GetPrescriptionDetailsAsync(id);
+                var result = await prescriptionService.GetPrescriptionDetailsAsync(id);
                 return Ok(result);
             }
             catch (ArgumentException e)
             {
-                _logger.LogWarning(e, "Prescription with ID {Id} not found.", id);
+                logger.LogWarning(e, "Prescription with ID {Id} not found.", id);
                 return Problem(
                     detail: $"Prescription with ID {id} does not exist.",
                     statusCode: (int)HttpStatusCode.NotFound,
@@ -84,7 +84,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogWarning(e, "Failed to fetch prescription with ID {Id}.", id);
+                logger.LogWarning(e, "Failed to fetch prescription with ID {Id}.", id);
                 return Problem(
                     detail: "Failed to fetch prescription details.",
                     statusCode: (int)HttpStatusCode.InternalServerError,

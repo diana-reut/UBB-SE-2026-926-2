@@ -7,15 +7,15 @@ namespace Common.API.Services;
 
 public class AllergyService : IAllergyService
 {
-    private readonly IAllergyRepository _repository;
+    private readonly IAllergyRepository repository;
 
     public AllergyService(IAllergyRepository allergyRepository)
     {
-        _repository = allergyRepository;
+        repository = allergyRepository;
     }
 
     public Task<List<Allergy>> GetAllergiesAsync()
     {
-        return _repository.GetAllergiesAsync();
+        return repository.GetAllergiesAsync();
     }
 }

@@ -12,13 +12,13 @@ namespace Common.API.Controllers
     [AuthorizeRole("Admin", "Medic")]
     public class ExaminationController : ControllerBase
     {
-        private readonly IExaminationService _examinationService;
-        private readonly ILogger<ExaminationController> _logger;
+        private readonly IExaminationService examinationService;
+        private readonly ILogger<ExaminationController> logger;
 
         public ExaminationController(IExaminationService examinationService, ILogger<ExaminationController> logger)
         {
-            _examinationService = examinationService;
-            _logger = logger;
+            this.examinationService = examinationService;
+            this.logger = logger;
         }
 
         [HttpGet]
@@ -26,12 +26,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _examinationService.GetAllAsync();
+                var result = await examinationService.GetAllAsync();
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch examinations.");
+                logger.LogError(e, "Failed to fetch examinations.");
 
                 return Problem(
                     detail: "Failed to fetch examinations.",
@@ -45,10 +45,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                Examination? result = await _examinationService.GetByIdAsync(id);
+                Examination? result = await examinationService.GetByIdAsync(id);
                 if (result is null)
                 {
-                    _logger.LogWarning("Examination {ExamId} was not found.", id);
+                    logger.LogWarning("Examination {ExamId} was not found.", id);
                     return NotFound();
                 }
 
@@ -56,7 +56,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch examination {ExamId}.", id);
+                logger.LogError(e, "Failed to fetch examination {ExamId}.", id);
 
                 return Problem(
                     detail: "Failed to fetch examination.",
@@ -70,11 +70,11 @@ namespace Common.API.Controllers
         {
             try
             {
-                return Ok(await _examinationService.GetByVisitIdAsync(visitId));
+                return Ok(await examinationService.GetByVisitIdAsync(visitId));
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch examinations for visit {VisitId}.", visitId);
+                logger.LogError(e, "Failed to fetch examinations for visit {VisitId}.", visitId);
                 return Problem(
                     detail: "Failed to fetch examinations for visit.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -87,11 +87,11 @@ namespace Common.API.Controllers
         {
             try
             {
-                return Ok(await _examinationService.GetEligibleVisitsAsync());
+                return Ok(await examinationService.GetEligibleVisitsAsync());
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch eligible examination visits.");
+                logger.LogError(e, "Failed to fetch eligible examination visits.");
                 return Problem(
                     detail: "Failed to fetch eligible examination visits.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -104,11 +104,11 @@ namespace Common.API.Controllers
         {
             try
             {
-                return Ok(await _examinationService.GetPatientHistoryAsync(patientId));
+                return Ok(await examinationService.GetPatientHistoryAsync(patientId));
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch examination history for patient {PatientId}.", patientId);
+                logger.LogError(e, "Failed to fetch examination history for patient {PatientId}.", patientId);
                 return Problem(
                     detail: "Failed to fetch examination history.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -121,7 +121,7 @@ namespace Common.API.Controllers
         {
             try
             {
-                ERExaminationSummaryDto? result = await _examinationService.GetSummaryByVisitIdAsync(visitId);
+                ERExaminationSummaryDto? result = await examinationService.GetSummaryByVisitIdAsync(visitId);
                 if (result == null)
                 {
                     return NotFound();
@@ -131,7 +131,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch examination summary for visit {VisitId}.", visitId);
+                logger.LogError(e, "Failed to fetch examination summary for visit {VisitId}.", visitId);
                 return Problem(
                     detail: "Failed to fetch examination summary.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -144,12 +144,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                Examination result = await _examinationService.CreateAsync(examination);
+                Examination result = await examinationService.CreateAsync(examination);
                 return CreatedAtAction(nameof(GetById), new { id = result.Exam_ID }, result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to create examination.");
+                logger.LogError(e, "Failed to create examination.");
 
                 return Problem(
                     detail: "Failed to create examination.",
@@ -163,10 +163,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                bool updated = await _examinationService.UpdateAsync(id, examination);
+                bool updated = await examinationService.UpdateAsync(id, examination);
                 if (!updated)
                 {
-                    _logger.LogWarning("Examination {ExamId} was not found for update.", id);
+                    logger.LogWarning("Examination {ExamId} was not found for update.", id);
                     return NotFound();
                 }
 
@@ -174,7 +174,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to update examination {ExamId}.", id);
+                logger.LogError(e, "Failed to update examination {ExamId}.", id);
 
                 return Problem(
                     detail: "Failed to update examination.",
@@ -188,10 +188,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                bool deleted = await _examinationService.DeleteAsync(id);
+                bool deleted = await examinationService.DeleteAsync(id);
                 if (!deleted)
                 {
-                    _logger.LogWarning("Examination {ExamId} was not found for delete.", id);
+                    logger.LogWarning("Examination {ExamId} was not found for delete.", id);
                     return NotFound();
                 }
 
@@ -199,7 +199,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to delete examination {ExamId}.", id);
+                logger.LogError(e, "Failed to delete examination {ExamId}.", id);
 
                 return Problem(
                     detail: "Failed to delete examination.",

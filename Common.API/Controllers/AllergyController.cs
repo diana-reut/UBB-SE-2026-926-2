@@ -11,13 +11,13 @@ namespace Common.API.Controllers
     [AuthorizeRole("Admin", "Medic")]
     public class AllergyController : ControllerBase
     {
-        private readonly IAllergyService _allergyService;
-        private readonly ILogger<AllergyController> _logger;
+        private readonly IAllergyService allergyService;
+        private readonly ILogger<AllergyController> logger;
 
         public AllergyController(IAllergyService allergyService, ILogger<AllergyController> logger) : base()
         {
-            _allergyService = allergyService;
-            _logger = logger;
+            this.allergyService = allergyService;
+            this.logger = logger;
         }
 
         [HttpGet]
@@ -25,12 +25,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _allergyService.GetAllergiesAsync();
+                var result = await allergyService.GetAllergiesAsync();
                 return Ok(result);
             }
-            catch (Exception e )
+            catch (Exception e)
             {
-                _logger.LogWarning(e, "Failed to fetch all allergies.");
+                logger.LogWarning(e, "Failed to fetch all allergies.");
 
                 return Problem(
                     detail: "Failed to fetch all allergies.",

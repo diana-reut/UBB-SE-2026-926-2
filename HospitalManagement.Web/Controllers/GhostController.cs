@@ -30,9 +30,9 @@ public class GhostController : Controller
         {
             GhostStatusDto status = await ghostApiClient.ReportSightingAsync(HttpContext.RequestAborted);
             var model = BuildModel(status);
-            model.StatusMessage = status.ExorcismTriggered
+            model.StatusMessage = status.exorcismTriggered
                 ? "Exorcism triggered! More than 3 sightings in the last 24 hours."
-                : $"Sighting recorded. Total in last 24 h: {status.SightingCount}.";
+                : $"Sighting recorded. Total in last 24 h: {status.sightingCount}.";
             return View("Index", GhostViewModel.FromModel(model));
         }
         catch (HttpRequestException ex)
@@ -56,10 +56,10 @@ public class GhostController : Controller
     }
 
     private static GhostModel BuildModel(GhostStatusDto status) =>
-        new()
+        new ()
         {
-            ExorcismTriggered = status.ExorcismTriggered,
-            SightingCount = status.SightingCount,
+            ExorcismTriggered = status.exorcismTriggered,
+            SightingCount = status.sightingCount,
             LastRefreshed = DateTime.UtcNow
         };
 }

@@ -5,7 +5,7 @@ using HospitalManagement.ViewModel;
 using System.Threading.Tasks;
 
 namespace HospitalManagement.View;
-//m
+
 internal sealed partial class MedicalHistoryDialog : ContentDialog
 {
     private readonly MedicalHistoryDialogViewModel _viewModel;
@@ -32,7 +32,6 @@ internal sealed partial class MedicalHistoryDialog : ContentDialog
         AllergyNameEntry.ItemsSource = _viewModel.AvailableAllergies;
         AllergyNameEntry.DisplayMemberPath = AllergyDisplayMemberPath;
         AllergyNameEntry.SelectedValuePath = AllergySelectedValuePath;
-
     }
 
     public async Task InitializeAsync()
@@ -93,6 +92,7 @@ internal sealed partial class MedicalHistoryDialog : ContentDialog
             args.Cancel = true;
             return;
         }
+
         WasSkipped = false;
     }
 }

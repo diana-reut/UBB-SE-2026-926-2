@@ -6,65 +6,75 @@ namespace Common.API.Services;
 
 public class BloodCompatibilityService : IBloodCompatibilityService
 {
-    private readonly IPatientRepository _patientRepo;
-    private readonly IMedicalHistoryRepository _historyRepo;
+    private readonly IPatientRepository patientRepo;
+    private readonly IMedicalHistoryRepository historyRepo;
 
     public BloodCompatibilityService(
         IPatientRepository patientRepo,
         IMedicalHistoryRepository historyRepo)
     {
-        _patientRepo = patientRepo;
-        _historyRepo = historyRepo;
+        this.patientRepo = patientRepo;
+        this.historyRepo = historyRepo;
     }
 
     public async Task<List<Patient>> GetTopCompatibleDonorsAsync(int recipientId)
     {
-        Patient? recipient = await _patientRepo.GetByIdAsync(recipientId);
+        Patient? recipient = await patientRepo.GetByIdAsync(recipientId);
 
         if (recipient != null)
         {
             recipient.MedicalHistory =
-                await _historyRepo.GetByPatientIdAsync(recipientId);
+                await historyRepo.GetByPatientIdAsync(recipientId);
         }
 
         if (recipient?.MedicalHistory?.BloodType is null
             || recipient.MedicalHistory.Rh is null)
         {
-            return [];
+            return new List<Patient>();
         }
 
         List<Patient> allPatients =
-            await _patientRepo.GetAllAsync(include_archived: true);
+            await patientRepo.GetAllAsync(include_archived: true);
 
         var rankedDonors = new List<(Patient Donor, int Score)>();
 
         foreach (var donor in allPatients)
         {
             if (donor.Id == recipientId || donor.IsDeceased)
+            {
                 continue;
+            }
 
             donor.MedicalHistory =
-                await _historyRepo.GetByPatientIdAsync(donor.Id);
+                await historyRepo.GetByPatientIdAsync(donor.Id);
 
             if (donor.MedicalHistory?.BloodType is null
                 || donor.MedicalHistory.Rh is null)
+            {
                 continue;
+            }
 
             if (!IsBloodMatch(
                     donor.MedicalHistory.BloodType,
                     recipient.MedicalHistory.BloodType.Value))
+            {
                 continue;
+            }
 
             if (!IsRhMatch(
                     donor.MedicalHistory.Rh,
                     recipient.MedicalHistory.Rh.Value))
+            {
                 continue;
+            }
 
             if (donor.MedicalHistory.Allergies?
                 .Any(a => a.SeverityLevel.Equals(
                     "Anaphylactic",
                     StringComparison.OrdinalIgnoreCase)) == true)
+            {
                 continue;
+            }
 
             rankedDonors.Add((donor,
                 CalculateScore(donor, recipient)));
@@ -83,7 +93,9 @@ public class BloodCompatibilityService : IBloodCompatibilityService
 
         if (donor.MedicalHistory is null
             || recipient.MedicalHistory is null)
+        {
             return 0;
+        }
 
         total += donor.MedicalHistory.BloodType ==
                  recipient.MedicalHistory.BloodType
@@ -93,7 +105,7 @@ public class BloodCompatibilityService : IBloodCompatibilityService
             : 25;
 
         int ageGap = Math.Abs(donor.Dob.Year - recipient.Dob.Year);
-        total += Math.Max(0, 30 - ageGap / 5 * 5);
+        total += Math.Max(0, 30 - (ageGap / 5 * 5));
 
         total += donor.Sex == recipient.Sex ? 20 : 10;
 
@@ -102,7 +114,10 @@ public class BloodCompatibilityService : IBloodCompatibilityService
 
     public bool IsBloodMatch(BloodType? donor, BloodType receiver)
     {
-        if (donor is null) return false;
+        if (donor is null)
+        {
+            return false;
+        }
 
         return donor switch
         {
@@ -116,7 +131,11 @@ public class BloodCompatibilityService : IBloodCompatibilityService
 
     public bool IsRhMatch(Rh? donor, Rh receiver)
     {
-        if (donor is null) return false;
+        if (donor is null)
+        {
+            return false;
+        }
+
         return receiver != Rh.Negative || donor == Rh.Negative;
     }
 }

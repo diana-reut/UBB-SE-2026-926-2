@@ -18,9 +18,8 @@ public class TransplantRequestViewModel
 
     [Required(ErrorMessage = "Please select an organ type.")]
     public string? SelectedOrgan { get; set; }
-    public List<string> AvailableOrgans { get; } = new()
+    public List<string> AvailableOrgans { get; } = new ()
     {
         "Kidney", "Heart", "Liver", "Lung", "Pancreas", "Cornea"
     };
-
 }

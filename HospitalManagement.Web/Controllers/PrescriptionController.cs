@@ -1,23 +1,23 @@
-﻿using Common.Data.Entity;
+﻿using System.Security.Cryptography;
+using Common.Data.Entity;
 using Common.Data.Entity.DTOs;
 using Common.Data.Integration;
 using HospitalManagement.Web.Models.Prescription;
 using HospitalManagement.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Cryptography;
 
 namespace HospitalManagement.Web.Controllers;
 
 [Authorize]
 public class PrescriptionController : Controller
 {
-    private readonly IPrescriptionApiClient _prescriptionApiClient;
+    private readonly IPrescriptionApiClient prescriptionApiClient;
     private const int PageSize = 9;
 
     public PrescriptionController(IPrescriptionApiClient prescriptionApiClient)
     {
-        _prescriptionApiClient = prescriptionApiClient;
+        this.prescriptionApiClient = prescriptionApiClient;
     }
 
     [HttpGet]
@@ -65,18 +65,20 @@ public class PrescriptionController : Controller
                     DateTo = dateTo
                 };
 
-                prescriptions = (await _prescriptionApiClient.ApplyFilterAsync(filter, cancellationToken))
+                prescriptions = (await prescriptionApiClient.ApplyFilterAsync(filter, cancellationToken))
                     .Skip((page - 1) * PageSize)
                     .Take(PageSize)
                     .ToList();
             }
             else
             {
-                prescriptions = await _prescriptionApiClient.GetLatestPrescriptionsAsync(PageSize, page, cancellationToken);
+                prescriptions = await prescriptionApiClient.GetLatestPrescriptionsAsync(PageSize, page, cancellationToken);
             }
 
             if (prescriptions.Count == 0)
+            {
                 model.InfoMessage = "No prescriptions found.";
+            }
 
             model.Prescriptions = prescriptions.Select(p => new PrescriptionCardViewModel
             {
@@ -89,7 +91,7 @@ public class PrescriptionController : Controller
                 {
                     MedName = i.MedName,
                     Quantity = i.Quantity
-                }).ToList() ?? []
+                }).ToList() ?? new List<PrescriptionItemViewModel>()
             }).ToList();
         }
         catch (Exception ex)
@@ -104,7 +106,9 @@ public class PrescriptionController : Controller
     {
         if (!string.IsNullOrEmpty(doctorName) &&
             !doctorName.Contains("Unknown", StringComparison.OrdinalIgnoreCase))
+        {
             return doctorName;
+        }
 
         var fakeDoctors = MockDoctorProvider.FakeDoctors;
         int index = RandomNumberGenerator.GetInt32(fakeDoctors.Count);

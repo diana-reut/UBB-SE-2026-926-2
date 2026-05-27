@@ -3,7 +3,7 @@
 public class MedicalStaffDashboardViewModel
 {
     public string? SearchQuery { get; set; }
-    public List<PatientSearchResultViewModel> SearchResults { get; set; } = [];
+    public List<PatientSearchResultViewModel> SearchResults { get; set; } = new ();
     public string? ErrorMessage { get; set; }
     public bool HasSearched { get; set; }
     public int? SelectedPatientId { get; set; }

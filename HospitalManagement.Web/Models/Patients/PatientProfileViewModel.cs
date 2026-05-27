@@ -12,7 +12,7 @@ public class PatientProfileViewModel
     public string FormattedAllergies { get; set; } = "None";
     public string FormattedChronicConditions { get; set; } = "None";
     public bool IsHighRisk { get; set; }
-    public List<MedicalRecordViewModel> MedicalRecords { get; set; } = [];
+    public List<MedicalRecordViewModel> MedicalRecords { get; set; } = new ();
     public int? SelectedRecordId { get; set; }
     public MedicalRecordViewModel? SelectedRecord =>
         MedicalRecords.FirstOrDefault(r => r.Id == SelectedRecordId);

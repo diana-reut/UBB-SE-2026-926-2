@@ -5,9 +5,9 @@ public class StatisticsViewModel
     public string SelectedKey { get; set; } = "patient-distribution";
     public string Title { get; set; } = "Patient Distribution";
     public bool IsDemographics { get; set; }
-    public List<StatisticOptionViewModel> Options { get; set; } = [];
-    public List<StatisticDataPointViewModel> PrimaryData { get; set; } = [];
-    public List<StatisticDataPointViewModel> SecondaryData { get; set; } = [];
+    public List<StatisticOptionViewModel> Options { get; set; } = new ();
+    public List<StatisticDataPointViewModel> PrimaryData { get; set; } = new ();
+    public List<StatisticDataPointViewModel> SecondaryData { get; set; } = new ();
     public string? ErrorMessage { get; set; }
 
     public static StatisticsViewModel FromModel(StatisticsModel model)

@@ -40,7 +40,7 @@ public class RegistrationViewModel : IValidatableObject
     {
         if (DateOfBirth >= DateTime.Today)
         {
-            yield return new ValidationResult("Date of birth must be in the past.", [nameof(DateOfBirth)]);
+            yield return new ValidationResult("Date of birth must be in the past.", new[] { nameof(DateOfBirth) });
         }
     }
 }

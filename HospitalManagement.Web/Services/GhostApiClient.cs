@@ -7,7 +7,7 @@ public class GhostApiClient : IGhostApiClient
 {
     private const string BaseUri = "api/ghost";
     private readonly HttpClient httpClient;
-    private readonly JsonSerializerOptions jsonOptions = new()
+    private readonly JsonSerializerOptions jsonOptions = new ()
     {
         PropertyNameCaseInsensitive = true,
     };

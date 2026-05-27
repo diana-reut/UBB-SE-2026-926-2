@@ -1,65 +1,65 @@
-using Common.Data.Data;
-using Common.Data.Entity;
-using Common.Data.Entity.Enums;
-using Common.Data.Entity;
-using Common.Data.Integration;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Common.Data.Data;
+using Common.Data.Entity;
+using Common.Data.Entity;
+using Common.Data.Entity.Enums;
+using Common.Data.Integration;
+using Microsoft.EntityFrameworkCore;
 
 namespace Common.Data.Repository;
 
 public class PatientRepository : IPatientRepository
 {
-    private readonly EFHospitalDbContext _context;
+    private readonly EFHospitalDbContext context;
 
     public PatientRepository(EFHospitalDbContext context)
     {
-        _context = context;
+        this.context = context;
     }
 
     public async Task AddAsync(Patient p)
     {
         ArgumentNullException.ThrowIfNull(p);
-        _ = await _context.Patients.AddAsync(p);
-        _ = await _context.SaveChangesAsync();
+        _ = await context.Patients.AddAsync(p);
+        _ = await context.SaveChangesAsync();
     }
 
     public async Task UpdateAsync(Patient p)
     {
         ArgumentNullException.ThrowIfNull(p);
 
-        Patient? trackedPatient = _context.Patients.Local.FirstOrDefault(existing => existing.Id == p.Id);
+        Patient? trackedPatient = context.Patients.Local.FirstOrDefault(existing => existing.Id == p.Id);
         if (trackedPatient is not null)
         {
-            _context.Entry(trackedPatient).CurrentValues.SetValues(p);
+            context.Entry(trackedPatient).CurrentValues.SetValues(p);
         }
         else
         {
-            _ = _context.Patients.Update(p);
+            _ = context.Patients.Update(p);
         }
 
-        _ = await _context.SaveChangesAsync();
+        _ = await context.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(int id)
     {
-        Patient? patient = await _context.Patients.FindAsync(id);
+        Patient? patient = await context.Patients.FindAsync(id);
         if (patient is not null)
         {
-            _ = _context.Patients.Remove(patient);
-            _ = await _context.SaveChangesAsync();
+            _ = context.Patients.Remove(patient);
+            _ = await context.SaveChangesAsync();
         }
     }
 
     public Task<bool> ExistsAsync(string cnp) =>
-        _context.Patients.AnyAsync(p => p.Cnp == cnp);
+        context.Patients.AnyAsync(p => p.Cnp == cnp);
 
     public Task<List<Patient>> GetAllAsync(bool include_archived)
     {
-        IQueryable<Patient> query = _context.Patients
+        IQueryable<Patient> query = context.Patients
             .Include(p => p.MedicalHistory);
 
         if (!include_archived)
@@ -71,14 +71,13 @@ public class PatientRepository : IPatientRepository
     }
 
     public Task<List<Patient>> GetArchivedAsync() =>
-        _context.Patients
+        context.Patients
             .AsNoTracking()
             .Where(p => p.IsArchived)
             .ToListAsync();
 
-
     public Task<Patient?> GetByIdAsync(int id) =>
-        _context.Patients
+        context.Patients
             .Include(p => p.MedicalHistory)
             .ThenInclude(h => h.PatientAllergies)
             .ThenInclude(pa => pa.Allergy)
@@ -89,7 +88,7 @@ public class PatientRepository : IPatientRepository
     {
         ArgumentNullException.ThrowIfNull(patientFilter);
 
-        IQueryable<Patient> query = _context.Patients
+        IQueryable<Patient> query = context.Patients
             .Include(p => p.MedicalHistory)
             .AsQueryable();
 
@@ -135,12 +134,12 @@ public class PatientRepository : IPatientRepository
 
     public async Task MarkAsDeceasedAsync(int id, DateTime dod)
     {
-        Patient? patient = await _context.Patients.FindAsync(id);
+        Patient? patient = await context.Patients.FindAsync(id);
         if (patient is not null)
         {
             patient.Dod = dod;
             patient.IsArchived = true;
-            _ = await _context.SaveChangesAsync();
+            _ = await context.SaveChangesAsync();
         }
     }
 
@@ -149,7 +148,7 @@ public class PatientRepository : IPatientRepository
         int currentYear = DateTime.Now.Year;
         int recipientAge = currentYear - dob.Year;
 
-        List<Patient> donors = await _context.Patients
+        List<Patient> donors = await context.Patients
             .Include(p => p.MedicalHistory)
             .ThenInclude(mh => mh.PatientAllergies)
             .ThenInclude(pa => pa.Allergy)

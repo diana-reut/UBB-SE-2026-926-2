@@ -56,7 +56,7 @@ public class PatientProfileController : Controller
                         StaffId = r.StaffId,
                         Symptoms = r.Symptoms ?? "N/A",
                         Diagnosis = r.Diagnosis ?? "N/A",
-                    }).ToList() ?? [],
+                    }).ToList() ?? new List<PatientsMedicalRecordViewModel>(),
                 SelectedRecordId = selectedRecordId,
             };
 
@@ -310,11 +310,11 @@ public class PatientProfileController : Controller
     {
         Patient patient = await patientApiClient.GetPatientDetailsAsync(patientId, cancellationToken);
         patient.MedicalHistory ??= new MedicalHistory();
-        patient.MedicalHistory.MedicalRecords ??= [];
+        patient.MedicalHistory.MedicalRecords ??= new List<MedicalRecord>();
 
         List<MedicalRecord> records = patient.MedicalHistory.Id > 0
             ? await patientApiClient.GetMedicalRecordsAsync(patient.MedicalHistory.Id, cancellationToken)
-            : [];
+            : new List<MedicalRecord>();
         List<string> allergies = await patientApiClient.GetPatientAllergiesAsync(patientId, cancellationToken);
         var history = patient.MedicalHistory;
 

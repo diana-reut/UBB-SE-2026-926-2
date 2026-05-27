@@ -8,58 +8,54 @@ namespace Common.API.Services;
 
 public class StatisticsService : IStatisticsService
 {
-    private readonly IPatientRepository _patientRepo;
-    private readonly IMedicalRecordRepository _recordRepo;
-    private readonly IPrescriptionRepository _prescriptionRepo;
+    private readonly IPatientRepository patientRepo;
+    private readonly IMedicalRecordRepository recordRepo;
+    private readonly IPrescriptionRepository prescriptionRepo;
 
     public StatisticsService(IPatientRepository patientRepo, IMedicalRecordRepository recordRepo, IPrescriptionRepository prescriptionRepo)
     {
-        _patientRepo = patientRepo;
-        _recordRepo = recordRepo;
-        _prescriptionRepo = prescriptionRepo;
+        this.patientRepo = patientRepo;
+        this.recordRepo = recordRepo;
+        this.prescriptionRepo = prescriptionRepo;
     }
 
     public async Task<Dictionary<string, int>> GetPatientsByBloodTypeAsync()
     {
-        return BuildPatientsByBloodType(await _patientRepo.GetAllAsync(include_archived: true));
+        return BuildPatientsByBloodType(await patientRepo.GetAllAsync(include_archived: true));
     }
 
     public async Task<Dictionary<string, int>> GetPatientsByRhAsync()
     {
-        return BuildPatientsByRh(await _patientRepo.GetAllAsync(include_archived: true));
+        return BuildPatientsByRh(await patientRepo.GetAllAsync(include_archived: true));
     }
-
 
     public async Task<Dictionary<string, int>> GetPatientGenderDistributionAsync()
     {
-        return BuildPatientGenderDistribution(await _patientRepo.GetAllAsync(include_archived: true));
+        return BuildPatientGenderDistribution(await patientRepo.GetAllAsync(include_archived: true));
     }
-
 
     public async Task<Dictionary<string, int>> GetConsultationDistributionAsync()
     {
-        return BuildConsultationDistribution(await _recordRepo.GetAllAsync());
+        return BuildConsultationDistribution(await recordRepo.GetAllAsync());
     }
-
 
     public async Task<Dictionary<string, int>> GetTopDiagnosesAsync()
     {
-        return BuildTopDiagnoses(await _recordRepo.GetAllAsync());
+        return BuildTopDiagnoses(await recordRepo.GetAllAsync());
     }
 
     public async Task<Dictionary<string, int>> GetAgeDistributionAsync()
     {
-        return BuildAgeDistribution(await _patientRepo.GetAllAsync(include_archived: true));
+        return BuildAgeDistribution(await patientRepo.GetAllAsync(include_archived: true));
     }
     public async Task<Dictionary<string, int>> GetMostPrescribedMedsAsync()
     {
-        return BuildMostPrescribedMeds(await _prescriptionRepo.GetAllAsync());
+        return BuildMostPrescribedMeds(await prescriptionRepo.GetAllAsync());
     }
-
 
     public async Task<Dictionary<string, int>> GetActiveVsArchivedRatioAsync()
     {
-        return BuildActiveVsArchivedRatio(await _patientRepo.GetAllAsync(include_archived: true));
+        return BuildActiveVsArchivedRatio(await patientRepo.GetAllAsync(include_archived: true));
     }
 
     private static Dictionary<string, int> BuildPatientsByBloodType(IEnumerable<Patient> patients)

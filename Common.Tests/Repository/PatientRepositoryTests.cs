@@ -1,10 +1,10 @@
+using System.Reflection;
 using Common.Data.Data;
 using Common.Data.Entity;
 using Common.Data.Entity.Enums;
 using Common.Data.Integration;
 using Common.Data.Repository;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection;
 
 namespace Common.Tests.Repository;
 
@@ -43,18 +43,28 @@ public sealed class PatientRepositoryTests
             PatientId = patientId,
             BloodType = bloodType,
             Rh = rh,
-            ChronicConditions = conditions ?? []
+            ChronicConditions = conditions ?? new List<string>()
         };
 
-    private static int InvokeCalculateTotalScore(PatientRepository repository, Patient donor, BloodType bloodType, Rh rh, Sex sex, int age) =>
-        (int)typeof(PatientRepository)
-            .GetMethod("CalculateTotalScore", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .Invoke(repository, [donor, bloodType, rh, sex, age])!;
+    private static int InvokeCalculateTotalScore(PatientRepository repository, Patient donor, BloodType bloodType, Rh rh, Sex sex, int age)
+    {
+        object[] arguments = new object[] { donor, bloodType, rh, sex, age };
+        MethodInfo? method = typeof(PatientRepository).GetMethod("CalculateTotalScore", BindingFlags.Instance | BindingFlags.NonPublic);
 
-    private static bool InvokeIsRhMatch(Rh? donor, Rh receiver) =>
-        (bool)typeof(PatientRepository)
-            .GetMethod("IsARhMatch", BindingFlags.Static | BindingFlags.NonPublic)!
-            .Invoke(null, [donor, receiver])!;
+        object? result = method!.Invoke(repository, arguments);
+
+        return (int)result!;
+    }
+
+    private static bool InvokeIsRhMatch(Rh? donor, Rh receiver)
+    {
+        object[] arguments = new object[] { donor, receiver };
+        MethodInfo? method = typeof(PatientRepository).GetMethod("IsARhMatch", BindingFlags.Static | BindingFlags.NonPublic);
+
+        object? result = method!.Invoke(null, arguments);
+
+        return (bool)result!;
+    }
 
     [TestMethod]
     public async Task AddAsync_WhenPatientIsNull_ThrowsArgumentNullException()
@@ -238,8 +248,8 @@ public sealed class PatientRepositoryTests
         context.Patients.AddRange(patient1, patient2);
         await context.SaveChangesAsync();
         context.MedicalHistory.AddRange(
-            MakeHistory(patient1.Id, conditions: ["Asthma"]),
-            MakeHistory(patient2.Id, conditions: []));
+            MakeHistory(patient1.Id, conditions: new List<string> { "Asthma" }),
+            MakeHistory(patient2.Id, conditions: new List<string>()));
         await context.SaveChangesAsync();
         var sut = new PatientRepository(context);
 
@@ -359,7 +369,7 @@ public sealed class PatientRepositoryTests
         context.Patients.AddRange(chronicDonor, healthyDonor);
         await context.SaveChangesAsync();
         context.MedicalHistory.AddRange(
-            MakeHistory(chronicDonor.Id, bloodType: BloodType.O, rh: Rh.Negative, conditions: ["Asthma"]),
+            MakeHistory(chronicDonor.Id, bloodType: BloodType.O, rh: Rh.Negative, conditions: new List<string> { "Asthma" }),
             MakeHistory(healthyDonor.Id, bloodType: BloodType.O, rh: Rh.Negative));
         await context.SaveChangesAsync();
         var sut = new PatientRepository(context);

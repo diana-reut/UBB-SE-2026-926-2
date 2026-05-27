@@ -12,7 +12,7 @@ public class TransplantApiClient : ITransplantApiClient
 {
     private const string BaseUri = "api/transplants";
     private readonly HttpClient httpClient;
-    private readonly JsonSerializerOptions jsonOptions = new() { PropertyNameCaseInsensitive = true };
+    private readonly JsonSerializerOptions jsonOptions = new () { PropertyNameCaseInsensitive = true };
 
     public TransplantApiClient(HttpClient httpClient)
     {
@@ -24,7 +24,11 @@ public class TransplantApiClient : ITransplantApiClient
         try
         {
             using HttpResponseMessage response = await httpClient.GetAsync($"{BaseUri}/{id}", cancellationToken);
-            if (response.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<Transplant>(jsonOptions, cancellationToken);
         }
@@ -39,7 +43,7 @@ public class TransplantApiClient : ITransplantApiClient
         try
         {
             return await httpClient.GetFromJsonAsync<List<Transplant>>(
-                $"{BaseUri}/receiver/{receiverId}", jsonOptions, cancellationToken) ?? [];
+                $"{BaseUri}/receiver/{receiverId}", jsonOptions, cancellationToken) ?? new List<Transplant>();
         }
         catch (HttpRequestException)
         {
@@ -52,7 +56,7 @@ public class TransplantApiClient : ITransplantApiClient
         try
         {
             return await httpClient.GetFromJsonAsync<List<Transplant>>(
-                $"{BaseUri}/donor/{donorId}", jsonOptions, cancellationToken) ?? [];
+                $"{BaseUri}/donor/{donorId}", jsonOptions, cancellationToken) ?? new List<Transplant>();
         }
         catch (HttpRequestException)
         {
@@ -66,7 +70,7 @@ public class TransplantApiClient : ITransplantApiClient
         {
             return await httpClient.GetFromJsonAsync<List<TransplantMatch>>(
                 $"{BaseUri}/matches/donor/{donorId}?organType={Uri.EscapeDataString(organType)}",
-                jsonOptions, cancellationToken) ?? [];
+                jsonOptions, cancellationToken) ?? new List<TransplantMatch>();
         }
         catch (HttpRequestException)
         {
@@ -128,7 +132,6 @@ public class TransplantApiClient : ITransplantApiClient
 
     public async Task AssignDonorAsync(int transplantId, int donorId, float finalScore, CancellationToken cancellationToken)
     {
-
         try
         {
             HttpResponseMessage response = await httpClient.PutAsJsonAsync(
@@ -142,7 +145,6 @@ public class TransplantApiClient : ITransplantApiClient
                 string error = await ApiErrorReader.ReadErrorMessageAsync(response, cancellationToken);
                 throw new InvalidOperationException(error);
             }
-
         }
         catch (HttpRequestException)
         {

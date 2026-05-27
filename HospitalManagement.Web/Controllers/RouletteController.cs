@@ -12,7 +12,7 @@ public class RouletteController : Controller
     // Set of discounts accepted from the client. The base wheel has segments
     // for 0/10/25/50/100; the "let it ride" double-or-nothing can also produce
     // 20 (10x2) or shove anything back to 0.
-    private static readonly HashSet<int> AllowedSubmittedDiscounts = [0, 10, 20, 25, 50, 100];
+    private static readonly HashSet<int> AllowedSubmittedDiscounts = new () { 0, 10, 20, 25, 50, 100 };
 
     private readonly IPatientApiClient patientApiClient;
     private readonly IBillingApiClient billingApiClient;

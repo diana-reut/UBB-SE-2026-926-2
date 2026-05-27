@@ -6,22 +6,22 @@ namespace Common.Data.Repository;
 
 public class AllergyRepository : IAllergyRepository
 {
-    private readonly EFHospitalDbContext _context;
+    private readonly EFHospitalDbContext context;
 
     public AllergyRepository(EFHospitalDbContext context)
     {
-        _context = context;
+        this.context = context;
     }
 
-    public Task<List<Allergy>> GetAllergiesAsync() => _context.Allergies.AsNoTracking().ToListAsync();
+    public Task<List<Allergy>> GetAllergiesAsync() => context.Allergies.AsNoTracking().ToListAsync();
 
     public Allergy? GetById(int id) =>
-        _context.Allergies
+        context.Allergies
             .AsNoTracking()
             .FirstOrDefault(a => a.Id == id);
 
     public Task<Allergy?> GetByIdAsync(int id) =>
-        _context.Allergies
+        context.Allergies
             .AsNoTracking()
             .FirstOrDefaultAsync(a => a.Id == id);
 }

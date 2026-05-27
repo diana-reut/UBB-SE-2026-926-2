@@ -1,42 +1,42 @@
-using Common.Data.Data;
-using Common.Data.Entity;
-using Common.Data.Integration;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Common.Data.Data;
 using Common.Data.Entity;
+using Common.Data.Entity;
+using Common.Data.Integration;
+using Microsoft.EntityFrameworkCore;
 
 namespace Common.Data.Repository;
 
 public class PrescriptionRepository : IPrescriptionRepository
 {
-    private readonly EFHospitalDbContext _context;
+    private readonly EFHospitalDbContext context;
 
     public PrescriptionRepository(EFHospitalDbContext context)
     {
-        _context = context;
+        this.context = context;
     }
 
     public async Task AddAsync(Prescription prescription)
     {
         ArgumentNullException.ThrowIfNull(prescription);
-        await _context.Prescriptions.AddAsync(prescription);
-        await _context.SaveChangesAsync();
+        await context.Prescriptions.AddAsync(prescription);
+        await context.SaveChangesAsync();
     }
 
     public async Task UpdateAsync(Prescription prescription)
     {
         ArgumentNullException.ThrowIfNull(prescription);
 
-        Prescription existing = await _context.Prescriptions
+        Prescription existing = await context.Prescriptions
             .Include(p => p.MedicationList)
             .FirstOrDefaultAsync(p => p.Id == prescription.Id)
             ?? throw new KeyNotFoundException();
 
-        _context.Entry(existing).CurrentValues.SetValues(prescription);
-        _context.PrescriptionItems.RemoveRange(existing.MedicationList);
+        context.Entry(existing).CurrentValues.SetValues(prescription);
+        context.PrescriptionItems.RemoveRange(existing.MedicationList);
         existing.MedicationList.Clear();
 
         foreach (PrescriptionItem item in prescription.MedicationList)
@@ -44,19 +44,18 @@ public class PrescriptionRepository : IPrescriptionRepository
             existing.MedicationList.Add(item);
         }
 
-        await _context.SaveChangesAsync();
+        await context.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(int id)
     {
-        Prescription? prescription = await _context.Prescriptions.FindAsync(id);
+        Prescription? prescription = await context.Prescriptions.FindAsync(id);
         if (prescription is not null)
         {
-            _context.Prescriptions.Remove(prescription);
-            await _context.SaveChangesAsync();
+            context.Prescriptions.Remove(prescription);
+            await context.SaveChangesAsync();
         }
     }
-
 
     public Task<List<Prescription>> GetTopNAsync(int n, int page)
     {
@@ -72,7 +71,7 @@ public class PrescriptionRepository : IPrescriptionRepository
     }
 
     public Task<List<PrescriptionItem>> GetItemsAsync(int prescriptionId) =>
-        _context.PrescriptionItems
+        context.PrescriptionItems
             .Where(pi => pi.PrescriptionId == prescriptionId)
             .AsNoTracking()
             .ToListAsync();
@@ -88,22 +87,34 @@ public class PrescriptionRepository : IPrescriptionRepository
             .Where(p => !p.MedicalRecord.History.Patient.IsArchived);
 
         if (filter.PrescriptionId.HasValue)
+        {
             query = query.Where(p => p.Id == filter.PrescriptionId.Value);
+        }
 
         if (filter.PatientId.HasValue)
+        {
             query = query.Where(p => p.MedicalRecord.History.PatientId == filter.PatientId.Value);
+        }
 
         if (filter.DoctorId.HasValue)
+        {
             query = query.Where(p => p.MedicalRecord.StaffId == filter.DoctorId.Value);
+        }
 
         if (!string.IsNullOrWhiteSpace(filter.MedName))
+        {
             query = query.Where(p => p.MedicationList.Any(m => m.MedName.Contains(filter.MedName)));
+        }
 
         if (filter.DateFrom.HasValue)
+        {
             query = query.Where(p => p.Date >= filter.DateFrom.Value);
+        }
 
         if (filter.DateTo.HasValue)
+        {
             query = query.Where(p => p.Date <= filter.DateTo.Value);
+        }
 
         if (!string.IsNullOrWhiteSpace(filter.PatientName))
         {
@@ -130,10 +141,12 @@ public class PrescriptionRepository : IPrescriptionRepository
         DateTime thirtyDaysAgo = DateTime.Now.AddDays(-30);
 
         var candidateIds = new List<int>();
-        var conn = _context.Database.GetDbConnection();
+        var conn = context.Database.GetDbConnection();
         bool wasOpen = conn.State == System.Data.ConnectionState.Open;
         if (!wasOpen)
+        {
             await conn.OpenAsync();
+        }
 
         try
         {
@@ -157,18 +170,24 @@ public class PrescriptionRepository : IPrescriptionRepository
 
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
+            {
                 candidateIds.Add(reader.GetInt32(0));
+            }
         }
         finally
         {
             if (!wasOpen)
+            {
                 await conn.CloseAsync();
+            }
         }
 
         if (candidateIds.Count == 0)
-            return [];
+        {
+            return new List<Patient>();
+        }
 
-        return await _context.Patients
+        return await context.Patients
             .Where(p => candidateIds.Contains(p.Id))
             .AsNoTracking()
             .ToListAsync();
@@ -178,22 +197,24 @@ public class PrescriptionRepository : IPrescriptionRepository
     {
         DateTime thirtyDaysAgo = DateTime.Now.AddDays(-30);
 
-        List<MedicalRecord> records = await _context.Prescriptions
+        List<MedicalRecord> records = await context.Prescriptions
             .Where(p => p.MedicalRecord.History.PatientId == patientId && p.Date >= thirtyDaysAgo)
             .Select(p => p.MedicalRecord)
             .ToListAsync();
 
         foreach (MedicalRecord record in records)
+        {
             record.PoliceNotified = true;
+        }
 
-        await _context.SaveChangesAsync();
+        await context.SaveChangesAsync();
     }
 
     public async Task<List<int>> GetPoliceNotifiedPatientIdsAsync(IEnumerable<int> patientIds)
     {
         DateTime thirtyDaysAgo = DateTime.Now.AddDays(-30);
 
-        return await _context.Prescriptions
+        return await context.Prescriptions
             .Where(p => patientIds.Contains(p.MedicalRecord.History.PatientId)
                         && p.Date >= thirtyDaysAgo
                         && p.MedicalRecord.PoliceNotified)
@@ -203,7 +224,7 @@ public class PrescriptionRepository : IPrescriptionRepository
     }
 
     private IQueryable<Prescription> BaseQuery() =>
-        _context.Prescriptions
+        context.Prescriptions
             .Include(p => p.MedicationList)
             .Include(p => p.MedicalRecord)
             .ThenInclude(mr => mr.History)

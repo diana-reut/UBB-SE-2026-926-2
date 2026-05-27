@@ -9,10 +9,10 @@ namespace Common.API.Services;
 
 internal class BillingService : IBillingService
 {
-    private readonly IMedicalHistoryRepository _historyRepo;
-    private readonly IMedicalRecordRepository _recordRepo;
-    private readonly IPrescriptionRepository _prescriptionRepo;
-    private readonly ITransplantRepository _transplantRepo;
+    private readonly IMedicalHistoryRepository historyRepo;
+    private readonly IMedicalRecordRepository recordRepo;
+    private readonly IPrescriptionRepository prescriptionRepo;
+    private readonly ITransplantRepository transplantRepo;
     private const int PercentageDivisor = 100;
     private const decimal EmergencyRoomBasePrice = 500;
     private const decimal AppointmentBasePrice = 200;
@@ -22,7 +22,6 @@ internal class BillingService : IBillingService
     private const decimal SevereAllergyPrice = 100;
     private const decimal TransplantAdditionalPrice = 2000;
 
-
     private const string MildSeverity = "mild";
     private const string ModerateSeverity = "moderate";
     private const string SevereSeverity = "severe";
@@ -30,48 +29,48 @@ internal class BillingService : IBillingService
 
     public BillingService(IMedicalHistoryRepository historyRepo, IMedicalRecordRepository recordRepo, IPrescriptionRepository prescriptionRepo, ITransplantRepository transplantRepo)
     {
-        _historyRepo = historyRepo;
-        _recordRepo = recordRepo;
-        _prescriptionRepo = prescriptionRepo;
-        _transplantRepo = transplantRepo;
+        this.historyRepo = historyRepo;
+        this.recordRepo = recordRepo;
+        this.prescriptionRepo = prescriptionRepo;
+        this.transplantRepo = transplantRepo;
     }
 
     public async Task<decimal> ComputeBasePriceAsync(int patientId, int recordId)
     {
-        MedicalRecord? record = await _recordRepo.GetByIdAsync(recordId);
-        Prescription? prescription = await _prescriptionRepo.GetByRecordIdAsync(recordId);
+        MedicalRecord? record = await recordRepo.GetByIdAsync(recordId);
+        Prescription? prescription = await prescriptionRepo.GetByRecordIdAsync(recordId);
         List<PrescriptionItem> prescriptionItems = prescription is not null
-            ? await _prescriptionRepo.GetItemsAsync(prescription.Id)
-            : [];
-        MedicalHistory? history = await _historyRepo.GetByPatientIdAsync(patientId);
+            ? await prescriptionRepo.GetItemsAsync(prescription.Id)
+            : new List<PrescriptionItem>();
+        MedicalHistory? history = await historyRepo.GetByPatientIdAsync(patientId);
         List<string> chronicConditions = history is not null
-            ? await _historyRepo.GetChronicConditionsAsync(history.Id)
-            : [];
+            ? await historyRepo.GetChronicConditionsAsync(history.Id)
+            : new List<string>();
         List<(Allergy Allergy, string SeverityLevel)> allergies = history is not null
-            ? await _historyRepo.GetAllergiesByHistoryIdAsync(history.Id)
-            : [];
-        List<Transplant> associatedTransplants = await _transplantRepo.GetByReceiverIdAsync(patientId);
+            ? await historyRepo.GetAllergiesByHistoryIdAsync(history.Id)
+            : new List<(Allergy Allergy, string SeverityLevel)>();
+        List<Transplant> associatedTransplants = await transplantRepo.GetByReceiverIdAsync(patientId);
 
         return CalculateBasePrice(record, history, prescriptionItems, chronicConditions, allergies, associatedTransplants);
     }
 
     public async Task<decimal> ApplyDiscountAsync(decimal basePrice, int discount)
     {
-        return await Task.FromResult(basePrice - basePrice * discount / PercentageDivisor);
+        return await Task.FromResult(basePrice - (basePrice * discount / PercentageDivisor));
     }
 
     public async Task<decimal> PersistDiscountAsync(int recordId, decimal basePrice, int discount)
     {
         decimal finalPrice = await ApplyDiscountAsync(basePrice, discount);
 
-        MedicalRecord? record = await _recordRepo.GetByIdAsync(recordId)
+        MedicalRecord? record = await recordRepo.GetByIdAsync(recordId)
             ?? throw new KeyNotFoundException($"Medical record with ID {recordId} not found.");
 
         record.BasePrice = basePrice;
         record.DiscountApplied = discount;
         record.FinalPrice = finalPrice;
 
-        await _recordRepo.UpdateAsync(record);
+        await recordRepo.UpdateAsync(record);
 
         return finalPrice;
     }

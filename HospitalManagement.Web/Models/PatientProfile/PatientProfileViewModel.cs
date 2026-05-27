@@ -10,8 +10,8 @@ public class PatientProfileViewModel
     public string? BloodType { get; set; }
     public string? Rh { get; set; }
     public string ChronicConditions { get; set; } = "None";
-    public List<string> Allergies { get; set; } = [];
-    public List<MedicalRecordRowViewModel> MedicalRecords { get; set; } = [];
+    public List<string> Allergies { get; set; } = new ();
+    public List<MedicalRecordRowViewModel> MedicalRecords { get; set; } = new ();
     public int? SelectedRecordId { get; set; }
     public decimal BasePrice { get; set; }
     public decimal FinalPrice { get; set; }
@@ -93,7 +93,7 @@ public class PrescriptionViewModel
     public int Id { get; set; }
     public string Date { get; set; } = string.Empty;
     public string? DoctorNotes { get; set; }
-    public List<PrescriptionItemViewModel> Items { get; set; } = [];
+    public List<PrescriptionItemViewModel> Items { get; set; } = new ();
 }
 
 public class PrescriptionItemViewModel

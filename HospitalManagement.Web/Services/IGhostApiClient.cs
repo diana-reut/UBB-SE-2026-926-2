@@ -1,6 +1,6 @@
 namespace HospitalManagement.Web.Services;
 
-public record GhostStatusDto(bool ExorcismTriggered, int SightingCount);
+public record GhostStatusDto(bool exorcismTriggered, int sightingCount);
 
 public interface IGhostApiClient
 {

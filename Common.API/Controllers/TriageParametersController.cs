@@ -11,15 +11,15 @@ namespace Common.API.Controllers
     [AuthorizeRole("Admin", "Medic")]
     public class TriageParametersController : ControllerBase
     {
-        private readonly ITriageParametersService _triageParametersService;
-        private readonly ILogger<TriageParametersController> _logger;
+        private readonly ITriageParametersService triageParametersService;
+        private readonly ILogger<TriageParametersController> logger;
 
         public TriageParametersController(
             ITriageParametersService triageParametersService,
             ILogger<TriageParametersController> logger)
         {
-            _triageParametersService = triageParametersService;
-            _logger = logger;
+            this.triageParametersService = triageParametersService;
+            this.logger = logger;
         }
 
         [HttpGet]
@@ -27,12 +27,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _triageParametersService.GetAllAsync();
+                var result = await triageParametersService.GetAllAsync();
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch triage parameters.");
+                logger.LogError(e, "Failed to fetch triage parameters.");
 
                 return Problem(
                     detail: "Failed to fetch triage parameters.",
@@ -46,10 +46,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                Triage_Parameters? result = await _triageParametersService.GetByIdAsync(id);
+                Triage_Parameters? result = await triageParametersService.GetByIdAsync(id);
                 if (result is null)
                 {
-                    _logger.LogWarning("Triage parameters {TriageId} were not found.", id);
+                    logger.LogWarning("Triage parameters {TriageId} were not found.", id);
                     return NotFound();
                 }
 
@@ -57,7 +57,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch triage parameters {TriageId}.", id);
+                logger.LogError(e, "Failed to fetch triage parameters {TriageId}.", id);
 
                 return Problem(
                     detail: "Failed to fetch triage parameters.",
@@ -71,12 +71,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                Triage_Parameters result = await _triageParametersService.CreateAsync(parameters);
+                Triage_Parameters result = await triageParametersService.CreateAsync(parameters);
                 return CreatedAtAction(nameof(GetById), new { id = result.Triage_ID }, result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to create triage parameters.");
+                logger.LogError(e, "Failed to create triage parameters.");
 
                 return Problem(
                     detail: e.Message,
@@ -90,10 +90,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                bool updated = await _triageParametersService.UpdateAsync(id, parameters);
+                bool updated = await triageParametersService.UpdateAsync(id, parameters);
                 if (!updated)
                 {
-                    _logger.LogWarning("Triage parameters {TriageId} were not found for update.", id);
+                    logger.LogWarning("Triage parameters {TriageId} were not found for update.", id);
                     return NotFound();
                 }
 
@@ -101,7 +101,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to update triage parameters {TriageId}.", id);
+                logger.LogError(e, "Failed to update triage parameters {TriageId}.", id);
 
                 return Problem(
                     detail: "Failed to update triage parameters.",
@@ -115,10 +115,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                bool deleted = await _triageParametersService.DeleteAsync(id);
+                bool deleted = await triageParametersService.DeleteAsync(id);
                 if (!deleted)
                 {
-                    _logger.LogWarning("Triage parameters {TriageId} were not found for delete.", id);
+                    logger.LogWarning("Triage parameters {TriageId} were not found for delete.", id);
                     return NotFound();
                 }
 
@@ -126,7 +126,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to delete triage parameters {TriageId}.", id);
+                logger.LogError(e, "Failed to delete triage parameters {TriageId}.", id);
 
                 return Problem(
                     detail: "Failed to delete triage parameters.",

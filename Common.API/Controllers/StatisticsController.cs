@@ -11,13 +11,13 @@ namespace Common.API.Controllers
     [AuthorizeRole("Admin")]
     public class StatisticsController : ControllerBase
     {
-        private readonly IStatisticsService _statisticsService;
-        private readonly ILogger<StatisticsController> _logger;
+        private readonly IStatisticsService statisticsService;
+        private readonly ILogger<StatisticsController> logger;
 
         public StatisticsController(IStatisticsService statisticsService, ILogger<StatisticsController> logger)
         {
-            _statisticsService = statisticsService;
-            _logger = logger;
+            this.statisticsService = statisticsService;
+            this.logger = logger;
         }
 
         [HttpGet("active-vs-archived")]
@@ -25,12 +25,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _statisticsService.GetActiveVsArchivedRatioAsync();
+                var result = await statisticsService.GetActiveVsArchivedRatioAsync();
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch Active vs Archived ratio.");
+                logger.LogError(e, "Failed to fetch Active vs Archived ratio.");
                 return Problem(
                     detail: e.Message,
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -43,12 +43,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _statisticsService.GetAgeDistributionAsync();
+                var result = await statisticsService.GetAgeDistributionAsync();
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch age distribution.");
+                logger.LogError(e, "Failed to fetch age distribution.");
                 return Problem(
                     detail: e.Message,
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -61,12 +61,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _statisticsService.GetPatientsByBloodTypeAsync();
+                var result = await statisticsService.GetPatientsByBloodTypeAsync();
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch blood type distribution.");
+                logger.LogError(e, "Failed to fetch blood type distribution.");
                 return Problem(
                     detail: e.Message,
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -79,12 +79,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _statisticsService.GetPatientsByRhAsync();
+                var result = await statisticsService.GetPatientsByRhAsync();
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch Rh factor distribution.");
+                logger.LogError(e, "Failed to fetch Rh factor distribution.");
                 return Problem(
                     detail: e.Message,
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -97,12 +97,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _statisticsService.GetPatientGenderDistributionAsync();
+                var result = await statisticsService.GetPatientGenderDistributionAsync();
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch gender distribution.");
+                logger.LogError(e, "Failed to fetch gender distribution.");
                 return Problem(
                     detail: e.Message,
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -115,12 +115,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _statisticsService.GetConsultationDistributionAsync();
+                var result = await statisticsService.GetConsultationDistributionAsync();
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch consultation distribution.");
+                logger.LogError(e, "Failed to fetch consultation distribution.");
                 return Problem(
                     detail: e.Message,
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -133,12 +133,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _statisticsService.GetTopDiagnosesAsync();
+                var result = await statisticsService.GetTopDiagnosesAsync();
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch top diagnoses.");
+                logger.LogError(e, "Failed to fetch top diagnoses.");
                 return Problem(
                     detail: e.Message,
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -151,12 +151,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _statisticsService.GetMostPrescribedMedsAsync();
+                var result = await statisticsService.GetMostPrescribedMedsAsync();
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch most prescribed meds.");
+                logger.LogError(e, "Failed to fetch most prescribed meds.");
                 return Problem(
                     detail: e.Message,
                     statusCode: (int)HttpStatusCode.InternalServerError,

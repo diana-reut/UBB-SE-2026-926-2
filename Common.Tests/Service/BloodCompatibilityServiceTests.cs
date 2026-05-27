@@ -531,7 +531,6 @@ public sealed class BloodCompatibilityServiceTests
         };
     }
 
-
     private static MedicalHistory CreateHistory(
         BloodType? bloodType,
         Rh? rh)

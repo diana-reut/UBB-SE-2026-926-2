@@ -8,7 +8,7 @@ namespace HospitalManagement.Web.Services;
 public abstract class HospitalApiClientBase
 {
     protected readonly HttpClient HttpClient;
-    protected readonly JsonSerializerOptions JsonOptions = new()
+    protected readonly JsonSerializerOptions JsonOptions = new ()
     {
         PropertyNameCaseInsensitive = true,
     };
@@ -174,7 +174,7 @@ public abstract class HospitalApiClientBase
             return errors.ToString();
         }
 
-        List<string> messages = [];
+        List<string> messages = new ();
         foreach (JsonProperty property in errors.EnumerateObject())
         {
             if (property.Value.ValueKind != JsonValueKind.Array)

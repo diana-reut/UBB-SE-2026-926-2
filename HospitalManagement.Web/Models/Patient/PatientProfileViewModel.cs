@@ -15,8 +15,8 @@ public class PatientProfileViewModel
     public string BloodType { get; set; } = "N/A";
     public string Rh { get; set; } = "N/A";
     public string ChronicConditions { get; set; } = "None";
-    public List<string> Allergies { get; set; } = [];
-    public List<PatientRecordViewModel> MedicalRecords { get; set; } = [];
+    public List<string> Allergies { get; set; } = new ();
+    public List<PatientRecordViewModel> MedicalRecords { get; set; } = new ();
     public int? SelectedRecordId { get; set; }
     public PatientRecordViewModel? SelectedRecord { get; set; }
     public PatientPrescriptionViewModel? SelectedPrescription { get; set; }
@@ -44,7 +44,7 @@ public class PatientPrescriptionViewModel
     public int Id { get; set; }
     public DateTime Date { get; set; }
     public string DoctorNotes { get; set; } = "None";
-    public List<PatientPrescriptionItemViewModel> Items { get; set; } = [];
+    public List<PatientPrescriptionItemViewModel> Items { get; set; } = new ();
 }
 
 public class PatientPrescriptionItemViewModel

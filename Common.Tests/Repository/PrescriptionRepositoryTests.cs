@@ -489,7 +489,7 @@ public sealed class PrescriptionRepositoryTests
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
 
-        List<int> result = await repo.GetPoliceNotifiedPatientIdsAsync([10]);
+        List<int> result = await repo.GetPoliceNotifiedPatientIdsAsync(new List<int> { 10 });
 
         Assert.AreEqual(1, result.Count);
     }
@@ -505,7 +505,7 @@ public sealed class PrescriptionRepositoryTests
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
 
-        List<int> result = await repo.GetPoliceNotifiedPatientIdsAsync([10]);
+        List<int> result = await repo.GetPoliceNotifiedPatientIdsAsync(new List<int> { 10 });
 
         Assert.AreEqual(0, result.Count);
     }
@@ -516,7 +516,7 @@ public sealed class PrescriptionRepositoryTests
         await using EFHospitalDbContext context = CreateContext();
         PrescriptionRepository repo = new(context);
 
-        List<int> result = await repo.GetPoliceNotifiedPatientIdsAsync([]);
+        List<int> result = await repo.GetPoliceNotifiedPatientIdsAsync(new List<int>());
 
         Assert.AreEqual(0, result.Count);
     }
@@ -534,7 +534,7 @@ public sealed class PrescriptionRepositoryTests
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
 
-        List<int> result = await repo.GetPoliceNotifiedPatientIdsAsync([10]);
+        List<int> result = await repo.GetPoliceNotifiedPatientIdsAsync(new List<int> { 10 });
 
         Assert.AreEqual(0, result.Count);
     }
@@ -562,7 +562,7 @@ public sealed class PrescriptionRepositoryTests
             PatientId = patient.Id,
             BloodType = BloodType.A,
             Rh = Rh.Positive,
-            ChronicConditions = []
+            ChronicConditions = new List<string>()
         };
         context.MedicalHistory.Add(history);
         await context.SaveChangesAsync();
@@ -594,6 +594,6 @@ public sealed class PrescriptionRepositoryTests
         {
             RecordId = recordId,
             Date = date ?? DateTime.Today,
-            MedicationList = [new PrescriptionItem { MedName = medName }]
+            MedicationList = new List<PrescriptionItem> { new PrescriptionItem { MedName = medName } }
         };
 }

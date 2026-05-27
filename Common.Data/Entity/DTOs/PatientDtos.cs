@@ -27,7 +27,6 @@ public class UpdatePatientDto
     public bool Transferred { get; set; }
     public DateTime? Dod { get; set; }
     public bool IsArchived { get; set; }
-
 }
 
 public class ArchiveAsDeceasedDto
@@ -53,6 +52,6 @@ public class CreateMedicalHistoryDto
 {
     public BloodType? BloodType { get; set; }
     public Rh? Rh { get; set; }
-    public List<string> ChronicConditions { get; set; } = [];
-    public List<int> AllergyIds { get; set; } = [];
+    public List<string> ChronicConditions { get; set; } = new List<string>();
+    public List<int> AllergyIds { get; set; } = new List<int>();
 }

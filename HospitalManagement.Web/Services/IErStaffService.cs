@@ -9,4 +9,4 @@ public interface IErStaffService
     ErDoctorAssignment GetDoctorById(int doctorId);
 }
 
-public sealed record ErDoctorAssignment(int DoctorId, string Name, string Specialty);
+public sealed record ErDoctorAssignment(int doctorId, string name, string specialty);

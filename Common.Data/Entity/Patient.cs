@@ -15,15 +15,15 @@ public class Patient
 
     [Required]
     [MaxLength(50)]
-    public string FirstName { get; set; } = "";
+    public string FirstName { get; set; } = string.Empty;
 
     [Required]
     [MaxLength(50)]
-    public string LastName { get; set; } = "";
-    
+    public string LastName { get; set; } = string.Empty;
+
     [Required]
     [MaxLength(15)]
-    public string Cnp { get; set; } = "";
+    public string Cnp { get; set; } = string.Empty;
 
     [Required]
     public DateTime Dob { get; set; }
@@ -32,12 +32,12 @@ public class Patient
 
     [Required]
     public Sex Sex { get; set; }
-    
-    [Required]
-    public string PhoneNo { get; set; } = "";
 
     [Required]
-    public string EmergencyContact { get; set; } = "";
+    public string PhoneNo { get; set; } = string.Empty;
+
+    [Required]
+    public string EmergencyContact { get; set; } = string.Empty;
 
     [Required]
     public bool IsArchived { get; set; }

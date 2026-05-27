@@ -18,7 +18,7 @@ public class ErWorkflowApiClient : HospitalApiClientBase, IErWorkflowApiClient
     }
 
     public async Task<List<ER_Visit>> GetVisitsAsync(CancellationToken cancellationToken = default) =>
-        await GetAsync<List<ER_Visit>>(VisitsBaseUri, cancellationToken) ?? [];
+        await GetAsync<List<ER_Visit>>(VisitsBaseUri, cancellationToken) ?? new List<ER_Visit>();
 
     public async Task<List<ER_Visit>> GetVisitsByStatusAsync(string status, CancellationToken cancellationToken = default) =>
         (await GetVisitsAsync(cancellationToken))
@@ -60,10 +60,10 @@ public class ErWorkflowApiClient : HospitalApiClientBase, IErWorkflowApiClient
         PostAsync<object>($"{VisitsBaseUri}/{visitId}/close", new { }, cancellationToken);
 
     public async Task<List<ER_Room>> GetRoomsAsync(CancellationToken cancellationToken = default) =>
-        await GetAsync<List<ER_Room>>(RoomsBaseUri, cancellationToken) ?? [];
+        await GetAsync<List<ER_Room>>(RoomsBaseUri, cancellationToken) ?? new List<ER_Room>();
 
     public async Task<List<ER_Room>> GetRoomsByStatusAsync(string status, CancellationToken cancellationToken = default) =>
-        await GetAsync<List<ER_Room>>($"{RoomsBaseUri}/status/{status}", cancellationToken) ?? [];
+        await GetAsync<List<ER_Room>>($"{RoomsBaseUri}/status/{status}", cancellationToken) ?? new List<ER_Room>();
 
     public async Task<ERRoomVisitDetailsDto?> GetRoomVisitDetailsAsync(int roomId, CancellationToken cancellationToken = default)
     {
@@ -90,7 +90,7 @@ public class ErWorkflowApiClient : HospitalApiClientBase, IErWorkflowApiClient
         PostAsync<object>($"{RoomsBaseUri}/{roomId}/mark-available", new { }, cancellationToken);
 
     public async Task<List<Triage>> GetTriagesAsync(CancellationToken cancellationToken = default) =>
-        await GetAsync<List<Triage>>(TriagesBaseUri, cancellationToken) ?? [];
+        await GetAsync<List<Triage>>(TriagesBaseUri, cancellationToken) ?? new List<Triage>();
 
     public async Task<Triage?> GetTriageByVisitIdAsync(int visitId, CancellationToken cancellationToken = default) =>
         (await GetTriagesAsync(cancellationToken)).FirstOrDefault(triage => triage.Visit_ID == visitId);
@@ -109,7 +109,7 @@ public class ErWorkflowApiClient : HospitalApiClientBase, IErWorkflowApiClient
         ?? throw new InvalidOperationException("Failed to perform triage: no response from server.");
 
     public async Task<List<Triage_Parameters>> GetTriageParametersAsync(CancellationToken cancellationToken = default) =>
-        await GetAsync<List<Triage_Parameters>>(TriageParametersBaseUri, cancellationToken) ?? [];
+        await GetAsync<List<Triage_Parameters>>(TriageParametersBaseUri, cancellationToken) ?? new List<Triage_Parameters>();
 
     public async Task<Triage_Parameters?> GetTriageParametersByTriageIdAsync(int triageId, CancellationToken cancellationToken = default) =>
         (await GetTriageParametersAsync(cancellationToken)).FirstOrDefault(parameters => parameters.Triage_ID == triageId);
@@ -121,13 +121,13 @@ public class ErWorkflowApiClient : HospitalApiClientBase, IErWorkflowApiClient
         ?? throw new InvalidOperationException("Failed to create triage parameters: no response from server.");
 
     public async Task<List<ER_Visit>> GetEligibleExaminationVisitsAsync(CancellationToken cancellationToken = default) =>
-        await GetAsync<List<ER_Visit>>($"{ExaminationsBaseUri}/eligible-visits", cancellationToken) ?? [];
+        await GetAsync<List<ER_Visit>>($"{ExaminationsBaseUri}/eligible-visits", cancellationToken) ?? new List<ER_Visit>();
 
     public async Task<List<Examination>> GetExaminationsByVisitIdAsync(int visitId, CancellationToken cancellationToken = default) =>
-        await GetAsync<List<Examination>>($"{ExaminationsBaseUri}/visit/{visitId}", cancellationToken) ?? [];
+        await GetAsync<List<Examination>>($"{ExaminationsBaseUri}/visit/{visitId}", cancellationToken) ?? new List<Examination>();
 
     public async Task<List<Examination>> GetPatientExaminationHistoryAsync(string patientId, CancellationToken cancellationToken = default) =>
-        await GetAsync<List<Examination>>($"{ExaminationsBaseUri}/patient-history/{patientId}", cancellationToken) ?? [];
+        await GetAsync<List<Examination>>($"{ExaminationsBaseUri}/patient-history/{patientId}", cancellationToken) ?? new List<Examination>();
 
     public Task<ERExaminationSummaryDto?> GetExaminationSummaryAsync(int visitId, CancellationToken cancellationToken = default) =>
         GetAsync<ERExaminationSummaryDto>($"{ExaminationsBaseUri}/summary/{visitId}", cancellationToken);
@@ -140,8 +140,8 @@ public class ErWorkflowApiClient : HospitalApiClientBase, IErWorkflowApiClient
         PutAsync($"{ExaminationsBaseUri}/{examId}", examination, cancellationToken);
 
     public async Task<List<ERTransferEligibleVisitDto>> GetEligibleTransferVisitsAsync(CancellationToken cancellationToken = default) =>
-        await GetAsync<List<ERTransferEligibleVisitDto>>($"{TransferLogsBaseUri}/eligible-visits", cancellationToken) ?? [];
+        await GetAsync<List<ERTransferEligibleVisitDto>>($"{TransferLogsBaseUri}/eligible-visits", cancellationToken) ?? new List<ERTransferEligibleVisitDto>();
 
     public async Task<List<Transfer_Log>> GetTransferLogsByVisitIdAsync(int visitId, CancellationToken cancellationToken = default) =>
-        await GetAsync<List<Transfer_Log>>($"{TransferLogsBaseUri}/visit/{visitId}", cancellationToken) ?? [];
+        await GetAsync<List<Transfer_Log>>($"{TransferLogsBaseUri}/visit/{visitId}", cancellationToken) ?? new List<Transfer_Log>();
 }

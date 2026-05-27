@@ -7,11 +7,11 @@ namespace Common.Data.Repository;
 
 public class MedicalHistoryRepository : IMedicalHistoryRepository
 {
-    private readonly EFHospitalDbContext _context;
+    private readonly EFHospitalDbContext context;
 
     public MedicalHistoryRepository(EFHospitalDbContext context)
     {
-        _context = context;
+        this.context = context;
     }
 
     public int Create(MedicalHistory history) => CreateAsync(history).GetAwaiter().GetResult();
@@ -19,8 +19,8 @@ public class MedicalHistoryRepository : IMedicalHistoryRepository
     public async Task<int> CreateAsync(MedicalHistory history)
     {
         ArgumentNullException.ThrowIfNull(history);
-        _ = _context.MedicalHistory.Add(history);
-        _ = await _context.SaveChangesAsync();
+        _ = context.MedicalHistory.Add(history);
+        _ = await context.SaveChangesAsync();
         return history.Id;
     }
 
@@ -30,7 +30,7 @@ public class MedicalHistoryRepository : IMedicalHistoryRepository
     {
         ArgumentNullException.ThrowIfNull(history);
 
-        MedicalHistory existing = await _context.MedicalHistory
+        MedicalHistory existing = await context.MedicalHistory
             .AsNoTracking()
             .FirstOrDefaultAsync(h => h.Id == history.Id)
             ?? throw new KeyNotFoundException($"Medical history {history.Id} was not found.");
@@ -40,14 +40,14 @@ public class MedicalHistoryRepository : IMedicalHistoryRepository
             throw new InvalidOperationException("Cannot reassign medical history to another patient.");
         }
 
-        _ = _context.MedicalHistory.Update(history);
-        _ = await _context.SaveChangesAsync();
+        _ = context.MedicalHistory.Update(history);
+        _ = await context.SaveChangesAsync();
     }
 
     public MedicalHistory? GetByPatientId(int patientId) => GetByPatientIdAsync(patientId).GetAwaiter().GetResult();
 
     public Task<MedicalHistory?> GetByPatientIdAsync(int patientId) =>
-        _context.MedicalHistory
+        context.MedicalHistory
             .Include(h => h.Patient)
             .Include(h => h.PatientAllergies)
             .ThenInclude(pa => pa.Allergy)
@@ -57,7 +57,7 @@ public class MedicalHistoryRepository : IMedicalHistoryRepository
     public MedicalHistory? GetById(int historyId) => GetByIdAsync(historyId).GetAwaiter().GetResult();
 
     public Task<MedicalHistory?> GetByIdAsync(int historyId) =>
-        _context.MedicalHistory
+        context.MedicalHistory
             .Include(h => h.Patient)
             .Include(h => h.PatientAllergies)
             .ThenInclude(pa => pa.Allergy)
@@ -76,7 +76,7 @@ public class MedicalHistoryRepository : IMedicalHistoryRepository
 
         foreach ((Allergy allergy, string severity) in allergies)
         {
-            _context.PatientAllergies.Add(new PatientAllergy
+            context.PatientAllergies.Add(new PatientAllergy
             {
                 MedicalHistoryId = historyId,
                 AllergyId = allergy.Id,
@@ -85,19 +85,19 @@ public class MedicalHistoryRepository : IMedicalHistoryRepository
             });
         }
 
-        _ = await _context.SaveChangesAsync();
+        _ = await context.SaveChangesAsync();
     }
 
     public List<string> GetChronicConditions(int historyId) => GetChronicConditionsAsync(historyId).GetAwaiter().GetResult();
 
     public async Task<List<string>> GetChronicConditionsAsync(int historyId)
     {
-        List<string>? conditions = await _context.MedicalHistory
+        List<string>? conditions = await context.MedicalHistory
             .Where(h => h.Id == historyId)
             .Select(h => h.ChronicConditions)
             .FirstOrDefaultAsync();
 
-        return conditions ?? [];
+        return conditions ?? new List<string>();
     }
 
     public List<(Allergy Allergy, string SeverityLevel)> GetAllergiesByHistoryId(int historyId) =>
@@ -105,7 +105,7 @@ public class MedicalHistoryRepository : IMedicalHistoryRepository
 
     public async Task<List<(Allergy Allergy, string SeverityLevel)>> GetAllergiesByHistoryIdAsync(int historyId)
     {
-        List<PatientAllergy> entries = await _context.PatientAllergies
+        List<PatientAllergy> entries = await context.PatientAllergies
             .Include(pa => pa.Allergy)
             .Where(pa => pa.MedicalHistoryId == historyId)
             .AsNoTracking()

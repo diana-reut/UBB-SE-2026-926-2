@@ -167,7 +167,6 @@ public sealed class MedicalHistoryRepositoryTests
         Assert.AreEqual(BloodType.B, context.MedicalHistory.Single().BloodType);
     }
 
-    
     [TestMethod]
     public async Task GetByPatientIdAsync_WhenHistoryDoesNotExist_ReturnsNull()
     {
@@ -179,9 +178,6 @@ public sealed class MedicalHistoryRepositoryTests
         Assert.IsNull(result);
     }
 
-   
-
-
     [TestMethod]
     public async Task GetByIdAsync_WhenHistoryDoesNotExist_ReturnsNull()
     {
@@ -192,7 +188,6 @@ public sealed class MedicalHistoryRepositoryTests
 
         Assert.IsNull(result);
     }
-
 
     [TestMethod]
     public async Task SaveAllergiesAsync_WhenAllergiesIsNull_DoesNotAddPatientAllergies()

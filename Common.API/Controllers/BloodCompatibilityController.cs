@@ -1,11 +1,11 @@
 using System.Net;
+using System.Net;
 using Common.API.Auth;
 using Common.API.Services;
 using Common.Data.Entity;
 using Common.Data.Entity.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Net;
 
 namespace Common.API.Controllers;
 
@@ -14,15 +14,15 @@ namespace Common.API.Controllers;
 [AuthorizeRole("Admin", "Medic")]
 public class BloodCompatibilityController : ControllerBase
 {
-    private readonly IBloodCompatibilityService _service;
-    private readonly ILogger<BloodCompatibilityController> _logger;
+    private readonly IBloodCompatibilityService service;
+    private readonly ILogger<BloodCompatibilityController> logger;
 
     public BloodCompatibilityController(
         IBloodCompatibilityService service,
         ILogger<BloodCompatibilityController> logger)
     {
-        _service = service;
-        _logger = logger;
+        this.service = service;
+        this.logger = logger;
     }
 
     [HttpPost("top-donors")]
@@ -32,13 +32,13 @@ public class BloodCompatibilityController : ControllerBase
         try
         {
             var result =
-                await _service.GetTopCompatibleDonorsAsync(dto.RecipientId);
+                await service.GetTopCompatibleDonorsAsync(dto.RecipientId);
 
             return Ok(result);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
+            logger.LogError(ex,
                 "Failed to compute compatible donors.");
 
             return Problem(

@@ -62,7 +62,7 @@ public sealed class TransplantServiceTests
     {
         BloodType = bloodType,
         Rh = rh,
-        ChronicConditions = []
+        ChronicConditions = new List<string>()
     };
 
     [TestMethod]
@@ -552,7 +552,7 @@ public sealed class TransplantServiceTests
         {
             Id = 11,
             PatientId = 5,
-            ChronicConditions = ["Asthma"]
+            ChronicConditions = new List<string> { "Asthma" }
         });
 
         string? result = await _sut.GetChronicWarningAsync(5);
@@ -568,7 +568,7 @@ public sealed class TransplantServiceTests
         {
             Id = 11,
             PatientId = 5,
-            ChronicConditions = []
+            ChronicConditions = new List<string>()
         });
 
         string? result = await _sut.GetChronicWarningAsync(5);

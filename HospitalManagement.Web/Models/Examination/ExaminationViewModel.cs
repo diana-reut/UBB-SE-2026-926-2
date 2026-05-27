@@ -6,11 +6,11 @@ namespace HospitalManagement.Web.Models.Examination;
 public class ExaminationViewModel
 {
     public int? SelectedVisitId { get; set; }
-    public List<ExaminationVisitViewModel> EligibleVisits { get; set; } = [];
+    public List<ExaminationVisitViewModel> EligibleVisits { get; set; } = new ();
     public ExaminationVisitViewModel? SelectedVisit { get; set; }
     public ExaminationTriageViewModel? TriageDetails { get; set; }
-    public List<ExaminationHistoryItemViewModel> ExaminationHistory { get; set; } = [];
-    public ExaminationFormViewModel Form { get; set; } = new();
+    public List<ExaminationHistoryItemViewModel> ExaminationHistory { get; set; } = new ();
+    public ExaminationFormViewModel Form { get; set; } = new ();
     public string DoctorName { get; set; } = string.Empty;
     public string DoctorSpecialty { get; set; } = string.Empty;
     public bool CanRequestDoctor { get; set; }
@@ -64,5 +64,5 @@ public class ExaminationFormViewModel
 public class ExaminationSummaryViewModel
 {
     public int VisitId { get; set; }
-    public ERExaminationSummaryDto Summary { get; set; } = new();
+    public ERExaminationSummaryDto Summary { get; set; } = new ();
 }

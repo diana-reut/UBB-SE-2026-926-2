@@ -19,14 +19,14 @@ public sealed class TransplantRepositoryTests
         string organType = "Kidney",
         TransplantStatus status = TransplantStatus.Pending,
         float score = 0) => new()
-    {
-        TransplantId = id,
-        ReceiverId = id * 10,
-        OrganType = organType,
-        RequestDate = new DateTime(2026, 1, id),
-        Status = status,
-        CompatibilityScore = score
-    };
+        {
+            TransplantId = id,
+            ReceiverId = id * 10,
+            OrganType = organType,
+            RequestDate = new DateTime(2026, 1, id),
+            Status = status,
+            CompatibilityScore = score
+        };
 
     [TestMethod]
     public async Task GetWaitingByOrganAsync_WhenOrganAliasIsLung_ReturnsLungsAndLung()

@@ -1,21 +1,21 @@
-using Common.Data.Data;
-using Common.Data.Entity;
-using Common.Data.Entity.Enums;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Common.Data.Data;
+using Common.Data.Entity;
+using Common.Data.Entity.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace Common.Data.Repository;
 
 public class MedicalRecordRepository : IMedicalRecordRepository
 {
-    private readonly EFHospitalDbContext _context;
+    private readonly EFHospitalDbContext context;
 
     public MedicalRecordRepository(EFHospitalDbContext context)
     {
-        _context = context;
+        this.context = context;
     }
 
     public int Add(MedicalRecord record) => AddAsync(record).GetAwaiter().GetResult();
@@ -23,8 +23,8 @@ public class MedicalRecordRepository : IMedicalRecordRepository
     public async Task<int> AddAsync(MedicalRecord record)
     {
         ArgumentNullException.ThrowIfNull(record);
-        _ = _context.MedicalRecords.Add(record);
-        _ = await _context.SaveChangesAsync();
+        _ = context.MedicalRecords.Add(record);
+        _ = await context.SaveChangesAsync();
         return record.Id;
     }
 
@@ -33,29 +33,29 @@ public class MedicalRecordRepository : IMedicalRecordRepository
     public async Task UpdateAsync(MedicalRecord record)
     {
         ArgumentNullException.ThrowIfNull(record);
-        _ = _context.MedicalRecords.Update(record);
-        _ = await _context.SaveChangesAsync();
+        _ = context.MedicalRecords.Update(record);
+        _ = await context.SaveChangesAsync();
     }
 
     public void Delete(int id) => DeleteAsync(id).GetAwaiter().GetResult();
 
     public async Task DeleteAsync(int id)
     {
-        MedicalRecord? record = await _context.MedicalRecords
+        MedicalRecord? record = await context.MedicalRecords
             .Include(r => r.Prescription)
             .FirstOrDefaultAsync(r => r.Id == id);
 
         if (record is not null)
         {
-            _ = _context.MedicalRecords.Remove(record);
-            _ = await _context.SaveChangesAsync();
+            _ = context.MedicalRecords.Remove(record);
+            _ = await context.SaveChangesAsync();
         }
     }
 
     public List<MedicalRecord> GetAll() => GetAllAsync().GetAwaiter().GetResult();
 
     public Task<List<MedicalRecord>> GetAllAsync() =>
-        _context.MedicalRecords
+        context.MedicalRecords
             .Include(r => r.History)
             .AsNoTracking()
             .ToListAsync();
@@ -63,7 +63,7 @@ public class MedicalRecordRepository : IMedicalRecordRepository
     public List<MedicalRecord> GetByHistoryId(int historyId) => GetByHistoryIdAsync(historyId).GetAwaiter().GetResult();
 
     public Task<List<MedicalRecord>> GetByHistoryIdAsync(int historyId) =>
-        _context.MedicalRecords
+        context.MedicalRecords
             .Include(r => r.History)
             .Where(r => r.HistoryId == historyId)
             .AsNoTracking()
@@ -72,7 +72,7 @@ public class MedicalRecordRepository : IMedicalRecordRepository
     public MedicalRecord? GetById(int id) => GetByIdAsync(id).GetAwaiter().GetResult();
 
     public Task<MedicalRecord?> GetByIdAsync(int id) =>
-        _context.MedicalRecords
+        context.MedicalRecords
             .Include(r => r.History)
             .Include(r => r.Prescription)
             .AsNoTracking()
@@ -81,7 +81,7 @@ public class MedicalRecordRepository : IMedicalRecordRepository
     public int? GetConsultingStaffId(int recordId) => GetConsultingStaffIdAsync(recordId).GetAwaiter().GetResult();
 
     public Task<int?> GetConsultingStaffIdAsync(int recordId) =>
-        _context.MedicalRecords
+        context.MedicalRecords
             .Where(r => r.Id == recordId)
             .Select(r => (int?)r.StaffId)
             .FirstOrDefaultAsync();
@@ -89,7 +89,7 @@ public class MedicalRecordRepository : IMedicalRecordRepository
     public int GetERVisitCount(int patientId, DateTime fromDate) => GetERVisitCountAsync(patientId, fromDate).GetAwaiter().GetResult();
 
     public Task<int> GetERVisitCountAsync(int patientId, DateTime fromDate) =>
-        _context.MedicalRecords
+        context.MedicalRecords
             .Include(r => r.History)
             .CountAsync(r => r.History.PatientId == patientId
                 && r.SourceType == SourceType.ER
@@ -98,7 +98,7 @@ public class MedicalRecordRepository : IMedicalRecordRepository
     public Prescription? GetPrescription(int recordId) => GetPrescriptionAsync(recordId).GetAwaiter().GetResult();
 
     public Task<Prescription?> GetPrescriptionAsync(int recordId) =>
-        _context.Prescriptions
+        context.Prescriptions
             .Include(p => p.MedicationList)
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.RecordId == recordId);

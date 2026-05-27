@@ -3,8 +3,8 @@ namespace HospitalManagement.Web.Models.Transfer;
 public class TransferViewModel
 {
     public int? SelectedVisitId { get; set; }
-    public List<TransferVisitViewModel> EligibleVisits { get; set; } = [];
-    public List<TransferLogItemViewModel> TransferLogs { get; set; } = [];
+    public List<TransferVisitViewModel> EligibleVisits { get; set; } = new ();
+    public List<TransferLogItemViewModel> TransferLogs { get; set; } = new ();
     public bool CanRetry { get; set; }
     public string? ErrorMessage { get; set; }
 }

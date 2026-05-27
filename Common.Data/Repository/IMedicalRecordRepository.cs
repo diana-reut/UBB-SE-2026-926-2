@@ -1,8 +1,8 @@
-using Common.Data.Entity;
-using Common.Data.Entity;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Common.Data.Entity;
+using Common.Data.Entity;
 
 namespace Common.Data.Repository;
 

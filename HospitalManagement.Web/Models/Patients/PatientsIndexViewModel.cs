@@ -8,5 +8,5 @@ public class PatientsIndexViewModel
     public int? MinAge { get; set; }
     public int? MaxAge { get; set; }
     public Sex? Sex { get; set; }
-    public List<PatientListItemViewModel> Patients { get; set; } = [];
+    public List<PatientListItemViewModel> Patients { get; set; } = new ();
 }

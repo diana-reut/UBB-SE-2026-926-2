@@ -11,7 +11,7 @@ public class Allergy
 
     [Required]
     [MaxLength(50)]
-    public string AllergyName { get; set; } = "";
+    public string AllergyName { get; set; } = string.Empty;
 
     [MaxLength(50)]
     public string? AllergyType { get; set; }

@@ -62,7 +62,6 @@ internal class BloodDonorsViewModel : INotifyPropertyChanged
         }
         List<Patient> topDonors = await _bloodProxy.GetTopCompatibleDonorsAsync(patientId);
 
- 
         foreach (Patient donor in topDonors)
         {
             int matchScore = CalculateScore(donor, recipient);
@@ -103,6 +102,7 @@ internal class BloodDonorsViewModel : INotifyPropertyChanged
 
         return total;
     }
+
     protected void OnPropertyChanged([CallerMemberName] string? name = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

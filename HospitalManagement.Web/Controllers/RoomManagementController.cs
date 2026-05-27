@@ -117,7 +117,7 @@ public class RoomManagementController : Controller
     }
 
     private static RoomStatusItemViewModel MapRoom(ER_Room room) =>
-        new()
+        new ()
         {
             RoomId = room.Room_ID,
             RoomType = room.Room_Type,

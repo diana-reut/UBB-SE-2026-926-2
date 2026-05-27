@@ -73,13 +73,17 @@ public class TransplantController : Controller
                 model.IsUrgent = await transplantApiClient.IsUrgentAsync(model.PatientId, HttpContext.RequestAborted);
                 model.WarningMessage = await transplantApiClient.GetChronicWarningAsync(model.PatientId, HttpContext.RequestAborted);
             }
-            catch { /* non-critical display data */ }
+            catch
+            { /* non-critical display data */
+            }
 
             return View(model);
         }
 
         if (!ModelState.IsValid)
+        {
             return await ReturnWithErrors();
+        }
 
         try
         {

@@ -5,7 +5,7 @@ namespace HospitalManagement.Service;
 
 internal sealed class GhostService : IGhostService
 {
-    private readonly List<DateTime> _sightings = [];
+    private readonly List<DateTime> _sightings = new();
 
     public event EventHandler? ExorcismTriggered;
 

@@ -7,7 +7,7 @@ public class PrescriptionDetailsViewModel
     public string DoctorName { get; set; } = string.Empty;
     public string DoctorNotes { get; set; } = string.Empty;
     public DateTime Date { get; set; }
-    public List<PrescriptionItemViewModel> Items { get; set; } = [];
+    public List<PrescriptionItemViewModel> Items { get; set; } = new ();
     public int ReturnPatientId { get; set; }
 }
 

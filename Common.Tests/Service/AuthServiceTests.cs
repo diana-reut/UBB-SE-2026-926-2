@@ -35,7 +35,12 @@ public sealed class AuthServiceTests
             .AddInMemoryCollection(new Dictionary<string, string?> { ["Jwt:Secret"] = "this-is-a-very-long-secret-key-for-tests" })
             .Build();
         var service = new AuthService(repo.Object, config);
-        return service.RegisterAsync(new RegisterDto(username, password, role)).GetAwaiter().GetResult() switch
+        return service.RegisterAsync(new RegisterDto
+        {
+            Username = username,
+            Password = password,
+            Role = role
+        }).GetAwaiter().GetResult() switch
         {
             var response => new User { Id = 9, Username = response.Username, Role = response.Role, PasswordHash = repo.Invocations.Count > 0 ? ((User)repo.Invocations[1].Arguments[0]).PasswordHash : string.Empty }
         };
@@ -46,7 +51,11 @@ public sealed class AuthServiceTests
     {
         _repository.Setup(x => x.GetByUsernameAsync("ghost")).ReturnsAsync((User?)null);
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.LoginAsync(new LoginDto("ghost", "pw")));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.LoginAsync(new LoginDto
+        {
+            Username = "ghost",
+            Password = "pw"
+        }));
     }
 
     [TestMethod]
@@ -60,7 +69,11 @@ public sealed class AuthServiceTests
             Role = "Doctor"
         });
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.LoginAsync(new LoginDto("alice", "pw")));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.LoginAsync(new LoginDto
+        {
+            Username = "alice",
+            Password = "pw"
+        }));
     }
 
     [TestMethod]
@@ -69,7 +82,11 @@ public sealed class AuthServiceTests
         User createdUser = MakeUser();
         _repository.Setup(x => x.GetByUsernameAsync("alice")).ReturnsAsync(createdUser);
 
-        AuthResponseDto result = await _sut.LoginAsync(new LoginDto("alice", "secret"));
+        AuthResponseDto result = await _sut.LoginAsync(new LoginDto
+        {
+            Username = "alice",
+            Password = "secret"
+        });
 
         Assert.AreEqual("alice", result.Username);
     }
@@ -79,7 +96,11 @@ public sealed class AuthServiceTests
     {
         _repository.Setup(x => x.ExistsByUsernameAsync("alice")).ReturnsAsync(true);
 
-        await Assert.ThrowsAsync<ArgumentException>(() => _sut.RegisterAsync(new RegisterDto("alice", "secret")));
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.RegisterAsync(new RegisterDto
+        {
+            Username = "alice",
+            Password = "secret"
+        }));
     }
 
     [TestMethod]
@@ -88,7 +109,12 @@ public sealed class AuthServiceTests
         _repository.Setup(x => x.ExistsByUsernameAsync("alice")).ReturnsAsync(false);
         _repository.Setup(x => x.CreateAsync(It.IsAny<User>())).ReturnsAsync((User user) => user);
 
-        AuthResponseDto result = await _sut.RegisterAsync(new RegisterDto("alice", "secret", "Admin"));
+        AuthResponseDto result = await _sut.RegisterAsync(new RegisterDto
+        {
+            Username = "alice",
+            Password = "secret",
+            Role = "Admin"
+        });
 
         Assert.AreEqual("Admin", result.Role);
     }
@@ -99,7 +125,12 @@ public sealed class AuthServiceTests
         _repository.Setup(x => x.ExistsByUsernameAsync("alice")).ReturnsAsync(false);
         _repository.Setup(x => x.CreateAsync(It.IsAny<User>())).ReturnsAsync((User user) => user);
 
-        await _sut.RegisterAsync(new RegisterDto("alice", "secret", "Admin"));
+        await _sut.RegisterAsync(new RegisterDto
+        {
+            Username = "alice",
+            Password = "secret",
+            Role = "Admin"
+        });
 
         _repository.Verify(x => x.CreateAsync(It.Is<User>(u => u.PasswordHash != "secret")), Times.Once);
     }

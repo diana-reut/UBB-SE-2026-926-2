@@ -12,13 +12,13 @@ namespace Common.API.Controllers
     [AuthorizeRole("Admin", "Medic")]
     public class ERRoomsController : ControllerBase
     {
-        private readonly IERRoomService _erRoomService;
-        private readonly ILogger<ERRoomsController> _logger;
+        private readonly IERRoomService erRoomService;
+        private readonly ILogger<ERRoomsController> logger;
 
         public ERRoomsController(IERRoomService erRoomService, ILogger<ERRoomsController> logger)
         {
-            _erRoomService = erRoomService;
-            _logger = logger;
+            this.erRoomService = erRoomService;
+            this.logger = logger;
         }
 
         [HttpGet]
@@ -26,12 +26,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _erRoomService.GetAllAsync();
+                var result = await erRoomService.GetAllAsync();
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch ER rooms.");
+                logger.LogError(e, "Failed to fetch ER rooms.");
 
                 return Problem(
                     detail: "Failed to fetch ER rooms.",
@@ -45,10 +45,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                ER_Room? result = await _erRoomService.GetByIdAsync(id);
+                ER_Room? result = await erRoomService.GetByIdAsync(id);
                 if (result is null)
                 {
-                    _logger.LogWarning("ER room {RoomId} was not found.", id);
+                    logger.LogWarning("ER room {RoomId} was not found.", id);
                     return NotFound();
                 }
 
@@ -56,7 +56,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch ER room {RoomId}.", id);
+                logger.LogError(e, "Failed to fetch ER room {RoomId}.", id);
 
                 return Problem(
                     detail: "Failed to fetch ER room.",
@@ -70,11 +70,11 @@ namespace Common.API.Controllers
         {
             try
             {
-                return Ok(await _erRoomService.GetByStatusAsync(status));
+                return Ok(await erRoomService.GetByStatusAsync(status));
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch ER rooms with status {Status}.", status);
+                logger.LogError(e, "Failed to fetch ER rooms with status {Status}.", status);
                 return Problem(
                     detail: "Failed to fetch ER rooms by status.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -87,7 +87,7 @@ namespace Common.API.Controllers
         {
             try
             {
-                ERRoomVisitDetailsDto? result = await _erRoomService.GetVisitDetailsAsync(id);
+                ERRoomVisitDetailsDto? result = await erRoomService.GetVisitDetailsAsync(id);
                 if (result == null)
                 {
                     return NotFound();
@@ -97,7 +97,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch visit details for room {RoomId}.", id);
+                logger.LogError(e, "Failed to fetch visit details for room {RoomId}.", id);
                 return Problem(
                     detail: "Failed to fetch room visit details.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -110,12 +110,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                ER_Room result = await _erRoomService.CreateAsync(room);
+                ER_Room result = await erRoomService.CreateAsync(room);
                 return CreatedAtAction(nameof(GetById), new { id = result.Room_ID }, result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to create ER room.");
+                logger.LogError(e, "Failed to create ER room.");
 
                 return Problem(
                     detail: "Failed to create ER room.",
@@ -129,10 +129,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                bool updated = await _erRoomService.UpdateAsync(id, room);
+                bool updated = await erRoomService.UpdateAsync(id, room);
                 if (!updated)
                 {
-                    _logger.LogWarning("ER room {RoomId} was not found for update.", id);
+                    logger.LogWarning("ER room {RoomId} was not found for update.", id);
                     return NotFound();
                 }
 
@@ -140,7 +140,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to update ER room {RoomId}.", id);
+                logger.LogError(e, "Failed to update ER room {RoomId}.", id);
 
                 return Problem(
                     detail: "Failed to update ER room.",
@@ -154,10 +154,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                bool deleted = await _erRoomService.DeleteAsync(id);
+                bool deleted = await erRoomService.DeleteAsync(id);
                 if (!deleted)
                 {
-                    _logger.LogWarning("ER room {RoomId} was not found for delete.", id);
+                    logger.LogWarning("ER room {RoomId} was not found for delete.", id);
                     return NotFound();
                 }
 
@@ -165,7 +165,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to delete ER room {RoomId}.", id);
+                logger.LogError(e, "Failed to delete ER room {RoomId}.", id);
 
                 return Problem(
                     detail: "Failed to delete ER room.",
@@ -179,12 +179,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                await _erRoomService.MarkRoomAsCleaningAsync(id);
+                await erRoomService.MarkRoomAsCleaningAsync(id);
                 return NoContent();
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to mark room {RoomId} as cleaning.", id);
+                logger.LogError(e, "Failed to mark room {RoomId} as cleaning.", id);
                 return Problem(
                     detail: e.Message,
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -197,12 +197,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                await _erRoomService.MarkRoomAsAvailableAsync(id);
+                await erRoomService.MarkRoomAsAvailableAsync(id);
                 return NoContent();
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to mark room {RoomId} as available.", id);
+                logger.LogError(e, "Failed to mark room {RoomId} as available.", id);
                 return Problem(
                     detail: e.Message,
                     statusCode: (int)HttpStatusCode.InternalServerError,

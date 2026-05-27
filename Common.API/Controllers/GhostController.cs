@@ -39,7 +39,7 @@ public class GhostController : ControllerBase
     private List<DateTime> GetActiveSightings()
     {
         var cutoff = DateTime.UtcNow.AddHours(-24);
-        var all = cache.Get<List<DateTime>>(SightingsCacheKey) ?? [];
+        var all = cache.Get<List<DateTime>>(SightingsCacheKey) ?? new List<DateTime>();
         return all.Where(s => s >= cutoff).ToList();
     }
 

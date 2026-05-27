@@ -1,9 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using Common.API.Auth;
-using Common.Data.Entity.DTOs;
-using Common.API.Services;
+﻿using System;
 using System.Net;
+using Common.API.Auth;
+using Common.API.Services;
+using Common.Data.Entity.DTOs;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Common.API.Controllers;
 
@@ -12,11 +12,11 @@ namespace Common.API.Controllers;
 [AuthorizeRole("Admin", "Medic")]
 public class BillingController : ControllerBase
 {
-    private readonly IBillingService _billingService;
+    private readonly IBillingService billingService;
 
     public BillingController(IBillingService billingService)
     {
-        _billingService = billingService;
+        this.billingService = billingService;
     }
 
     [HttpGet("base-price/{patientId:int}/{recordId:int}")]
@@ -26,7 +26,7 @@ public class BillingController : ControllerBase
     {
         try
         {
-            decimal price = await _billingService.ComputeBasePriceAsync(patientId, recordId);
+            decimal price = await billingService.ComputeBasePriceAsync(patientId, recordId);
             return Ok(price);
         }
         catch (Exception ex)
@@ -34,8 +34,7 @@ public class BillingController : ControllerBase
             return Problem(
                 detail: ex.Message,
                 statusCode: (int)HttpStatusCode.InternalServerError,
-                title: "Could not compute base price."
-            );
+                title: "Could not compute base price.");
         }
     }
 
@@ -44,7 +43,7 @@ public class BillingController : ControllerBase
     {
         try
         {
-            decimal finalPrice = await _billingService.ApplyDiscountAsync(dto.BasePrice, dto.Discount);
+            decimal finalPrice = await billingService.ApplyDiscountAsync(dto.BasePrice, dto.Discount);
             return Ok(finalPrice);
         }
         catch (Exception ex)
@@ -52,8 +51,7 @@ public class BillingController : ControllerBase
             return Problem(
                 detail: ex.Message,
                 statusCode: (int)HttpStatusCode.InternalServerError,
-                title: "Could not apply discount."
-            );
+                title: "Could not apply discount.");
         }
     }
 
@@ -64,7 +62,7 @@ public class BillingController : ControllerBase
     {
         try
         {
-            decimal finalPrice = await _billingService.PersistDiscountAsync(recordId, dto.BasePrice, dto.Discount);
+            decimal finalPrice = await billingService.PersistDiscountAsync(recordId, dto.BasePrice, dto.Discount);
             return Ok(finalPrice);
         }
         catch (KeyNotFoundException ex)
@@ -72,16 +70,14 @@ public class BillingController : ControllerBase
             return Problem(
                 detail: ex.Message,
                 statusCode: (int)HttpStatusCode.NotFound,
-                title: "Medical record not found."
-            );
+                title: "Medical record not found.");
         }
         catch (Exception ex)
         {
             return Problem(
                 detail: ex.Message,
                 statusCode: (int)HttpStatusCode.InternalServerError,
-                title: "Could not persist discount."
-            );
+                title: "Could not persist discount.");
         }
     }
 }

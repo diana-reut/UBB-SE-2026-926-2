@@ -13,7 +13,7 @@ namespace HospitalManagement.View.DialogServiceAdmin;
 internal class DialogService : IDialogService
 {
     private Window? _window;
-    
+
     public void SetWindow(Window window)
     {
         _window = window;
@@ -73,7 +73,7 @@ internal class DialogService : IDialogService
     public async Task<MedicalHistoryEntry> ShowMedicalHistoryAsync()
     {
         var viewModel = ServiceRegistry.Services
-        .GetRequiredService<MedicalHistoryDialogViewModel>();
+            .GetRequiredService<MedicalHistoryDialogViewModel>();
 
         var dialog = new MedicalHistoryDialog(viewModel)
         {

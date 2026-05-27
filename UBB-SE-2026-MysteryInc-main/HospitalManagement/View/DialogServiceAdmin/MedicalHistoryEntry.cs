@@ -7,5 +7,4 @@ internal class MedicalHistoryEntry
     public MedicalHistory? History { get; set; } = null;
 
     public bool WasSkipped { get; set; }
-
 }

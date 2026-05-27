@@ -12,13 +12,13 @@ namespace Common.API.Controllers
     [AuthorizeRole("Admin", "Medic")]
     public class TransferLogController : ControllerBase
     {
-        private readonly ITransferLogService _transferLogService;
-        private readonly ILogger<TransferLogController> _logger;
+        private readonly ITransferLogService transferLogService;
+        private readonly ILogger<TransferLogController> logger;
 
         public TransferLogController(ITransferLogService transferLogService, ILogger<TransferLogController> logger)
         {
-            _transferLogService = transferLogService;
-            _logger = logger;
+            this.transferLogService = transferLogService;
+            this.logger = logger;
         }
 
         [HttpGet]
@@ -26,12 +26,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _transferLogService.GetAllAsync();
+                var result = await transferLogService.GetAllAsync();
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch transfer logs.");
+                logger.LogError(e, "Failed to fetch transfer logs.");
 
                 return Problem(
                     detail: "Failed to fetch transfer logs.",
@@ -45,10 +45,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                Transfer_Log? result = await _transferLogService.GetByIdAsync(id);
+                Transfer_Log? result = await transferLogService.GetByIdAsync(id);
                 if (result is null)
                 {
-                    _logger.LogWarning("Transfer log {TransferId} was not found.", id);
+                    logger.LogWarning("Transfer log {TransferId} was not found.", id);
                     return NotFound();
                 }
 
@@ -56,7 +56,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch transfer log {TransferId}.", id);
+                logger.LogError(e, "Failed to fetch transfer log {TransferId}.", id);
 
                 return Problem(
                     detail: "Failed to fetch transfer log.",
@@ -70,11 +70,11 @@ namespace Common.API.Controllers
         {
             try
             {
-                return Ok(await _transferLogService.GetByVisitIdAsync(visitId));
+                return Ok(await transferLogService.GetByVisitIdAsync(visitId));
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch transfer logs for visit {VisitId}.", visitId);
+                logger.LogError(e, "Failed to fetch transfer logs for visit {VisitId}.", visitId);
                 return Problem(
                     detail: "Failed to fetch transfer logs for visit.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -87,11 +87,11 @@ namespace Common.API.Controllers
         {
             try
             {
-                return Ok(await _transferLogService.GetEligibleVisitsAsync());
+                return Ok(await transferLogService.GetEligibleVisitsAsync());
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch eligible transfer visits.");
+                logger.LogError(e, "Failed to fetch eligible transfer visits.");
                 return Problem(
                     detail: "Failed to fetch eligible transfer visits.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -104,12 +104,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                Transfer_Log result = await _transferLogService.CreateAsync(transferLog);
+                Transfer_Log result = await transferLogService.CreateAsync(transferLog);
                 return CreatedAtAction(nameof(GetById), new { id = result.Transfer_ID }, result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to create transfer log.");
+                logger.LogError(e, "Failed to create transfer log.");
 
                 return Problem(
                     detail: "Failed to create transfer log.",
@@ -123,10 +123,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                bool updated = await _transferLogService.UpdateAsync(id, transferLog);
+                bool updated = await transferLogService.UpdateAsync(id, transferLog);
                 if (!updated)
                 {
-                    _logger.LogWarning("Transfer log {TransferId} was not found for update.", id);
+                    logger.LogWarning("Transfer log {TransferId} was not found for update.", id);
                     return NotFound();
                 }
 
@@ -134,7 +134,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to update transfer log {TransferId}.", id);
+                logger.LogError(e, "Failed to update transfer log {TransferId}.", id);
 
                 return Problem(
                     detail: "Failed to update transfer log.",
@@ -148,10 +148,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                bool deleted = await _transferLogService.DeleteAsync(id);
+                bool deleted = await transferLogService.DeleteAsync(id);
                 if (!deleted)
                 {
-                    _logger.LogWarning("Transfer log {TransferId} was not found for delete.", id);
+                    logger.LogWarning("Transfer log {TransferId} was not found for delete.", id);
                     return NotFound();
                 }
 
@@ -159,7 +159,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to delete transfer log {TransferId}.", id);
+                logger.LogError(e, "Failed to delete transfer log {TransferId}.", id);
 
                 return Problem(
                     detail: "Failed to delete transfer log.",
