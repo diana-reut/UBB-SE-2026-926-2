@@ -60,6 +60,7 @@ builder.Services.AddHttpClient<IBloodCompatibilityApiClient, BloodCompatibilityA
     ConfigureHospitalApiClient(builder.Configuration, client)).AddHttpMessageHandler<BearerTokenHandler>();
 builder.Services.AddHttpClient<ITransplantApiClient, TransplantApiClient>(client =>
     ConfigureHospitalApiClient(builder.Configuration, client)).AddHttpMessageHandler<BearerTokenHandler>();
+builder.Services.AddSingleton<IAppointmentImportProvider, MockAppointmentImportProvider>();
 
 var app = builder.Build();
 
