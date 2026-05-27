@@ -146,7 +146,6 @@
                                 string deceasedClass = Model.IsArchivedMode && patient.IsDeceased ? "patient-deceased" : string.Empty;
                                 <tr class="patient-row @(isSelected ? "table-active" : string.Empty)"
                                     data-select-url="@Url.Action("Index", new { searchQuery = Model.SearchQuery, minAge = Model.MinAge, maxAge = Model.MaxAge, sex = Model.Sex, archived = Model.ShowArchived, selectedId = patient.Id })"
-                                    data-details-url="@Url.Action("Details", "Patient", new { id = patient.Id })"
                                     style="cursor: pointer;">
                                     <td class="@deceasedClass">@patient.FirstName</td>
                                     <td class="@deceasedClass">@patient.LastName</td>
@@ -175,6 +174,11 @@
                 else if (Model.IsActiveMode)
                 {
                     <h2 class="h4 mb-3">Patient Details</h2>
+                    <a asp-action="Details"
+                       asp-route-id="@Model.SelectedPatient!.Id"
+                       class="btn btn-outline-primary w-100 mb-3">
+                        View Profile
+                    </a>
                     <form asp-action="UpdatePatient" method="post" class="mb-4" autocomplete="off">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="searchQuery" value="@Model.SearchQuery" />
@@ -239,6 +243,11 @@
                 else
                 {
                     <h2 class="h4 mb-3">Archive Actions</h2>
+                    <a asp-action="Details"
+                       asp-route-id="@Model.SelectedPatient!.Id"
+                       class="btn btn-outline-primary w-100 mb-3">
+                        View Profile
+                    </a>
                     <div class="mb-3 text-muted">
                         <div>@Model.SelectedPatient.FirstName @Model.SelectedPatient.LastName</div>
                         <div>@Model.SelectedPatient.Cnp</div>
@@ -306,19 +315,8 @@
             }
 
             for (const row of rows) {
-                let clickTimer = null;
-
                 row.addEventListener("click", () => {
-                    clickTimer = window.setTimeout(() => {
-                        window.location.href = row.dataset.selectUrl;
-                    }, 400);
-                });
-
-                row.addEventListener("dblclick", () => {
-                    if (clickTimer) {
-                        window.clearTimeout(clickTimer);
-                    }
-                    window.location.href = row.dataset.detailsUrl;
+                    window.location.href = row.dataset.selectUrl;
                 });
             }
         })();
