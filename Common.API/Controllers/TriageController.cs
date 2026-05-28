@@ -14,10 +14,10 @@ namespace Common.API.Controllers
     [AuthorizeRole("Admin", "Medic")]
     public class TriageController : ControllerBase
     {
-        private readonly ITriageService _triageService;
-        private readonly ITriageDecisionService _triageDecisionService;
-        private readonly EFHospitalDbContext _dbContext;
-        private readonly ILogger<TriageController> _logger;
+        private readonly ITriageService triageService;
+        private readonly ITriageDecisionService triageDecisionService;
+        private readonly EFHospitalDbContext dbContext;
+        private readonly ILogger<TriageController> logger;
 
         public TriageController(
             ITriageService triageService,
@@ -25,10 +25,10 @@ namespace Common.API.Controllers
             EFHospitalDbContext dbContext,
             ILogger<TriageController> logger)
         {
-            _triageService = triageService;
-            _triageDecisionService = triageDecisionService;
-            _dbContext = dbContext;
-            _logger = logger;
+            this.triageService = triageService;
+            this.triageDecisionService = triageDecisionService;
+            this.dbContext = dbContext;
+            this.logger = logger;
         }
 
         [HttpGet]
@@ -36,12 +36,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _triageService.GetAllAsync();
+                var result = await triageService.GetAllAsync();
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch triages.");
+                logger.LogError(e, "Failed to fetch triages.");
 
                 return Problem(
                     detail: "Failed to fetch triages.",
@@ -55,10 +55,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                Triage? result = await _triageService.GetByIdAsync(id);
+                Triage? result = await triageService.GetByIdAsync(id);
                 if (result is null)
                 {
-                    _logger.LogWarning("Triage {TriageId} was not found.", id);
+                    logger.LogWarning("Triage {TriageId} was not found.", id);
                     return NotFound();
                 }
 
@@ -66,7 +66,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch triage {TriageId}.", id);
+                logger.LogError(e, "Failed to fetch triage {TriageId}.", id);
 
                 return Problem(
                     detail: "Failed to fetch triage.",
@@ -80,12 +80,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                Triage result = await _triageService.CreateAsync(triage);
+                Triage result = await triageService.CreateAsync(triage);
                 return CreatedAtAction(nameof(GetById), new { id = result.Triage_ID }, result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to create triage.");
+                logger.LogError(e, "Failed to create triage.");
 
                 return Problem(
                     detail: "Failed to create triage.",
@@ -97,11 +97,11 @@ namespace Common.API.Controllers
         [HttpPost("perform")]
         public async Task<ActionResult<PerformTriageResponseDto>> Perform([FromBody] PerformTriageRequestDto request)
         {
-            await using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            await using var transaction = await dbContext.Database.BeginTransactionAsync();
 
             try
             {
-                ER_Visit? visit = await _dbContext.ERVisits.FirstOrDefaultAsync(item => item.Visit_ID == request.VisitId);
+                ER_Visit? visit = await dbContext.ERVisits.FirstOrDefaultAsync(item => item.Visit_ID == request.VisitId);
                 if (visit is null)
                 {
                     return NotFound($"Visit {request.VisitId} was not found.");
@@ -109,13 +109,13 @@ namespace Common.API.Controllers
 
                 Triage_Parameters pendingParameters = request.ToParameters(triageId: 0);
                 pendingParameters.ValidateParameters();
-                int triageLevel = _triageDecisionService.CalculateTriageLevel(pendingParameters);
-                string specialization = _triageDecisionService.DetermineSpecialization(pendingParameters);
+                int triageLevel = triageDecisionService.CalculateTriageLevel(pendingParameters);
+                string specialization = triageDecisionService.DetermineSpecialization(pendingParameters);
 
-                Triage? triage = await _dbContext.Triages.FirstOrDefaultAsync(item => item.Visit_ID == request.VisitId);
+                Triage? triage = await dbContext.Triages.FirstOrDefaultAsync(item => item.Visit_ID == request.VisitId);
                 if (triage is not null)
                 {
-                    Triage_Parameters? existingParameters = await _dbContext.TriageParameters
+                    Triage_Parameters? existingParameters = await dbContext.TriageParameters
                         .FirstOrDefaultAsync(item => item.TriageId == triage.Triage_ID);
 
                     if (existingParameters is not null)
@@ -139,15 +139,15 @@ namespace Common.API.Controllers
                         Triage_Time = request.TriageTime
                     };
 
-                    await _dbContext.Triages.AddAsync(triage);
-                    await _dbContext.SaveChangesAsync();
+                    await dbContext.Triages.AddAsync(triage);
+                    await dbContext.SaveChangesAsync();
                 }
 
                 Triage_Parameters parameters = request.ToParameters(triage.Triage_ID);
-                await _dbContext.TriageParameters.AddAsync(parameters);
+                await dbContext.TriageParameters.AddAsync(parameters);
 
                 visit.Status = ER_Visit.VisitStatus.TRIAGED;
-                await _dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync();
                 await transaction.CommitAsync();
 
                 return Ok(new PerformTriageResponseDto
@@ -159,7 +159,7 @@ namespace Common.API.Controllers
             catch (Exception e)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(e, "Failed to perform triage for visit {VisitId}.", request.VisitId);
+                logger.LogError(e, "Failed to perform triage for visit {VisitId}.", request.VisitId);
 
                 return Problem(
                     detail: e.Message,
@@ -173,10 +173,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                bool updated = await _triageService.UpdateAsync(id, triage);
+                bool updated = await triageService.UpdateAsync(id, triage);
                 if (!updated)
                 {
-                    _logger.LogWarning("Triage {TriageId} was not found for update.", id);
+                    logger.LogWarning("Triage {TriageId} was not found for update.", id);
                     return NotFound();
                 }
 
@@ -184,7 +184,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to update triage {TriageId}.", id);
+                logger.LogError(e, "Failed to update triage {TriageId}.", id);
 
                 return Problem(
                     detail: "Failed to update triage.",
@@ -198,10 +198,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                bool deleted = await _triageService.DeleteAsync(id);
+                bool deleted = await triageService.DeleteAsync(id);
                 if (!deleted)
                 {
-                    _logger.LogWarning("Triage {TriageId} was not found for delete.", id);
+                    logger.LogWarning("Triage {TriageId} was not found for delete.", id);
                     return NotFound();
                 }
 
@@ -209,7 +209,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to delete triage {TriageId}.", id);
+                logger.LogError(e, "Failed to delete triage {TriageId}.", id);
 
                 return Problem(
                     detail: "Failed to delete triage.",

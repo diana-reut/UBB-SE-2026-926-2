@@ -13,13 +13,13 @@ namespace Common.API.Controllers;
 [AuthorizeRole("Admin", "Medic")]
 public class PatientController : ControllerBase
 {
-    private readonly IPatientService _patientService;
-    private readonly ILogger<PatientController> _logger;
+    private readonly IPatientService patientService;
+    private readonly ILogger<PatientController> logger;
 
     public PatientController(IPatientService patientService, ILogger<PatientController> logger)
     {
-        _patientService = patientService;
-        _logger = logger;
+        this.patientService = patientService;
+        this.logger = logger;
     }
 
     [HttpGet("{id}")]
@@ -27,15 +27,17 @@ public class PatientController : ControllerBase
     {
         try
         {
-            Patient? patient = await _patientService.GetByIdAsync(id);
+            Patient? patient = await patientService.GetByIdAsync(id);
             if (patient is null)
+            {
                 return NotFound();
+            }
 
             return Ok(patient);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to fetch patient with id {Id}.", id);
+            logger.LogWarning(e, "Failed to fetch patient with id {Id}.", id);
             return Problem(
                 detail: $"Failed to fetch patient with id {id}.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -48,17 +50,17 @@ public class PatientController : ControllerBase
     {
         try
         {
-            Patient patient = await _patientService.GetPatientDetailsAsync(id);
+            Patient patient = await patientService.GetPatientDetailsAsync(id);
             return Ok(patient);
         }
         catch (KeyNotFoundException e)
         {
-            _logger.LogWarning(e, "Patient with id {Id} not found.", id);
+            logger.LogWarning(e, "Patient with id {Id} not found.", id);
             return NotFound(e.Message);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to fetch details for patient {Id}.", id);
+            logger.LogWarning(e, "Failed to fetch details for patient {Id}.", id);
             return Problem(
                 detail: $"Failed to fetch details for patient {id}.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -71,20 +73,22 @@ public class PatientController : ControllerBase
     {
         try
         {
-            MedicalHistory? history = await _patientService.GetMedicalHistoryAsync(id);
+            MedicalHistory? history = await patientService.GetMedicalHistoryAsync(id);
             if (history is null)
+            {
                 return NotFound();
+            }
 
             return Ok(history);
         }
         catch (KeyNotFoundException e)
         {
-            _logger.LogWarning(e, "Invalid patient id {Id} when fetching medical history.", id);
+            logger.LogWarning(e, "Invalid patient id {Id} when fetching medical history.", id);
             return BadRequest(e.Message);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to fetch medical history for patient {Id}.", id);
+            logger.LogWarning(e, "Failed to fetch medical history for patient {Id}.", id);
             return Problem(
                 detail: $"Failed to fetch medical history for patient {id}.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -97,12 +101,12 @@ public class PatientController : ControllerBase
     {
         try
         {
-            List<MedicalRecord> records = await _patientService.GetMedicalRecordsAsync(id);
+            List<MedicalRecord> records = await patientService.GetMedicalRecordsAsync(id);
             return Ok(records);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to fetch medical records for history {Id}.", id);
+            logger.LogWarning(e, "Failed to fetch medical records for history {Id}.", id);
             return Problem(
                 detail: $"Failed to fetch medical records for history id {id}.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -115,12 +119,12 @@ public class PatientController : ControllerBase
     {
         try
         {
-            List<string> allergies = await _patientService.GetPatientAllergiesAsync(id);
+            List<string> allergies = await patientService.GetPatientAllergiesAsync(id);
             return Ok(allergies);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to fetch allergies for patient {Id}.", id);
+            logger.LogWarning(e, "Failed to fetch allergies for patient {Id}.", id);
             return Problem(
                 detail: $"Failed to fetch allergies for patient {id}.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -133,12 +137,12 @@ public class PatientController : ControllerBase
     {
         try
         {
-            bool isHighRisk = await _patientService.IsHighRiskPatientAsync(id);
+            bool isHighRisk = await patientService.IsHighRiskPatientAsync(id);
             return Ok(isHighRisk);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to evaluate high-risk status for patient {Id}.", id);
+            logger.LogWarning(e, "Failed to evaluate high-risk status for patient {Id}.", id);
             return Problem(
                 detail: $"Failed to evaluate high-risk status for patient {id}.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -151,12 +155,12 @@ public class PatientController : ControllerBase
     {
         try
         {
-            bool exists = await _patientService.ExistsAsync(cnp);
+            bool exists = await patientService.ExistsAsync(cnp);
             return Ok(exists);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to check existence for CNP {Cnp}.", cnp);
+            logger.LogWarning(e, "Failed to check existence for CNP {Cnp}.", cnp);
             return Problem(
                 detail: $"Failed to check existence for CNP {cnp}.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -169,15 +173,17 @@ public class PatientController : ControllerBase
     {
         try
         {
-            Prescription? prescription = await _patientService.GetPrescriptionByRecordIdAsync(recordId);
+            Prescription? prescription = await patientService.GetPrescriptionByRecordIdAsync(recordId);
             if (prescription is null)
+            {
                 return NotFound();
+            }
 
             return Ok(prescription);
         }
         catch (InvalidOperationException e)
         {
-            _logger.LogWarning(e, "Prescription repository unavailable.");
+            logger.LogWarning(e, "Prescription repository unavailable.");
             return Problem(
                 detail: e.Message,
                 statusCode: (int)HttpStatusCode.ServiceUnavailable,
@@ -185,7 +191,7 @@ public class PatientController : ControllerBase
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to fetch prescription for record {RecordId}.", recordId);
+            logger.LogWarning(e, "Failed to fetch prescription for record {RecordId}.", recordId);
             return Problem(
                 detail: $"Failed to fetch prescription for record {recordId}.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -213,17 +219,17 @@ public class PatientController : ControllerBase
                 Transferred = false,
             };
 
-            Patient created = await _patientService.CreatePatientAsync(patient);
+            Patient created = await patientService.CreatePatientAsync(patient);
             return Ok(created);
         }
         catch (ArgumentException e)
         {
-            _logger.LogWarning(e, "Validation failed when creating patient.");
+            logger.LogWarning(e, "Validation failed when creating patient.");
             return BadRequest(e.Message);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to create patient.");
+            logger.LogWarning(e, "Failed to create patient.");
             return Problem(
                 detail: "Failed to create patient.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -250,17 +256,17 @@ public class PatientController : ControllerBase
                 Rh = dto.Rh,
             };
 
-            List<Patient> results = await _patientService.SearchPatientsAsync(filter);
+            List<Patient> results = await patientService.SearchPatientsAsync(filter);
             return Ok(results);
         }
         catch (ArgumentException e)
         {
-            _logger.LogWarning(e, "Invalid search filter provided.");
+            logger.LogWarning(e, "Invalid search filter provided.");
             return BadRequest(e.Message);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to search patients.");
+            logger.LogWarning(e, "Failed to search patients.");
             return Problem(
                 detail: "Failed to search patients.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -289,17 +295,17 @@ public class PatientController : ControllerBase
                     .ToList()
             };
 
-            await _patientService.CreateMedicalHistoryAsync(id, history);
+            await patientService.CreateMedicalHistoryAsync(id, history);
             return Ok();
         }
         catch (ArgumentException e)
         {
-            _logger.LogWarning(e, "Validation failed when creating medical history for patient {Id}.", id);
+            logger.LogWarning(e, "Validation failed when creating medical history for patient {Id}.", id);
             return BadRequest(e.Message);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to create medical history for patient {Id}.", id);
+            logger.LogWarning(e, "Failed to create medical history for patient {Id}.", id);
             return Problem(
                 detail: $"Failed to create medical history for patient {id}.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -326,17 +332,17 @@ public class PatientController : ControllerBase
                 PoliceNotified = dto.PoliceNotified
             };
 
-            int recordId = await _patientService.CreateMedicalRecordAsync(id, record);
+            int recordId = await patientService.CreateMedicalRecordAsync(id, record);
             return Ok(recordId);
         }
         catch (KeyNotFoundException e)
         {
-            _logger.LogWarning(e, "Patient {Id} not found when creating medical record.", id);
+            logger.LogWarning(e, "Patient {Id} not found when creating medical record.", id);
             return NotFound(e.Message);
         }
         catch (InvalidOperationException e)
         {
-            _logger.LogWarning(e, "Patient {Id} has no medical history when creating record.", id);
+            logger.LogWarning(e, "Patient {Id} has no medical history when creating record.", id);
             return Problem(
                 detail: e.Message,
                 statusCode: (int)HttpStatusCode.Conflict,
@@ -344,7 +350,7 @@ public class PatientController : ControllerBase
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to create medical record for patient {Id}.", id);
+            logger.LogWarning(e, "Failed to create medical record for patient {Id}.", id);
             return Problem(
                 detail: $"Failed to create medical record for patient {id}.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -371,17 +377,17 @@ public class PatientController : ControllerBase
                     .ToList()
             };
 
-            await _patientService.CreatePrescriptionAsync(recordId, prescription);
+            await patientService.CreatePrescriptionAsync(recordId, prescription);
             return Ok();
         }
         catch (KeyNotFoundException e)
         {
-            _logger.LogWarning(e, "Medical record {RecordId} not found when creating prescription.", recordId);
+            logger.LogWarning(e, "Medical record {RecordId} not found when creating prescription.", recordId);
             return NotFound(e.Message);
         }
         catch (InvalidOperationException e)
         {
-            _logger.LogWarning(e, "Prescription repository unavailable when creating prescription for record {RecordId}.", recordId);
+            logger.LogWarning(e, "Prescription repository unavailable when creating prescription for record {RecordId}.", recordId);
             return Problem(
                 detail: e.Message,
                 statusCode: (int)HttpStatusCode.ServiceUnavailable,
@@ -389,7 +395,7 @@ public class PatientController : ControllerBase
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to create prescription for record {RecordId}.", recordId);
+            logger.LogWarning(e, "Failed to create prescription for record {RecordId}.", recordId);
             return Problem(
                 detail: $"Failed to create prescription for record {recordId}.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -402,17 +408,17 @@ public class PatientController : ControllerBase
     {
         try
         {
-            RecordExportDataDto result = await _patientService.GetRecordExportDataAsync(recordId);
+            RecordExportDataDto result = await patientService.GetRecordExportDataAsync(recordId);
             return Ok(result);
         }
         catch (KeyNotFoundException e)
         {
-            _logger.LogWarning(e, "Export data for medical record {RecordId} not found.", recordId);
+            logger.LogWarning(e, "Export data for medical record {RecordId} not found.", recordId);
             return NotFound(e.Message);
         }
         catch (InvalidOperationException e)
         {
-            _logger.LogWarning(e, "Export data unavailable for medical record {RecordId}.", recordId);
+            logger.LogWarning(e, "Export data unavailable for medical record {RecordId}.", recordId);
             return Problem(
                 detail: e.Message,
                 statusCode: (int)HttpStatusCode.ServiceUnavailable,
@@ -420,7 +426,7 @@ public class PatientController : ControllerBase
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to fetch export data for medical record {RecordId}.", recordId);
+            logger.LogWarning(e, "Failed to fetch export data for medical record {RecordId}.", recordId);
             return Problem(
                 detail: $"Failed to fetch export data for medical record {recordId}.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -450,17 +456,17 @@ public class PatientController : ControllerBase
                 Transferred = dto.Transferred,
             };
 
-            await _patientService.UpdatePatientAsync(patient);
+            await patientService.UpdatePatientAsync(patient);
             return Ok();
         }
         catch (ArgumentException e)
         {
-            _logger.LogWarning(e, "Validation failed when updating patient {Id}.", id);
+            logger.LogWarning(e, "Validation failed when updating patient {Id}.", id);
             return BadRequest(e.Message);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to update patient {Id}.", id);
+            logger.LogWarning(e, "Failed to update patient {Id}.", id);
             return Problem(
                 detail: $"Failed to update patient {id}.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -474,16 +480,18 @@ public class PatientController : ControllerBase
     {
         try
         {
-            Patient? patient = await _patientService.GetByIdAsync(id);
+            Patient? patient = await patientService.GetByIdAsync(id);
             if (patient is null)
+            {
                 return NotFound();
+            }
 
-            await _patientService.ArchivePatientAsync(patient);
+            await patientService.ArchivePatientAsync(patient);
             return Ok();
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to archive patient {Id}.", id);
+            logger.LogWarning(e, "Failed to archive patient {Id}.", id);
             return Problem(
                 detail: $"Failed to archive patient {id}.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -497,17 +505,17 @@ public class PatientController : ControllerBase
     {
         try
         {
-            await _patientService.DearchivePatientAsync(id);
+            await patientService.DearchivePatientAsync(id);
             return Ok();
         }
         catch (KeyNotFoundException e)
         {
-            _logger.LogWarning(e, "Patient {Id} not found when dearchiving.", id);
+            logger.LogWarning(e, "Patient {Id} not found when dearchiving.", id);
             return NotFound(e.Message);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to dearchive patient {Id}.", id);
+            logger.LogWarning(e, "Failed to dearchive patient {Id}.", id);
             return Problem(
                 detail: $"Failed to dearchive patient {id}.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -521,22 +529,22 @@ public class PatientController : ControllerBase
     {
         try
         {
-            await _patientService.ArchiveAsDeceasedAsync(id, dto.DeathDate);
+            await patientService.ArchiveAsDeceasedAsync(id, dto.DeathDate);
             return Ok();
         }
         catch (ArgumentException e)
         {
-            _logger.LogWarning(e, "Validation failed when archiving patient {Id} as deceased.", id);
+            logger.LogWarning(e, "Validation failed when archiving patient {Id} as deceased.", id);
             return BadRequest(e.Message);
         }
         catch (KeyNotFoundException e)
         {
-            _logger.LogWarning(e, "Patient {Id} not found when archiving as deceased.", id);
+            logger.LogWarning(e, "Patient {Id} not found when archiving as deceased.", id);
             return NotFound(e.Message);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to archive patient {Id} as deceased.", id);
+            logger.LogWarning(e, "Failed to archive patient {Id} as deceased.", id);
             return Problem(
                 detail: $"Failed to archive patient {id} as deceased.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -550,17 +558,17 @@ public class PatientController : ControllerBase
     {
         try
         {
-            await _patientService.DeletePatientAsync(id);
+            await patientService.DeletePatientAsync(id);
             return Ok();
         }
         catch (KeyNotFoundException e)
         {
-            _logger.LogWarning(e, "Patient {Id} not found when deleting.", id);
+            logger.LogWarning(e, "Patient {Id} not found when deleting.", id);
             return NotFound(e.Message);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to delete patient {Id}.", id);
+            logger.LogWarning(e, "Failed to delete patient {Id}.", id);
             return Problem(
                 detail: $"Failed to delete patient {id}.",
                 statusCode: (int)HttpStatusCode.InternalServerError,

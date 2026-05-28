@@ -9,10 +9,10 @@ public class OrganDonorViewModel
     public string? StatusMessage { get; set; }
     public string? ErrorMessage { get; set; }
 
-    public List<string> Organs { get; } = new()
+    public List<string> Organs { get; } = new ()
     {
         "Kidney", "Heart", "Liver", "Lung", "Pancreas", "Cornea"
     };
 
-    public List<TransplantMatchViewModel> TopMatches { get; set; } = [];
+    public List<TransplantMatchViewModel> TopMatches { get; set; } = new ();
 }

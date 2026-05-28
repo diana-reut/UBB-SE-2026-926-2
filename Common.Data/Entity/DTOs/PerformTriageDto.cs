@@ -16,7 +16,7 @@ public class PerformTriageRequestDto
     public int PainLevel { get; set; }
 
     public Triage_Parameters ToParameters(int triageId) =>
-        new()
+        new ()
         {
             TriageId = triageId,
             Consciousness = Consciousness,
@@ -29,6 +29,6 @@ public class PerformTriageRequestDto
 
 public class PerformTriageResponseDto
 {
-    public Triage Triage { get; set; } = new();
-    public Triage_Parameters Parameters { get; set; } = new();
+    public Triage Triage { get; set; } = new ();
+    public Triage_Parameters Parameters { get; set; } = new ();
 }

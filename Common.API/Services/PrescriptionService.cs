@@ -7,23 +7,22 @@ namespace Common.API.Service;
 
 internal class PrescriptionService : IPrescriptionService
 {
-    private readonly IPrescriptionRepository _prescriptionRepository;
+    private readonly IPrescriptionRepository prescriptionRepository;
 
     public PrescriptionService(IPrescriptionRepository prescriptionRepository)
     {
-        _prescriptionRepository = prescriptionRepository ?? throw new ArgumentNullException(nameof(prescriptionRepository));
+        this.prescriptionRepository = prescriptionRepository ?? throw new ArgumentNullException(nameof(prescriptionRepository));
     }
-
 
     public Task<List<Prescription>> GetLatestPrescriptionsAsync(int n, int page)
     {
-        return _prescriptionRepository.GetTopNAsync(n, page);
+        return prescriptionRepository.GetTopNAsync(n, page);
     }
 
     public async Task<Prescription> GetPrescriptionDetailsAsync(int id)
     {
         var filter = new PrescriptionFilter { PrescriptionId = id, };
-        List<Prescription> prescriptions = await _prescriptionRepository.GetFilteredAsync(filter);
+        List<Prescription> prescriptions = await prescriptionRepository.GetFilteredAsync(filter);
         return prescriptions.FirstOrDefault() ?? throw new ArgumentException($"Prescription with ID {id} does not exist.");
     }
 
@@ -31,12 +30,12 @@ internal class PrescriptionService : IPrescriptionService
     {
         if (filter is null)
         {
-            return await _prescriptionRepository.GetTopNAsync(20, 1);
+            return await prescriptionRepository.GetTopNAsync(20, 1);
         }
 
         try
         {
-            return await _prescriptionRepository.GetFilteredAsync(filter);
+            return await prescriptionRepository.GetFilteredAsync(filter);
         }
         catch (Exception)
         {

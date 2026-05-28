@@ -8,7 +8,7 @@ public class BloodCompatibilityApiClient : IBloodCompatibilityApiClient
 {
     private const string BaseUri = "api/bloodcompatibilities";
     private readonly HttpClient httpClient;
-    private readonly JsonSerializerOptions jsonOptions = new() { PropertyNameCaseInsensitive = true };
+    private readonly JsonSerializerOptions jsonOptions = new () { PropertyNameCaseInsensitive = true };
 
     public BloodCompatibilityApiClient(HttpClient httpClient)
     {
@@ -31,7 +31,7 @@ public class BloodCompatibilityApiClient : IBloodCompatibilityApiClient
                 throw new InvalidOperationException(error);
             }
 
-            return await response.Content.ReadFromJsonAsync<List<Patient>>(jsonOptions, cancellationToken) ?? [];
+            return await response.Content.ReadFromJsonAsync<List<Patient>>(jsonOptions, cancellationToken) ?? new List<Patient>();
         }
         catch (HttpRequestException)
         {

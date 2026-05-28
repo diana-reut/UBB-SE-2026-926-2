@@ -141,7 +141,7 @@ public class PatientController : Controller
         List<PatientRecordViewModel> records = history?.MedicalRecords?
             .OrderByDescending(r => r.ConsultationDate)
             .Select(MapRecord)
-            .ToList() ?? [];
+            .ToList() ?? new List<PatientRecordViewModel>();
 
         PatientRecordViewModel? selectedRecord = selectedRecordId.HasValue
             ? records.FirstOrDefault(r => r.Id == selectedRecordId.Value)

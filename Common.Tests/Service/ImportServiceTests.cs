@@ -42,7 +42,7 @@ public sealed class ImportServiceTests
         };
 
     private static MedicalHistory MakeHistory(List<MedicalRecord>? records = null) =>
-        new() { MedicalRecords = records ?? [] };
+        new() { MedicalRecords = records ?? new List<MedicalRecord>() };
 
     private static Examination MakeExam(int visitId, DateTime? examTime = null) =>
         new() { Visit_ID = visitId, Exam_Time = examTime ?? DateTime.Now };
@@ -74,7 +74,7 @@ public sealed class ImportServiceTests
     {
         var patient = MakePatient(history: MakeHistory());
         _patientProxy.Setup(p => p.GetPatientDetailsAsync(1)).ReturnsAsync(patient);
-        _examinationProxy.Setup(p => p.GetPatientHistoryAsync(patient.Cnp)).ReturnsAsync([]);
+        _examinationProxy.Setup(p => p.GetPatientHistoryAsync(patient.Cnp)).ReturnsAsync(new List<Examination>());
 
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => _sut.ImportFromERAsync(1, 0));
@@ -90,7 +90,7 @@ public sealed class ImportServiceTests
         var patient = MakePatient(history: MakeHistory(records));
         _patientProxy.Setup(p => p.GetPatientDetailsAsync(1)).ReturnsAsync(patient);
         _examinationProxy.Setup(p => p.GetPatientHistoryAsync(patient.Cnp))
-            .ReturnsAsync([MakeExam(visitId: 10)]);
+            .ReturnsAsync(new List<Examination> { MakeExam(visitId: 10) });
 
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => _sut.ImportFromERAsync(1, 0));
@@ -102,7 +102,7 @@ public sealed class ImportServiceTests
         var patient = MakePatient(history: MakeHistory());
         _patientProxy.Setup(p => p.GetPatientDetailsAsync(1)).ReturnsAsync(patient);
         _examinationProxy.Setup(p => p.GetPatientHistoryAsync(patient.Cnp))
-            .ReturnsAsync([MakeExam(visitId: 5)]);
+            .ReturnsAsync(new List<Examination> { MakeExam(visitId: 5) });
         _examinationProxy.Setup(p => p.GetSummaryByVisitIdAsync(5))
             .ReturnsAsync((ERExaminationSummaryDto?)null);
 
@@ -116,7 +116,7 @@ public sealed class ImportServiceTests
         var patient = MakePatient(history: MakeHistory());
         _patientProxy.Setup(p => p.GetPatientDetailsAsync(1)).ReturnsAsync(patient);
         _examinationProxy.Setup(p => p.GetPatientHistoryAsync(patient.Cnp))
-            .ReturnsAsync([MakeExam(visitId: 7)]);
+            .ReturnsAsync(new List<Examination> { MakeExam(visitId: 7) });
         _examinationProxy.Setup(p => p.GetSummaryByVisitIdAsync(7))
             .ReturnsAsync(MakeSummary("Chest pain", "Suspected angina"));
         _patientProxy.Setup(p => p.CreateMedicalRecordAsync(1, It.IsAny<CreateMedicalRecordDto>()))
@@ -133,7 +133,7 @@ public sealed class ImportServiceTests
         var patient = MakePatient(history: MakeHistory());
         _patientProxy.Setup(p => p.GetPatientDetailsAsync(1)).ReturnsAsync(patient);
         _examinationProxy.Setup(p => p.GetPatientHistoryAsync(patient.Cnp))
-            .ReturnsAsync([MakeExam(visitId: 7)]);
+            .ReturnsAsync(new List<Examination> { MakeExam(visitId: 7) });
         _examinationProxy.Setup(p => p.GetSummaryByVisitIdAsync(7))
             .ReturnsAsync(MakeSummary("Chest pain", "Suspected angina"));
         _patientProxy.Setup(p => p.CreateMedicalRecordAsync(1, It.IsAny<CreateMedicalRecordDto>()))
@@ -150,9 +150,9 @@ public sealed class ImportServiceTests
         var patient = MakePatient(history: MakeHistory());
         _patientProxy.Setup(p => p.GetPatientDetailsAsync(1)).ReturnsAsync(patient);
         _examinationProxy.Setup(p => p.GetPatientHistoryAsync(patient.Cnp))
-            .ReturnsAsync([MakeExam(visitId: 3)]);
+            .ReturnsAsync(new List<Examination> { MakeExam(visitId: 3) });
         _examinationProxy.Setup(p => p.GetSummaryByVisitIdAsync(3))
-            .ReturnsAsync(MakeSummary("Fever", notes: "", specialization: "Cardiology"));
+            .ReturnsAsync(MakeSummary("Fever", notes: string.Empty, specialization: "Cardiology"));
         _patientProxy.Setup(p => p.CreateMedicalRecordAsync(1, It.IsAny<CreateMedicalRecordDto>()))
             .ReturnsAsync(1);
 
@@ -168,7 +168,7 @@ public sealed class ImportServiceTests
         var patient = MakePatient(history: MakeHistory());
         _patientProxy.Setup(p => p.GetPatientDetailsAsync(1)).ReturnsAsync(patient);
         _examinationProxy.Setup(p => p.GetPatientHistoryAsync(patient.Cnp))
-            .ReturnsAsync([MakeExam(visitId: 3)]);
+            .ReturnsAsync(new List<Examination> { MakeExam(visitId: 3) });
         _examinationProxy.Setup(p => p.GetSummaryByVisitIdAsync(3))
             .ReturnsAsync(MakeSummary("Fever", notes: "Suspected flu", specialization: "Cardiology"));
         _patientProxy.Setup(p => p.CreateMedicalRecordAsync(1, It.IsAny<CreateMedicalRecordDto>()))
@@ -188,7 +188,7 @@ public sealed class ImportServiceTests
         var newer = MakeExam(visitId: 20, examTime: DateTime.Now.AddDays(-1));
         _patientProxy.Setup(p => p.GetPatientDetailsAsync(1)).ReturnsAsync(patient);
         _examinationProxy.Setup(p => p.GetPatientHistoryAsync(patient.Cnp))
-            .ReturnsAsync([older, newer]);
+            .ReturnsAsync(new List<Examination> { older, newer });
         _examinationProxy.Setup(p => p.GetSummaryByVisitIdAsync(20)).ReturnsAsync(MakeSummary());
         _patientProxy.Setup(p => p.CreateMedicalRecordAsync(1, It.IsAny<CreateMedicalRecordDto>()))
             .ReturnsAsync(1);
@@ -210,7 +210,7 @@ public sealed class ImportServiceTests
         var newExam = MakeExam(visitId: 10, examTime: DateTime.Now.AddDays(-2));
         _patientProxy.Setup(p => p.GetPatientDetailsAsync(1)).ReturnsAsync(patient);
         _examinationProxy.Setup(p => p.GetPatientHistoryAsync(patient.Cnp))
-            .ReturnsAsync([alreadyImported, newExam]);
+            .ReturnsAsync(new List<Examination> { alreadyImported, newExam });
         _examinationProxy.Setup(p => p.GetSummaryByVisitIdAsync(10)).ReturnsAsync(MakeSummary());
         _patientProxy.Setup(p => p.CreateMedicalRecordAsync(1, It.IsAny<CreateMedicalRecordDto>()))
             .ReturnsAsync(1);
@@ -226,7 +226,7 @@ public sealed class ImportServiceTests
         var patient = MakePatient(history: MakeHistory());
         _patientProxy.Setup(p => p.GetPatientDetailsAsync(1)).ReturnsAsync(patient);
         _examinationProxy.Setup(p => p.GetPatientHistoryAsync(patient.Cnp))
-            .ReturnsAsync([MakeExam(visitId: 1)]);
+            .ReturnsAsync(new List<Examination> { MakeExam(visitId: 1) });
         _examinationProxy.Setup(p => p.GetSummaryByVisitIdAsync(1)).ReturnsAsync(MakeSummary());
         _patientProxy.Setup(p => p.CreateMedicalRecordAsync(1, It.IsAny<CreateMedicalRecordDto>()))
             .ReturnsAsync(1);
@@ -256,7 +256,7 @@ public sealed class ImportServiceTests
             ExternalRecordId = 1,
             Symptoms = "Cough",
             TemporaryDiagnosis = "Common cold",
-            PrescribedMeds = "",
+            PrescribedMeds = string.Empty,
             ConsultationDate = DateTime.Now,
             SourceType = SourceType.App,
         };
@@ -276,7 +276,7 @@ public sealed class ImportServiceTests
     {
         var dto = new RecordDTO
         {
-            PrescribedMeds = "",
+            PrescribedMeds = string.Empty,
             ConsultationDate = DateTime.Now,
             SourceType = SourceType.App,
         };
@@ -338,7 +338,6 @@ public sealed class ImportServiceTests
         _patientProxy.Verify(p => p.CreatePrescriptionForRecordAsync(77, It.IsAny<CreatePrescriptionDto>()), Times.Once);
     }
 
-
     [TestMethod]
     public async Task ImportFromERWhenPatientHasNoMedicalHistoryThrowsInvalidOperationException()
     {
@@ -361,14 +360,13 @@ public sealed class ImportServiceTests
             () => Task.Run(() => _sut.ImportFromAppointment(1, 1)));
     }
 
-
     [TestMethod]
     public async Task ImportFromERAsyncWhenMedicalRecordsIsNullTreatsAsNoExistingImports()
     {
         var patient = MakePatient(history: new MedicalHistory { MedicalRecords = null });
         _patientProxy.Setup(p => p.GetPatientDetailsAsync(1)).ReturnsAsync(patient);
         _examinationProxy.Setup(p => p.GetPatientHistoryAsync(patient.Cnp))
-            .ReturnsAsync([MakeExam(visitId: 1)]);
+            .ReturnsAsync(new List<Examination> { MakeExam(visitId: 1) });
         _examinationProxy.Setup(p => p.GetSummaryByVisitIdAsync(1)).ReturnsAsync(MakeSummary());
         _patientProxy.Setup(p => p.CreateMedicalRecordAsync(1, It.IsAny<CreateMedicalRecordDto>()))
             .ReturnsAsync(1);
@@ -384,7 +382,7 @@ public sealed class ImportServiceTests
         var patient = MakePatient(history: MakeHistory());
         _patientProxy.Setup(p => p.GetPatientDetailsAsync(1)).ReturnsAsync(patient);
         _examinationProxy.Setup(p => p.GetPatientHistoryAsync(patient.Cnp))
-            .ReturnsAsync([MakeExam(visitId: 1)]);
+            .ReturnsAsync(new List<Examination> { MakeExam(visitId: 1) });
         _examinationProxy.Setup(p => p.GetSummaryByVisitIdAsync(1)).ReturnsAsync(MakeSummary());
         _patientProxy.Setup(p => p.CreateMedicalRecordAsync(1, It.IsAny<CreateMedicalRecordDto>()))
             .ReturnsAsync(1);
@@ -397,7 +395,7 @@ public sealed class ImportServiceTests
     [TestMethod]
     public void ImportFromAppointmentHappyPathCreatesMedicalRecord()
     {
-        var dto = new RecordDTO { PrescribedMeds = "", ConsultationDate = DateTime.Now, SourceType = SourceType.App };
+        var dto = new RecordDTO { PrescribedMeds = string.Empty, ConsultationDate = DateTime.Now, SourceType = SourceType.App };
         var patient = MakePatient(history: MakeHistory());
         _externalProvider.Setup(e => e.FetchRecordByPatientId(1)).Returns(dto);
         _patientProxy.Setup(p => p.GetPatientDetailsAsync(1)).ReturnsAsync(patient);

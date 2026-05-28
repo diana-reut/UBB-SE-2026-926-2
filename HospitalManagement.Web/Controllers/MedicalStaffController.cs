@@ -10,11 +10,11 @@ namespace HospitalManagement.Web.Controllers;
 [Authorize]
 public class MedicalStaffController : Controller
 {
-    private readonly IPatientApiClient _patientApiClient;
+    private readonly IPatientApiClient patientApiClient;
 
     public MedicalStaffController(IPatientApiClient patientApiClient)
     {
-        _patientApiClient = patientApiClient;
+        this.patientApiClient = patientApiClient;
     }
 
     [HttpGet]
@@ -33,7 +33,7 @@ public class MedicalStaffController : Controller
         try
         {
             SearchPatientsDto dto = BuildSearchDto(searchQuery);
-            List<Patient> results = await _patientApiClient.SearchPatientsAsync(dto, cancellationToken);
+            List<Patient> results = await patientApiClient.SearchPatientsAsync(dto, cancellationToken);
 
             if (results.Count == 0)
             {

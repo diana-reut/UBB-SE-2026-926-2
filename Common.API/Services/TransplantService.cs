@@ -6,11 +6,11 @@ namespace Common.API.Services;
 
 public class TransplantService : ITransplantService
 {
-    private readonly ITransplantRepository _transplantRepository;
-    private readonly IPatientRepository _patientRepository;
-    private readonly IMedicalRecordRepository _recordRepository;
-    private readonly IBloodCompatibilityService _compatibilityService;
-    private readonly IMedicalHistoryRepository _historyRepository;
+    private readonly ITransplantRepository transplantRepository;
+    private readonly IPatientRepository patientRepository;
+    private readonly IMedicalRecordRepository recordRepository;
+    private readonly IBloodCompatibilityService compatibilityService;
+    private readonly IMedicalHistoryRepository historyRepository;
 
     private const int MaxScoreModifier = 20;
     private const int MinScoreModifier = 5;
@@ -24,46 +24,46 @@ public class TransplantService : ITransplantService
         IBloodCompatibilityService compatibilityService,
         IMedicalHistoryRepository historyRepository)
     {
-        _transplantRepository = transplantRepository;
-        _patientRepository = patientRepository;
-        _recordRepository = recordRepository;
-        _compatibilityService = compatibilityService;
-        _historyRepository = historyRepository;
+        this.transplantRepository = transplantRepository;
+        this.patientRepository = patientRepository;
+        this.recordRepository = recordRepository;
+        this.compatibilityService = compatibilityService;
+        this.historyRepository = historyRepository;
     }
 
     public Task<List<Transplant>> GetAllAsync() =>
-        _transplantRepository.GetAllAsync();
+        transplantRepository.GetAllAsync();
 
     public async Task<Transplant> CreateAsync(Transplant transplant)
     {
-        await _transplantRepository.AddAsync(transplant);
+        await transplantRepository.AddAsync(transplant);
         return transplant;
     }
 
     public Task<bool> UpdateAsync(int id, Transplant transplant) =>
-        _transplantRepository.UpdateAsync(id, transplant);
+        transplantRepository.UpdateAsync(id, transplant);
 
     public Task<bool> DeleteAsync(int id) =>
-        _transplantRepository.DeleteAsync(id);
+        transplantRepository.DeleteAsync(id);
 
     public Task<Transplant?> GetByIdAsync(int id)
     {
-        return _transplantRepository.GetByIdAsync(id);
+        return transplantRepository.GetByIdAsync(id);
     }
 
     public Task<List<Transplant>> GetByReceiverIdAsync(int receiverId)
     {
-        return _transplantRepository.GetByReceiverIdAsync(receiverId);
+        return transplantRepository.GetByReceiverIdAsync(receiverId);
     }
 
     public Task<List<Transplant>> GetByDonorIdAsync(int donorId)
     {
-        return _transplantRepository.GetByDonorIdAsync(donorId);
+        return transplantRepository.GetByDonorIdAsync(donorId);
     }
 
     public async Task CreateWaitlistRequestAsync(int receiverId, string organType)
     {
-        _ = await _patientRepository.GetByIdAsync(receiverId) ?? throw new ArgumentException("Receiver not found.");
+        _ = await patientRepository.GetByIdAsync(receiverId) ?? throw new ArgumentException("Receiver not found.");
 
         string normalizedOrganType = NormalizeOrganType(organType);
 
@@ -77,43 +77,53 @@ public class TransplantService : ITransplantService
             CompatibilityScore = 0,
         };
 
-        await _transplantRepository.AddAsync(request);
+        await transplantRepository.AddAsync(request);
     }
 
     public Task AssignDonorAsync(int transplantId, int donorId, float finalScore)
     {
-        return _transplantRepository.UpdateAsync(transplantId, donorId, finalScore);
+        return transplantRepository.UpdateAsync(transplantId, donorId, finalScore);
     }
 
     public async Task<List<Transplant>> GetTopMatchesForDonorAsync(int donorId, string organType)
     {
         string normalizedOrganType = NormalizeOrganType(organType);
-        Patient? donor = await _patientRepository.GetByIdAsync(donorId);
+        Patient? donor = await patientRepository.GetByIdAsync(donorId);
 
         if (donor?.IsDeceased != true || !donor.IsDonor)
+        {
             throw new InvalidOperationException("Donor must be deceased and registered.");
+        }
 
-        donor.MedicalHistory = await _historyRepository.GetByPatientIdAsync(donor.Id);
+        donor.MedicalHistory = await historyRepository.GetByPatientIdAsync(donor.Id);
 
-        List<Transplant> waitlist = await _transplantRepository.GetWaitingByOrganAsync(normalizedOrganType);
+        List<Transplant> waitlist = await transplantRepository.GetWaitingByOrganAsync(normalizedOrganType);
         var scoredMatches = new List<Transplant>();
 
         foreach (Transplant request in waitlist)
         {
-            Patient? receiver = await _patientRepository.GetByIdAsync(request.ReceiverId);
+            Patient? receiver = await patientRepository.GetByIdAsync(request.ReceiverId);
             if (receiver is null)
+            {
                 continue;
+            }
 
-            receiver.MedicalHistory = await _historyRepository.GetByPatientIdAsync(receiver.Id);
+            receiver.MedicalHistory = await historyRepository.GetByPatientIdAsync(receiver.Id);
 
             if (receiver.MedicalHistory?.BloodType is null || receiver.MedicalHistory.Rh is null)
+            {
                 continue;
+            }
 
-            if (!_compatibilityService.IsBloodMatch(donor.MedicalHistory?.BloodType, receiver.MedicalHistory.BloodType.Value))
+            if (!compatibilityService.IsBloodMatch(donor.MedicalHistory?.BloodType, receiver.MedicalHistory.BloodType.Value))
+            {
                 continue;
+            }
 
-            if (!_compatibilityService.IsRhMatch(donor.MedicalHistory?.Rh, receiver.MedicalHistory.Rh.Value))
+            if (!compatibilityService.IsRhMatch(donor.MedicalHistory?.Rh, receiver.MedicalHistory.Rh.Value))
+            {
                 continue;
+            }
 
             request.CompatibilityScore = await CalculatePostMortemScoreAsync(donor, receiver);
             scoredMatches.Add(request);
@@ -133,8 +143,8 @@ public class TransplantService : ITransplantService
 
         foreach (Transplant transplant in matches)
         {
-            Patient? receiver = await _patientRepository.GetByIdAsync(transplant.ReceiverId);
-            MedicalHistory? receiverHistory = receiver is not null ? await _historyRepository.GetByPatientIdAsync(receiver.Id) : null;
+            Patient? receiver = await patientRepository.GetByIdAsync(transplant.ReceiverId);
+            MedicalHistory? receiverHistory = receiver is not null ? await historyRepository.GetByPatientIdAsync(receiver.Id) : null;
             string receiverName = receiver is not null ? $"{receiver.FirstName} {receiver.LastName}" : "Unknown";
             string bloodType = receiverHistory?.BloodType?.ToString() ?? "Unknown";
 
@@ -156,16 +166,18 @@ public class TransplantService : ITransplantService
     public async Task<bool> IsUrgentAsync(int patientId)
     {
         DateTime threeMonthsAgo = DateTime.UtcNow.AddMonths(-TimeIntervalMonths);
-        int erVisits = await _recordRepository.GetERVisitCountAsync(patientId, threeMonthsAgo);
+        int erVisits = await recordRepository.GetERVisitCountAsync(patientId, threeMonthsAgo);
         return erVisits >= ComparativeERVisits;
     }
 
     public async Task<string?> GetChronicWarningAsync(int patientId)
     {
-        Patient? patient = await _patientRepository.GetByIdAsync(patientId);
+        Patient? patient = await patientRepository.GetByIdAsync(patientId);
 
         if (patient is not null)
-            patient.MedicalHistory = await _historyRepository.GetByPatientIdAsync(patientId);
+        {
+            patient.MedicalHistory = await historyRepository.GetByPatientIdAsync(patientId);
+        }
 
         if (patient?.MedicalHistory?.ChronicConditions is not null
             && patient.MedicalHistory.ChronicConditions.Count != 0)
@@ -178,9 +190,9 @@ public class TransplantService : ITransplantService
 
     private async Task<float> CalculatePostMortemScoreAsync(Patient donor, Patient receiver)
     {
-        float score = _compatibilityService.CalculateScore(donor, receiver);
+        float score = compatibilityService.CalculateScore(donor, receiver);
         DateTime threeMonthsAgo = DateTime.UtcNow.AddMonths(-TimeIntervalMonths);
-        int erVisits = await _recordRepository.GetERVisitCountAsync(receiver.Id, threeMonthsAgo);
+        int erVisits = await recordRepository.GetERVisitCountAsync(receiver.Id, threeMonthsAgo);
         score += erVisits >= ComparativeERVisits ? MaxScoreModifier : MinScoreModifier;
         return score;
     }

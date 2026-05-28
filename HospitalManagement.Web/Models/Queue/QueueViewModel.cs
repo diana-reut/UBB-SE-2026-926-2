@@ -2,7 +2,7 @@ namespace HospitalManagement.Web.Models.Queue;
 
 public class QueueViewModel
 {
-    public List<QueueItemViewModel> ActiveVisits { get; set; } = [];
+    public List<QueueItemViewModel> ActiveVisits { get; set; } = new ();
     public string? ErrorMessage { get; set; }
 }
 

@@ -60,7 +60,7 @@ public class ExaminationController : Controller
             ErDoctorAssignment doctor = erStaffService.RequestDoctor(triage.Specialization, parameters);
             await erApiClient.UpdateVisitStatusAsync(visitId, ER_Visit.VisitStatus.WAITING_FOR_DOCTOR, cancellationToken);
 
-            TempData["SuccessMessage"] = $"Doctor {doctor.Name} ({doctor.Specialty}) assigned to visit {visitId}.";
+            TempData["SuccessMessage"] = $"Doctor {doctor.name} ({doctor.specialty}) assigned to visit {visitId}.";
         }
         catch (UnauthorizedAccessException)
         {
@@ -145,7 +145,7 @@ public class ExaminationController : Controller
                 ?? throw new InvalidOperationException("No examination summary is available for this visit.");
 
             ErDoctorAssignment doctor = erStaffService.GetDoctorById(summary.DoctorId);
-            summary.AssignedDoctorName = $"{doctor.Name} ({doctor.Specialty})";
+            summary.AssignedDoctorName = $"{doctor.name} ({doctor.specialty})";
 
             return View(new ExaminationSummaryViewModel
             {
@@ -238,8 +238,8 @@ public class ExaminationController : Controller
                 DoctorId = existing.Doctor_ID,
                 Notes = string.IsNullOrWhiteSpace(form.Notes) ? existing.Notes : form.Notes
             };
-            model.DoctorName = doctor.Name;
-            model.DoctorSpecialty = doctor.Specialty;
+            model.DoctorName = doctor.name;
+            model.DoctorSpecialty = doctor.specialty;
         }
         else
         {
@@ -255,10 +255,10 @@ public class ExaminationController : Controller
                 });
 
             model.Form.VisitId = selectedVisit.Visit_ID;
-            model.Form.DoctorId = form.DoctorId == 0 ? doctor?.DoctorId ?? 0 : form.DoctorId;
+            model.Form.DoctorId = form.DoctorId == 0 ? doctor?.doctorId ?? 0 : form.DoctorId;
             model.Form.Notes = form.Notes;
-            model.DoctorName = doctor?.Name ?? string.Empty;
-            model.DoctorSpecialty = doctor?.Specialty ?? string.Empty;
+            model.DoctorName = doctor?.name ?? string.Empty;
+            model.DoctorSpecialty = doctor?.specialty ?? string.Empty;
         }
 
         return model;
@@ -289,7 +289,7 @@ public class ExaminationController : Controller
     }
 
     private static ExaminationVisitViewModel MapVisit(ER_Visit visit) =>
-        new()
+        new ()
         {
             VisitId = visit.Visit_ID,
             PatientId = visit.Patient_ID,

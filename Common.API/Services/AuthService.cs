@@ -11,30 +11,39 @@ namespace Common.API.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly IUserRepository _userRepository;
-    private readonly IConfiguration _config;
+    private readonly IUserRepository userRepository;
+    private readonly IConfiguration config;
 
     public AuthService(IUserRepository userRepository, IConfiguration config)
     {
-        _userRepository = userRepository;
-        _config = config;
+        this.userRepository = userRepository;
+        this.config = config;
     }
 
     public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
     {
-        User? user = await _userRepository.GetByUsernameAsync(dto.Username);
+        User? user = await userRepository.GetByUsernameAsync(dto.Username);
         if (user is null || !VerifyPassword(dto.Password, user.PasswordHash))
+        {
             throw new UnauthorizedAccessException("Invalid username or password.");
+        }
 
         string token = GenerateToken(user);
-        return new AuthResponseDto(token, user.Username, user.Role);
+        return new AuthResponseDto
+        {
+            Token = token,
+            Username = user.Username,
+            Role = user.Role
+        };
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
     {
-        bool exists = await _userRepository.ExistsByUsernameAsync(dto.Username);
+        bool exists = await userRepository.ExistsByUsernameAsync(dto.Username);
         if (exists)
+        {
             throw new ArgumentException($"Username '{dto.Username}' is already taken.");
+        }
 
         var user = new User
         {
@@ -43,17 +52,22 @@ public class AuthService : IAuthService
             Role = dto.Role
         };
 
-        await _userRepository.CreateAsync(user);
+        await userRepository.CreateAsync(user);
 
         string token = GenerateToken(user);
-        return new AuthResponseDto(token, user.Username, user.Role);
+        return new AuthResponseDto
+        {
+            Token = token,
+            Username = user.Username,
+            Role = user.Role
+        };
     }
 
     private string GenerateToken(User user)
     {
-        string secret = _config["Jwt:Secret"] ?? throw new InvalidOperationException("JWT secret is not configured.");
-        string issuer = _config["Jwt:Issuer"] ?? "HospitalAPI";
-        string audience = _config["Jwt:Audience"] ?? "HospitalClients";
+        string secret = config["Jwt:Secret"] ?? throw new InvalidOperationException("JWT secret is not configured.");
+        string issuer = config["Jwt:Issuer"] ?? "HospitalAPI";
+        string audience = config["Jwt:Audience"] ?? "HospitalClients";
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

@@ -1,5 +1,5 @@
-using Common.Data.Entity.Enums;
 using System.ComponentModel.DataAnnotations;
+using Common.Data.Entity.Enums;
 
 namespace HospitalManagement.Web.Models.Admin;
 
@@ -18,9 +18,9 @@ public class CreateMedicalHistoryViewModel
     [Display(Name = "Chronic conditions")]
     public string ChronicConditionsText { get; set; } = string.Empty;
 
-    public List<int> AllergyIds { get; set; } = [];
+    public List<int> AllergyIds { get; set; } = new ();
 
-    public List<AllergyOptionViewModel> AvailableAllergies { get; set; } = [];
+    public List<AllergyOptionViewModel> AvailableAllergies { get; set; } = new ();
 }
 
 public class AllergyOptionViewModel

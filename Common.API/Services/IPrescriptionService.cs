@@ -1,7 +1,7 @@
-using Common.Data.Entity;
-using Common.Data.Integration;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Common.Data.Entity;
+using Common.Data.Integration;
 
 namespace Common.API.Service;
 

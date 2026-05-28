@@ -88,7 +88,9 @@ public class BloodCompatibilityController : Controller
     private static int CalculateScore(Patient donor, Patient recipient)
     {
         if (donor.MedicalHistory is null || recipient.MedicalHistory is null)
+        {
             return 0;
+        }
 
         int total = donor.MedicalHistory.BloodType == recipient.MedicalHistory.BloodType
                     && donor.MedicalHistory.Rh == recipient.MedicalHistory.Rh
@@ -96,7 +98,7 @@ public class BloodCompatibilityController : Controller
             : 25;
 
         int ageGap = Math.Abs(donor.Dob.Year - recipient.Dob.Year);
-        total += Math.Max(0, 30 - ageGap / 5 * 5);
+        total += Math.Max(0, 30 - (ageGap / 5 * 5));
         total += donor.Sex == recipient.Sex ? 20 : 10;
 
         return total;

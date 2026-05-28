@@ -25,7 +25,7 @@ public sealed class AddictDetectionServiceTests
         _medicalHistoryRepository = new Mock<IMedicalHistoryRepository>();
         _prescriptionRepository
             .Setup(r => r.GetPoliceNotifiedPatientIdsAsync(It.IsAny<IEnumerable<int>>()))
-            .ReturnsAsync([]);
+            .ReturnsAsync(new List<int>());
         _sut = new AddictDetectionService(_prescriptionRepository.Object, _medicalHistoryRepository.Object);
     }
 
@@ -46,8 +46,8 @@ public sealed class AddictDetectionServiceTests
         Id = id,
         PatientId = 1,
         Patient = MakePatient(),
-        ChronicConditions = conditions ?? [],
-        PatientAllergies = [],
+        ChronicConditions = conditions ?? new List<string>(),
+        PatientAllergies = new List<PatientAllergy>(),
     };
 
     private static Prescription MakePrescription(Patient patient, List<PrescriptionItem>? items = null) => new()
@@ -55,7 +55,7 @@ public sealed class AddictDetectionServiceTests
         Id = 1,
         RecordId = 10,
         Date = DateTime.Today,
-        MedicationList = items ?? [],
+        MedicationList = items ?? new List<PrescriptionItem>(),
         MedicalRecord = new MedicalRecord
         {
             Id = 10,
@@ -81,7 +81,7 @@ public sealed class AddictDetectionServiceTests
     [TestMethod]
     public async Task GetAddictCandidatesAsyncWhenNoPatientsReturnedReturnsEmptyList()
     {
-        _prescriptionRepository.Setup(r => r.GetAddictCandidatePatientsAsync()).ReturnsAsync([]);
+        _prescriptionRepository.Setup(r => r.GetAddictCandidatePatientsAsync()).ReturnsAsync(new List<Patient>());
 
         var result = await _sut.GetAddictCandidatesAsync();
 
@@ -92,7 +92,7 @@ public sealed class AddictDetectionServiceTests
     public async Task GetAddictCandidatesAsyncWhenPatientHasNoMedicalHistoryAssignsDefaultHistory()
     {
         var patient = MakePatient();
-        _prescriptionRepository.Setup(r => r.GetAddictCandidatePatientsAsync()).ReturnsAsync([patient]);
+        _prescriptionRepository.Setup(r => r.GetAddictCandidatePatientsAsync()).ReturnsAsync(new List<Patient> { patient });
         _medicalHistoryRepository.Setup(r => r.GetByPatientIdAsync(patient.Id)).ReturnsAsync((MedicalHistory?)null);
 
         var result = await _sut.GetAddictCandidatesAsync();
@@ -104,7 +104,7 @@ public sealed class AddictDetectionServiceTests
     public async Task GetAddictCandidatesAsyncWhenPatientHasNoMedicalHistoryChronicConditionsIsNoneReported()
     {
         var patient = MakePatient();
-        _prescriptionRepository.Setup(r => r.GetAddictCandidatePatientsAsync()).ReturnsAsync([patient]);
+        _prescriptionRepository.Setup(r => r.GetAddictCandidatePatientsAsync()).ReturnsAsync(new List<Patient> { patient });
         _medicalHistoryRepository.Setup(r => r.GetByPatientIdAsync(patient.Id)).ReturnsAsync((MedicalHistory?)null);
 
         var result = await _sut.GetAddictCandidatesAsync();
@@ -117,9 +117,9 @@ public sealed class AddictDetectionServiceTests
     {
         var patient = MakePatient();
         var history = MakeHistory(id: 10);
-        _prescriptionRepository.Setup(r => r.GetAddictCandidatePatientsAsync()).ReturnsAsync([patient]);
+        _prescriptionRepository.Setup(r => r.GetAddictCandidatePatientsAsync()).ReturnsAsync(new List<Patient> { patient });
         _medicalHistoryRepository.Setup(r => r.GetByPatientIdAsync(patient.Id)).ReturnsAsync(history);
-        _medicalHistoryRepository.Setup(r => r.GetChronicConditionsAsync(history.Id)).ReturnsAsync([]);
+        _medicalHistoryRepository.Setup(r => r.GetChronicConditionsAsync(history.Id)).ReturnsAsync(new List<string>());
 
         await _sut.GetAddictCandidatesAsync();
 
@@ -130,10 +130,10 @@ public sealed class AddictDetectionServiceTests
     public async Task GetAddictCandidatesAsyncWhenPatientHasEmptyChronicConditionsNormalizesToNoneReported()
     {
         var patient = MakePatient();
-        var history = MakeHistory(id: 10, conditions: []);
-        _prescriptionRepository.Setup(r => r.GetAddictCandidatePatientsAsync()).ReturnsAsync([patient]);
+        var history = MakeHistory(id: 10, conditions: new List<string>());
+        _prescriptionRepository.Setup(r => r.GetAddictCandidatePatientsAsync()).ReturnsAsync(new List<Patient> { patient });
         _medicalHistoryRepository.Setup(r => r.GetByPatientIdAsync(patient.Id)).ReturnsAsync(history);
-        _medicalHistoryRepository.Setup(r => r.GetChronicConditionsAsync(history.Id)).ReturnsAsync([]);
+        _medicalHistoryRepository.Setup(r => r.GetChronicConditionsAsync(history.Id)).ReturnsAsync(new List<string>());
 
         var result = await _sut.GetAddictCandidatesAsync();
 
@@ -145,9 +145,9 @@ public sealed class AddictDetectionServiceTests
     {
         var patient = MakePatient();
         var history = MakeHistory(id: 10);
-        _prescriptionRepository.Setup(r => r.GetAddictCandidatePatientsAsync()).ReturnsAsync([patient]);
+        _prescriptionRepository.Setup(r => r.GetAddictCandidatePatientsAsync()).ReturnsAsync(new List<Patient> { patient });
         _medicalHistoryRepository.Setup(r => r.GetByPatientIdAsync(patient.Id)).ReturnsAsync(history);
-        _medicalHistoryRepository.Setup(r => r.GetChronicConditionsAsync(history.Id)).ReturnsAsync([]);
+        _medicalHistoryRepository.Setup(r => r.GetChronicConditionsAsync(history.Id)).ReturnsAsync(new List<string>());
 
         var result = await _sut.GetAddictCandidatesAsync();
 
@@ -159,9 +159,9 @@ public sealed class AddictDetectionServiceTests
     {
         var patient = MakePatient();
         var history = MakeHistory(id: 10);
-        _prescriptionRepository.Setup(r => r.GetAddictCandidatePatientsAsync()).ReturnsAsync([patient]);
+        _prescriptionRepository.Setup(r => r.GetAddictCandidatePatientsAsync()).ReturnsAsync(new List<Patient> { patient });
         _medicalHistoryRepository.Setup(r => r.GetByPatientIdAsync(patient.Id)).ReturnsAsync(history);
-        _medicalHistoryRepository.Setup(r => r.GetChronicConditionsAsync(history.Id)).ReturnsAsync([]);
+        _medicalHistoryRepository.Setup(r => r.GetChronicConditionsAsync(history.Id)).ReturnsAsync(new List<string>());
 
         var result = await _sut.GetAddictCandidatesAsync();
 
@@ -172,10 +172,10 @@ public sealed class AddictDetectionServiceTests
     public async Task GetAddictCandidatesAsyncWhenPatientIdInNotifiedListSetsIsPoliceNotifiedTrue()
     {
         var patient = MakePatient(id: 5);
-        _prescriptionRepository.Setup(r => r.GetAddictCandidatePatientsAsync()).ReturnsAsync([patient]);
+        _prescriptionRepository.Setup(r => r.GetAddictCandidatePatientsAsync()).ReturnsAsync(new List<Patient> { patient });
         _prescriptionRepository
             .Setup(r => r.GetPoliceNotifiedPatientIdsAsync(It.IsAny<IEnumerable<int>>()))
-            .ReturnsAsync([5]);
+            .ReturnsAsync(new List<int> { 5 });
         _medicalHistoryRepository.Setup(r => r.GetByPatientIdAsync(patient.Id)).ReturnsAsync((MedicalHistory?)null);
 
         var result = await _sut.GetAddictCandidatesAsync();
@@ -187,10 +187,10 @@ public sealed class AddictDetectionServiceTests
     public async Task GetAddictCandidatesAsyncWhenPatientIdNotInNotifiedListSetsIsPoliceNotifiedFalse()
     {
         var patient = MakePatient(id: 5);
-        _prescriptionRepository.Setup(r => r.GetAddictCandidatePatientsAsync()).ReturnsAsync([patient]);
+        _prescriptionRepository.Setup(r => r.GetAddictCandidatePatientsAsync()).ReturnsAsync(new List<Patient> { patient });
         _prescriptionRepository
             .Setup(r => r.GetPoliceNotifiedPatientIdsAsync(It.IsAny<IEnumerable<int>>()))
-            .ReturnsAsync([99]);
+            .ReturnsAsync(new List<int> { 99 });
         _medicalHistoryRepository.Setup(r => r.GetByPatientIdAsync(patient.Id)).ReturnsAsync((MedicalHistory?)null);
 
         var result = await _sut.GetAddictCandidatesAsync();
@@ -239,7 +239,7 @@ public sealed class AddictDetectionServiceTests
     [TestMethod]
     public async Task BuildPoliceReportAsyncWhenNoPrescriptionsFoundThrowsArgumentException()
     {
-        _prescriptionRepository.Setup(r => r.GetFilteredAsync(It.IsAny<PrescriptionFilter>())).ReturnsAsync([]);
+        _prescriptionRepository.Setup(r => r.GetFilteredAsync(It.IsAny<PrescriptionFilter>())).ReturnsAsync(new List<Prescription>());
 
         await Assert.ThrowsAsync<ArgumentException>(
             () => _sut.BuildPoliceReportAsync(1));
@@ -250,7 +250,7 @@ public sealed class AddictDetectionServiceTests
     {
         var patient = MakePatient();
         _prescriptionRepository.Setup(r => r.GetFilteredAsync(It.IsAny<PrescriptionFilter>()))
-            .ReturnsAsync([MakePrescription(patient)]);
+            .ReturnsAsync(new List<Prescription> { MakePrescription(patient) });
 
         var result = await _sut.BuildPoliceReportAsync(1);
 
@@ -262,7 +262,7 @@ public sealed class AddictDetectionServiceTests
     {
         var patient = MakePatient();
         _prescriptionRepository.Setup(r => r.GetFilteredAsync(It.IsAny<PrescriptionFilter>()))
-            .ReturnsAsync([MakePrescription(patient)]);
+            .ReturnsAsync(new List<Prescription> { MakePrescription(patient) });
 
         var result = await _sut.BuildPoliceReportAsync(1);
 
@@ -275,7 +275,7 @@ public sealed class AddictDetectionServiceTests
         var patient = MakePatient();
         var items = new List<PrescriptionItem> { new() { MedName = "Morphine" } };
         _prescriptionRepository.Setup(r => r.GetFilteredAsync(It.IsAny<PrescriptionFilter>()))
-            .ReturnsAsync([MakePrescription(patient, items)]);
+            .ReturnsAsync(new List<Prescription> { MakePrescription(patient, items) });
 
         var result = await _sut.BuildPoliceReportAsync(1);
 
@@ -287,7 +287,7 @@ public sealed class AddictDetectionServiceTests
     {
         var patient = MakePatient();
         _prescriptionRepository.Setup(r => r.GetFilteredAsync(It.IsAny<PrescriptionFilter>()))
-            .ReturnsAsync([MakePrescription(patient, items: [])]);
+            .ReturnsAsync(new List<Prescription> { MakePrescription(patient, items: new List<PrescriptionItem>()) });
 
         var result = await _sut.BuildPoliceReportAsync(1);
 
@@ -312,7 +312,7 @@ public sealed class AddictDetectionServiceTests
             },
         };
         _prescriptionRepository.Setup(r => r.GetFilteredAsync(It.IsAny<PrescriptionFilter>()))
-            .ReturnsAsync([prescription]);
+            .ReturnsAsync(new List<Prescription> { prescription });
 
         var result = await _sut.BuildPoliceReportAsync(1);
 
@@ -346,7 +346,7 @@ public sealed class AddictDetectionServiceTests
     [TestMethod]
     public async Task GetChronicConditionsAsyncWhenConditionsAlreadyLoadedReturnsThem()
     {
-        var history = MakeHistory(conditions: ["Diabetes", "Hypertension"]);
+        var history = MakeHistory(conditions: new List<string> { "Diabetes", "Hypertension" });
         _medicalHistoryRepository.Setup(r => r.GetByPatientIdAsync(1)).ReturnsAsync(history);
 
         var result = await _sut.GetChronicConditionsAsync(1);
@@ -359,7 +359,7 @@ public sealed class AddictDetectionServiceTests
     {
         var history = new MedicalHistory { Id = 10, PatientId = 1, ChronicConditions = null! };
         _medicalHistoryRepository.Setup(r => r.GetByPatientIdAsync(1)).ReturnsAsync(history);
-        _medicalHistoryRepository.Setup(r => r.GetChronicConditionsAsync(10)).ReturnsAsync(["Asthma"]);
+        _medicalHistoryRepository.Setup(r => r.GetChronicConditionsAsync(10)).ReturnsAsync(new List<string> { "Asthma" });
 
         await _sut.GetChronicConditionsAsync(1);
 
@@ -369,9 +369,9 @@ public sealed class AddictDetectionServiceTests
     [TestMethod]
     public async Task GetChronicConditionsAsyncWhenConditionsEmptyFetchesFromRepository()
     {
-        var history = MakeHistory(id: 10, conditions: []);
+        var history = MakeHistory(id: 10, conditions: new List<string>());
         _medicalHistoryRepository.Setup(r => r.GetByPatientIdAsync(1)).ReturnsAsync(history);
-        _medicalHistoryRepository.Setup(r => r.GetChronicConditionsAsync(10)).ReturnsAsync(["Asthma"]);
+        _medicalHistoryRepository.Setup(r => r.GetChronicConditionsAsync(10)).ReturnsAsync(new List<string> { "Asthma" });
 
         await _sut.GetChronicConditionsAsync(1);
 
@@ -381,9 +381,9 @@ public sealed class AddictDetectionServiceTests
     [TestMethod]
     public async Task GetChronicConditionsAsyncWhenConditionsEmptyAndRepoReturnsConditionsReturnsThem()
     {
-        var history = MakeHistory(id: 10, conditions: []);
+        var history = MakeHistory(id: 10, conditions: new List<string>());
         _medicalHistoryRepository.Setup(r => r.GetByPatientIdAsync(1)).ReturnsAsync(history);
-        _medicalHistoryRepository.Setup(r => r.GetChronicConditionsAsync(10)).ReturnsAsync(["Asthma"]);
+        _medicalHistoryRepository.Setup(r => r.GetChronicConditionsAsync(10)).ReturnsAsync(new List<string> { "Asthma" });
 
         var result = await _sut.GetChronicConditionsAsync(1);
 
@@ -393,9 +393,9 @@ public sealed class AddictDetectionServiceTests
     [TestMethod]
     public async Task GetChronicConditionsAsyncWhenConditionsEmptyAndRepoReturnsEmptyReturnsNoneReported()
     {
-        var history = MakeHistory(id: 10, conditions: []);
+        var history = MakeHistory(id: 10, conditions: new List<string>());
         _medicalHistoryRepository.Setup(r => r.GetByPatientIdAsync(1)).ReturnsAsync(history);
-        _medicalHistoryRepository.Setup(r => r.GetChronicConditionsAsync(10)).ReturnsAsync([]);
+        _medicalHistoryRepository.Setup(r => r.GetChronicConditionsAsync(10)).ReturnsAsync(new List<string>());
 
         var result = await _sut.GetChronicConditionsAsync(1);
 
@@ -411,7 +411,7 @@ public sealed class AddictDetectionServiceTests
         var method = typeof(AddictDetectionService).GetMethod(
             "NormalizeMedicalHistory",
             BindingFlags.NonPublic | BindingFlags.Static);
-        method!.Invoke(null, [patient]);
+        method!.Invoke(null, new object?[] { patient });
 
         Assert.AreEqual("None reported.", patient.MedicalHistory.ChronicConditions[0]);
     }
@@ -423,7 +423,7 @@ public sealed class AddictDetectionServiceTests
             "BuildPoliceReportText",
             BindingFlags.NonPublic | BindingFlags.Static);
 
-        var result = (string)method!.Invoke(null, [MakePatient(), new List<Prescription>()]);
+        var result = (string)method!.Invoke(null, new object?[] { MakePatient(), new List<Prescription>() });
 
         Assert.IsTrue(result.Contains("No matching records pulled for this timeframe."));
     }

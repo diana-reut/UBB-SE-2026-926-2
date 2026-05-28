@@ -10,13 +10,13 @@ namespace Common.API.Controllers;
 [Route("api/auth")]
 public class AuthController : ControllerBase
 {
-    private readonly IAuthService _authService;
-    private readonly ILogger<AuthController> _logger;
+    private readonly IAuthService authService;
+    private readonly ILogger<AuthController> logger;
 
     public AuthController(IAuthService authService, ILogger<AuthController> logger)
     {
-        _authService = authService;
-        _logger = logger;
+        this.authService = authService;
+        this.logger = logger;
     }
 
     [HttpPost("login")]
@@ -24,17 +24,17 @@ public class AuthController : ControllerBase
     {
         try
         {
-            AuthResponseDto response = await _authService.LoginAsync(dto);
+            AuthResponseDto response = await authService.LoginAsync(dto);
             return Ok(response);
         }
         catch (UnauthorizedAccessException e)
         {
-            _logger.LogWarning(e, "Login failed for user {Username}.", dto.Username);
+            logger.LogWarning(e, "Login failed for user {Username}.", dto.Username);
             return Unauthorized(e.Message);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Unexpected error during login for user {Username}.", dto.Username);
+            logger.LogWarning(e, "Unexpected error during login for user {Username}.", dto.Username);
             return Problem(
                 detail: "Login failed due to an unexpected error.",
                 statusCode: (int)HttpStatusCode.InternalServerError,
@@ -48,17 +48,17 @@ public class AuthController : ControllerBase
     {
         try
         {
-            AuthResponseDto response = await _authService.RegisterAsync(dto);
+            AuthResponseDto response = await authService.RegisterAsync(dto);
             return Ok(response);
         }
         catch (ArgumentException e)
         {
-            _logger.LogWarning(e, "Registration failed for user {Username}.", dto.Username);
+            logger.LogWarning(e, "Registration failed for user {Username}.", dto.Username);
             return BadRequest(e.Message);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Unexpected error during registration for user {Username}.", dto.Username);
+            logger.LogWarning(e, "Unexpected error during registration for user {Username}.", dto.Username);
             return Problem(
                 detail: "Registration failed due to an unexpected error.",
                 statusCode: (int)HttpStatusCode.InternalServerError,

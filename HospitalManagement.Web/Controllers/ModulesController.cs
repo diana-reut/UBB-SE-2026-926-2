@@ -7,57 +7,57 @@ namespace HospitalManagement.Web.Controllers;
 [Authorize]
 public class ModulesController : Controller
 {
-    private static readonly Dictionary<string, ModulePageViewModel> Modules = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, ModulePageViewModel> Modules = new (StringComparer.OrdinalIgnoreCase)
     {
-        ["statistics"] = new()
+        ["statistics"] = new ()
         {
             Key = "statistics",
             Title = "Statistics",
             Description = "This statistics section exists in the web app to mirror the original desktop admin shell, but it is not implemented yet."
         },
-        ["pharmacy"] = new()
+        ["pharmacy"] = new ()
         {
             Key = "pharmacy",
             Title = "Pharmacy",
             Description = "This area exists in the web toolbar to mirror the original desktop shell, but it is not implemented yet."
         },
-        ["patient-registration"] = new()
+        ["patient-registration"] = new ()
         {
             Key = "patient-registration",
             Title = "Patient Registration",
             Description = "This ER management section is present in the sidebar as a placeholder and is not implemented yet."
         },
-        ["queue"] = new()
+        ["queue"] = new ()
         {
             Key = "queue",
             Title = "Queue",
             Description = "This ER management section is present in the sidebar as a placeholder and is not implemented yet."
         },
-        ["triage"] = new()
+        ["triage"] = new ()
         {
             Key = "triage",
             Title = "Triage",
             Description = "This ER management section is present in the sidebar as a placeholder and is not implemented yet."
         },
-        ["room-assignment"] = new()
+        ["room-assignment"] = new ()
         {
             Key = "room-assignment",
             Title = "Room Assignment",
             Description = "This ER management section is present in the sidebar as a placeholder and is not implemented yet."
         },
-        ["examination"] = new()
+        ["examination"] = new ()
         {
             Key = "examination",
             Title = "Examination",
             Description = "This ER management section is present in the sidebar as a placeholder and is not implemented yet."
         },
-        ["transfer-log"] = new()
+        ["transfer-log"] = new ()
         {
             Key = "transfer-log",
             Title = "Transfer Log",
             Description = "This ER management section is present in the sidebar as a placeholder and is not implemented yet."
         },
-        ["room-management"] = new()
+        ["room-management"] = new ()
         {
             Key = "room-management",
             Title = "Room Management",

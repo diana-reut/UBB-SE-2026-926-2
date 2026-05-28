@@ -10,7 +10,9 @@ internal class AuthProxy : ProxyBase, IAuthProxy
     private const string BaseUri = "api/auth";
 
     public AuthProxy(HttpClient httpClient)
-        : base(httpClient) { }
+        : base(httpClient)
+    {
+    }
 
     public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
     {

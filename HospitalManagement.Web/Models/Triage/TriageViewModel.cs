@@ -5,8 +5,8 @@ namespace HospitalManagement.Web.Models.Triage;
 public class TriageViewModel
 {
     public int? SelectedVisitId { get; set; }
-    public List<TriageVisitViewModel> Visits { get; set; } = [];
-    public TriageFormViewModel Form { get; set; } = new();
+    public List<TriageVisitViewModel> Visits { get; set; } = new ();
+    public TriageFormViewModel Form { get; set; } = new ();
     public TriageResultViewModel? SelectedTriage { get; set; }
     public string? ErrorMessage { get; set; }
 }

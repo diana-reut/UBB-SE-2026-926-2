@@ -1,5 +1,5 @@
-using Common.Data.Entity.Enums;
 using System.ComponentModel.DataAnnotations;
+using Common.Data.Entity.Enums;
 
 namespace HospitalManagement.Web.Models.Admin;
 

@@ -6,29 +6,29 @@ namespace Common.Data.Repository;
 
 public class TransferLogRepository : ITransferLogRepository
 {
-    private readonly EFHospitalDbContext _context;
+    private readonly EFHospitalDbContext context;
 
     public TransferLogRepository(EFHospitalDbContext context)
     {
-        _context = context;
+        this.context = context;
     }
 
     public Task<List<Transfer_Log>> GetAllAsync() =>
-        _context.TransferLogs.AsNoTracking().ToListAsync();
+        context.TransferLogs.AsNoTracking().ToListAsync();
 
     public Task<Transfer_Log?> GetByIdAsync(int id) =>
-        _context.TransferLogs.AsNoTracking().FirstOrDefaultAsync(t => t.Transfer_ID == id);
+        context.TransferLogs.AsNoTracking().FirstOrDefaultAsync(t => t.Transfer_ID == id);
 
     public async Task<Transfer_Log> CreateAsync(Transfer_Log transferLog)
     {
-        await _context.TransferLogs.AddAsync(transferLog);
-        await _context.SaveChangesAsync();
+        await context.TransferLogs.AddAsync(transferLog);
+        await context.SaveChangesAsync();
         return transferLog;
     }
 
     public async Task<bool> UpdateAsync(int id, Transfer_Log transferLog)
     {
-        Transfer_Log? existingTransferLog = await _context.TransferLogs.FirstOrDefaultAsync(t => t.Transfer_ID == id);
+        Transfer_Log? existingTransferLog = await context.TransferLogs.FirstOrDefaultAsync(t => t.Transfer_ID == id);
         if (existingTransferLog is null)
         {
             return false;
@@ -39,20 +39,20 @@ public class TransferLogRepository : ITransferLogRepository
         existingTransferLog.Target_System = transferLog.Target_System;
         existingTransferLog.FilePath = transferLog.FilePath;
         existingTransferLog.Status = transferLog.Status;
-        await _context.SaveChangesAsync();
+        await context.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> DeleteAsync(int id)
     {
-        Transfer_Log? transferLog = await _context.TransferLogs.FirstOrDefaultAsync(t => t.Transfer_ID == id);
+        Transfer_Log? transferLog = await context.TransferLogs.FirstOrDefaultAsync(t => t.Transfer_ID == id);
         if (transferLog is null)
         {
             return false;
         }
 
-        _context.TransferLogs.Remove(transferLog);
-        await _context.SaveChangesAsync();
+        context.TransferLogs.Remove(transferLog);
+        await context.SaveChangesAsync();
         return true;
     }
 }

@@ -1,10 +1,10 @@
 using System.Net;
+using System.Net;
 using Common.API.Auth;
 using Common.API.Services;
 using Common.Data.Entity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Net;
 
 namespace Common.API.Controllers
 {
@@ -13,13 +13,13 @@ namespace Common.API.Controllers
     [AuthorizeRole("Admin", "Medic")]
     public class TransplantController : ControllerBase
     {
-        private readonly ITransplantService _transplantService;
-        private readonly ILogger<TransplantController> _logger;
+        private readonly ITransplantService transplantService;
+        private readonly ILogger<TransplantController> logger;
 
         public TransplantController(ITransplantService transplantService, ILogger<TransplantController> logger) : base()
         {
-            _transplantService = transplantService;
-            _logger = logger;
+            this.transplantService = transplantService;
+            this.logger = logger;
         }
 
         [HttpGet]
@@ -27,12 +27,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _transplantService.GetAllAsync();
+                var result = await transplantService.GetAllAsync();
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch transplants.");
+                logger.LogError(e, "Failed to fetch transplants.");
 
                 return Problem(
                     detail: "Failed to fetch transplants.",
@@ -46,10 +46,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _transplantService.GetByIdAsync(id);
+                var result = await transplantService.GetByIdAsync(id);
                 if (result is null)
                 {
-                    _logger.LogWarning("Transplant {TransplantId} was not found.", id);
+                    logger.LogWarning("Transplant {TransplantId} was not found.", id);
                     return NotFound();
                 }
 
@@ -57,7 +57,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogWarning(e, "Failed to fetch transplant with id {Id}.", id);
+                logger.LogWarning(e, "Failed to fetch transplant with id {Id}.", id);
                 return Problem(
                     detail: $"Failed to fetch transplant with id {id}.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -70,12 +70,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                Transplant result = await _transplantService.CreateAsync(transplant);
+                Transplant result = await transplantService.CreateAsync(transplant);
                 return CreatedAtAction(nameof(GetById), new { id = result.TransplantId }, result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to create transplant.");
+                logger.LogError(e, "Failed to create transplant.");
 
                 return Problem(
                     detail: "Failed to create transplant.",
@@ -89,10 +89,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                bool updated = await _transplantService.UpdateAsync(id, transplant);
+                bool updated = await transplantService.UpdateAsync(id, transplant);
                 if (!updated)
                 {
-                    _logger.LogWarning("Transplant {TransplantId} was not found for update.", id);
+                    logger.LogWarning("Transplant {TransplantId} was not found for update.", id);
                     return NotFound();
                 }
 
@@ -100,7 +100,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to update transplant {TransplantId}.", id);
+                logger.LogError(e, "Failed to update transplant {TransplantId}.", id);
 
                 return Problem(
                     detail: "Failed to update transplant.",
@@ -114,10 +114,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                bool deleted = await _transplantService.DeleteAsync(id);
+                bool deleted = await transplantService.DeleteAsync(id);
                 if (!deleted)
                 {
-                    _logger.LogWarning("Transplant {TransplantId} was not found for delete.", id);
+                    logger.LogWarning("Transplant {TransplantId} was not found for delete.", id);
                     return NotFound();
                 }
 
@@ -125,7 +125,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to delete transplant {TransplantId}.", id);
+                logger.LogError(e, "Failed to delete transplant {TransplantId}.", id);
 
                 return Problem(
                     detail: "Failed to delete transplant.",
@@ -139,12 +139,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _transplantService.GetByReceiverIdAsync(receiverId);
+                var result = await transplantService.GetByReceiverIdAsync(receiverId);
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogWarning(e, "Failed to fetch transplants for receiver {ReceiverId}.", receiverId);
+                logger.LogWarning(e, "Failed to fetch transplants for receiver {ReceiverId}.", receiverId);
                 return Problem(
                     detail: $"Failed to fetch transplants for receiver {receiverId}.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -157,12 +157,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _transplantService.GetByDonorIdAsync(donorId);
+                var result = await transplantService.GetByDonorIdAsync(donorId);
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogWarning(e, "Failed to fetch transplants for donor {DonorId}.", donorId);
+                logger.LogWarning(e, "Failed to fetch transplants for donor {DonorId}.", donorId);
                 return Problem(
                     detail: $"Failed to fetch transplants for donor {donorId}.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -175,17 +175,17 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _transplantService.GetTopMatchesAsDisplayModelsAsync(donorId, organType);
+                var result = await transplantService.GetTopMatchesAsDisplayModelsAsync(donorId, organType);
                 return Ok(result);
             }
             catch (InvalidOperationException e)
             {
-                _logger.LogWarning(e, "Invalid donor state for donor {DonorId}.", donorId);
+                logger.LogWarning(e, "Invalid donor state for donor {DonorId}.", donorId);
                 return BadRequest(e.Message);
             }
             catch (Exception e)
             {
-                _logger.LogWarning(e, "Failed to fetch top matches for donor {DonorId}.", donorId);
+                logger.LogWarning(e, "Failed to fetch top matches for donor {DonorId}.", donorId);
                 return Problem(
                     detail: $"Failed to fetch top matches for donor {donorId}.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -198,12 +198,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _transplantService.IsUrgentAsync(patientId);
+                var result = await transplantService.IsUrgentAsync(patientId);
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogWarning(e, "Failed to check urgency for patient {PatientId}.", patientId);
+                logger.LogWarning(e, "Failed to check urgency for patient {PatientId}.", patientId);
                 return Problem(
                     detail: $"Failed to check urgency for patient {patientId}.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -216,12 +216,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _transplantService.GetChronicWarningAsync(patientId);
+                var result = await transplantService.GetChronicWarningAsync(patientId);
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogWarning(e, "Failed to get chronic warning for patient {PatientId}.", patientId);
+                logger.LogWarning(e, "Failed to get chronic warning for patient {PatientId}.", patientId);
                 return Problem(
                     detail: $"Failed to get chronic warning for patient {patientId}.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -234,17 +234,17 @@ namespace Common.API.Controllers
         {
             try
             {
-                await _transplantService.CreateWaitlistRequestAsync(dto.ReceiverId, dto.OrganType);
+                await transplantService.CreateWaitlistRequestAsync(dto.ReceiverId, dto.OrganType);
                 return Ok();
             }
             catch (ArgumentException e)
             {
-                _logger.LogWarning(e, "Invalid receiver for waitlist request.");
+                logger.LogWarning(e, "Invalid receiver for waitlist request.");
                 return BadRequest(e.Message);
             }
             catch (Exception e)
             {
-                _logger.LogWarning(e, "Failed to create waitlist request for receiver {ReceiverId}.", dto.ReceiverId);
+                logger.LogWarning(e, "Failed to create waitlist request for receiver {ReceiverId}.", dto.ReceiverId);
                 return Problem(
                     detail: "Failed to create waitlist request.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -257,12 +257,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                await _transplantService.AssignDonorAsync(id, dto.DonorId, dto.FinalScore);
+                await transplantService.AssignDonorAsync(id, dto.DonorId, dto.FinalScore);
                 return Ok();
             }
             catch (Exception e)
             {
-                _logger.LogWarning(e, "Failed to assign donor for transplant {TransplantId}.", id);
+                logger.LogWarning(e, "Failed to assign donor for transplant {TransplantId}.", id);
                 return Problem(
                     detail: $"Failed to assign donor for transplant {id}.",
                     statusCode: (int)HttpStatusCode.InternalServerError,

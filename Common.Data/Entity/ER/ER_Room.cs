@@ -35,7 +35,7 @@ namespace Common.Data.Models
             RoomStatus.Cleaning
         };
 
-        private static readonly Dictionary<string, string> ValidTransitions = new()
+        private static readonly Dictionary<string, string> ValidTransitions = new ()
         {
             { RoomStatus.Available, RoomStatus.Occupied },
             { RoomStatus.Occupied,  RoomStatus.Cleaning },

@@ -159,7 +159,7 @@ public partial class App : Application
             client.BaseAddress = new Uri(uriString);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.Timeout = TimeSpan.FromSeconds(30);
-        });
+        }).AddHttpMessageHandler<AuthTokenForwardingHandler>();
         _ = services.AddTransient<ERManagementSystem.Proxy.PatientProxy.IPatientProxy>((serviceProvider) =>
             new ERManagementSystem.Proxy.PatientProxy.PatientProxy(
                 serviceProvider.GetRequiredService<IHttpClientFactory>().CreateClient("ERPatientProxy")));
@@ -176,7 +176,7 @@ public partial class App : Application
             client.BaseAddress = new Uri(uriString);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.Timeout = TimeSpan.FromSeconds(30);
-        });
+        }).AddHttpMessageHandler<AuthTokenForwardingHandler>();
 
         _ = services.AddHttpClient<IERRoomProxy, ERRoomProxy>((client) =>
         {
@@ -190,7 +190,7 @@ public partial class App : Application
             client.BaseAddress = new Uri(uriString);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.Timeout = TimeSpan.FromSeconds(30);
-        });
+        }).AddHttpMessageHandler<AuthTokenForwardingHandler>();
 
         _ = services.AddHttpClient<ITriageProxy, TriageProxy>((client) =>
         {
@@ -204,7 +204,7 @@ public partial class App : Application
             client.BaseAddress = new Uri(uriString);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.Timeout = TimeSpan.FromSeconds(30);
-        });
+        }).AddHttpMessageHandler<AuthTokenForwardingHandler>();
 
         _ = services.AddHttpClient<ITriageParametersProxy, TriageParametersProxy>((client) =>
         {
@@ -218,7 +218,7 @@ public partial class App : Application
             client.BaseAddress = new Uri(uriString);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.Timeout = TimeSpan.FromSeconds(30);
-        });
+        }).AddHttpMessageHandler<AuthTokenForwardingHandler>();
 
         _ = services.AddHttpClient<IExaminationProxy, ExaminationProxy>((client) =>
         {
@@ -232,7 +232,7 @@ public partial class App : Application
             client.BaseAddress = new Uri(uriString);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.Timeout = TimeSpan.FromSeconds(30);
-        });
+        }).AddHttpMessageHandler<AuthTokenForwardingHandler>();
 
         _ = services.AddHttpClient<ITransferLogProxy, TransferLogProxy>((client) =>
         {
@@ -246,7 +246,7 @@ public partial class App : Application
             client.BaseAddress = new Uri(uriString);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.Timeout = TimeSpan.FromSeconds(30);
-        });
+        }).AddHttpMessageHandler<AuthTokenForwardingHandler>();
 
         _ = services.AddHttpClient<ITransplantProxy, TransplantProxy>((client) =>
         {

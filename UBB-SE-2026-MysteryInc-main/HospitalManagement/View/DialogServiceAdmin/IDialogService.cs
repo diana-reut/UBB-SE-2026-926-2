@@ -14,10 +14,10 @@ internal interface IDialogService
     public Task<bool> ShowConfirmAsync(string message, string title);
 
     public Task<DateTime?> ShowDatePickerAsync(string message, string title);
-  
+
     public Task ShowOrganDonorDialogAsync(Patient patient);
 
     public Task<Patient?> ShowAddPatientDialogAsync();
-   
+
     public Task<MedicalHistoryEntry> ShowMedicalHistoryAsync();
 }

@@ -7,7 +7,7 @@ public class PrescriptionDetailViewModel
     public string DoctorName { get; set; } = string.Empty;
     public DateTime Date { get; set; }
     public string DoctorNotes { get; set; } = "No notes provided";
-    public List<PrescriptionItemViewModel> Medications { get; set; } = [];
+    public List<PrescriptionItemViewModel> Medications { get; set; } = new ();
 
     // Set when navigating from the consultation details page; used to render
     // a "Back to Consultation" button that returns the user where they came from.

@@ -8,7 +8,7 @@ namespace Common.Data.Entity;
 
 public class Prescription
 {
-    private string? _patientName;
+    private string? patientName;
 
     [Key]
     public int Id { get; set; }
@@ -20,7 +20,7 @@ public class Prescription
     [JsonIgnore]
     public MedicalRecord MedicalRecord { get; set; } = null!;
 
-    public List<PrescriptionItem> MedicationList { get; set; } = [];
+    public List<PrescriptionItem> MedicationList { get; set; } = new List<PrescriptionItem>();
 
     [MaxLength(2000)]
     public string? DoctorNotes { get; set; }
@@ -33,9 +33,9 @@ public class Prescription
     {
         get
         {
-            if (!string.IsNullOrWhiteSpace(_patientName))
+            if (!string.IsNullOrWhiteSpace(patientName))
             {
-                return _patientName;
+                return patientName;
             }
 
             return MedicalRecord?.History?.Patient == null
@@ -43,7 +43,7 @@ public class Prescription
                 : $"{MedicalRecord.History.Patient.FirstName} {MedicalRecord.History.Patient.LastName}";
         }
 
-        set => _patientName = value;
+        set => patientName = value;
     }
 
     [NotMapped]

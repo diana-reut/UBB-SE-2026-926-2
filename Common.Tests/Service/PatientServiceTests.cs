@@ -1,3 +1,4 @@
+using System.Reflection;
 using Common.API.Services;
 using Common.Data.Entity;
 using Common.Data.Entity.DTOs;
@@ -7,7 +8,6 @@ using Common.Data.Repository;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Moq;
-using System.Reflection;
 
 namespace Common.Tests.Service;
 
@@ -50,47 +50,54 @@ public sealed class PatientServiceTests
         int number = 2601,
         string message = "IX_Patient_CNP")
     {
-        SqlErrorCollection errors = (SqlErrorCollection)Activator.CreateInstance(
+        object? createdErrors = Activator.CreateInstance(
             typeof(SqlErrorCollection),
-            nonPublic: true)!;
+            nonPublic: true);
+        SqlErrorCollection errors = (SqlErrorCollection)createdErrors!;
         ConstructorInfo sqlErrorConstructor = typeof(SqlError)
             .GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)
             .OrderByDescending(constructor => constructor.GetParameters().Length)
             .First();
-        object?[] arguments = sqlErrorConstructor.GetParameters()
-            .Select(parameter => parameter.ParameterType == typeof(int) ? (object?)number
-                : parameter.ParameterType == typeof(byte) ? (object?)(byte)0
+        object[] arguments = sqlErrorConstructor.GetParameters()
+            .Select(parameter => parameter.ParameterType == typeof(int) ? (object)number
+                : parameter.ParameterType == typeof(byte) ? (object)(byte)0
                 : parameter.ParameterType == typeof(string) ? message
                 : parameter.ParameterType == typeof(Exception) ? null
                 : parameter.HasDefaultValue ? parameter.DefaultValue
                 : parameter.ParameterType.IsValueType ? Activator.CreateInstance(parameter.ParameterType)
-                : null)
+                : null!)
             .ToArray();
         var error = (SqlError)sqlErrorConstructor.Invoke(arguments);
-        typeof(SqlErrorCollection)
-            .GetMethod("Add", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .Invoke(errors, [error]);
+        object[] addArguments = new object[] { error };
+        MethodInfo? addMethod = typeof(SqlErrorCollection).GetMethod("Add", BindingFlags.Instance | BindingFlags.NonPublic);
+        addMethod!.Invoke(errors, addArguments);
         MethodInfo createException = typeof(SqlException)
             .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
             .First(method => method.Name == "CreateException"
                 && method.GetParameters().Length >= 2
                 && method.GetParameters()[0].ParameterType == typeof(SqlErrorCollection));
-        object?[] createArguments = createException.GetParameters()
+        object[] createArguments = createException.GetParameters()
             .Select(parameter => parameter.ParameterType == typeof(SqlErrorCollection) ? errors
                 : parameter.ParameterType == typeof(string) ? "11.0.0"
                 : parameter.HasDefaultValue ? parameter.DefaultValue
                 : parameter.ParameterType.IsValueType ? Activator.CreateInstance(parameter.ParameterType)
-                : null)
+                : null!)
             .ToArray();
-        var sqlException = (SqlException)createException.Invoke(null, createArguments)!;
+        object? createdException = createException.Invoke(null, createArguments);
+        var sqlException = (SqlException)createdException!;
 
         return new DbUpdateException("Duplicate CNP.", sqlException);
     }
 
-    private static bool InvokeIsDuplicateCnpException(DbUpdateException exception) =>
-        (bool)typeof(PatientService)
-            .GetMethod("IsDuplicateCnpException", BindingFlags.Static | BindingFlags.NonPublic)!
-            .Invoke(null, [exception])!;
+    private static bool InvokeIsDuplicateCnpException(DbUpdateException exception)
+    {
+        object[] arguments = new object[] { exception };
+        MethodInfo? method = typeof(PatientService).GetMethod("IsDuplicateCnpException", BindingFlags.Static | BindingFlags.NonPublic);
+
+        object? result = method!.Invoke(null, arguments);
+
+        return (bool)result!;
+    }
 
     [TestMethod]
     public void ValidateCNP_WhenLengthIsInvalid_ReturnsFalse()
@@ -347,9 +354,9 @@ public sealed class PatientServiceTests
         MedicalHistory history = new() { Id = 9, PatientId = 1 };
         _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(patient);
         _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync(history);
-        _historyRepository.Setup(x => x.GetChronicConditionsAsync(9)).ReturnsAsync(["Asthma"]);
-        _historyRepository.Setup(x => x.GetAllergiesByHistoryIdAsync(9)).ReturnsAsync([]);
-        _recordRepository.Setup(x => x.GetByHistoryIdAsync(9)).ReturnsAsync([]);
+        _historyRepository.Setup(x => x.GetChronicConditionsAsync(9)).ReturnsAsync(new List<string> { "Asthma" });
+        _historyRepository.Setup(x => x.GetAllergiesByHistoryIdAsync(9)).ReturnsAsync(new List<(Allergy Allergy, string SeverityLevel)>());
+        _recordRepository.Setup(x => x.GetByHistoryIdAsync(9)).ReturnsAsync(new List<MedicalRecord>());
 
         Patient result = await _sut.GetPatientDetailsAsync(1);
 
@@ -365,9 +372,9 @@ public sealed class PatientServiceTests
         MedicalRecord newer = new() { Id = 2, HistoryId = 9, ConsultationDate = new DateTime(2026, 2, 1) };
         _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(patient);
         _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync(history);
-        _historyRepository.Setup(x => x.GetChronicConditionsAsync(9)).ReturnsAsync([]);
-        _historyRepository.Setup(x => x.GetAllergiesByHistoryIdAsync(9)).ReturnsAsync([]);
-        _recordRepository.Setup(x => x.GetByHistoryIdAsync(9)).ReturnsAsync([older, newer]);
+        _historyRepository.Setup(x => x.GetChronicConditionsAsync(9)).ReturnsAsync(new List<string>());
+        _historyRepository.Setup(x => x.GetAllergiesByHistoryIdAsync(9)).ReturnsAsync(new List<(Allergy Allergy, string SeverityLevel)>());
+        _recordRepository.Setup(x => x.GetByHistoryIdAsync(9)).ReturnsAsync(new List<MedicalRecord> { older, newer });
 
         Patient result = await _sut.GetPatientDetailsAsync(1);
 
@@ -411,7 +418,7 @@ public sealed class PatientServiceTests
     [TestMethod]
     public async Task SearchPatientsAsync_WhenFilterIsValid_ReturnsRepositoryResults()
     {
-        List<Patient> patients = [MakePatient()];
+        List<Patient> patients = new() { MakePatient() };
         PatientFilter filter = new() { MinAge = 18, MaxAge = 65, CNP = "2900101123457" };
         _patientRepository.Setup(x => x.SearchAsync(filter)).ReturnsAsync(patients);
 
@@ -444,7 +451,7 @@ public sealed class PatientServiceTests
         Allergy allergy = new() { Id = 4, AllergyName = "Peanuts" };
         MedicalHistory history = new()
         {
-            Allergies = [(allergy, "Severe")]
+            Allergies = new List<(Allergy Allergy, string SeverityLevel)> { (allergy, "Severe") }
         };
         _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(MakePatient());
         _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync((MedicalHistory?)null);
@@ -460,7 +467,7 @@ public sealed class PatientServiceTests
     {
         MedicalHistory history = new()
         {
-            Allergies = [(new Allergy { Id = 4, AllergyName = "Peanuts" }, "Severe")]
+            Allergies = new List<(Allergy Allergy, string SeverityLevel)> { (new Allergy { Id = 4, AllergyName = "Peanuts" }, "Severe") }
         };
         _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(MakePatient());
         _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync((MedicalHistory?)null);
@@ -492,7 +499,7 @@ public sealed class PatientServiceTests
     {
         MedicalHistory history = new()
         {
-            Allergies = []
+            Allergies = new List<(Allergy Allergy, string SeverityLevel)>()
         };
         _patientRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(MakePatient());
         _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync((MedicalHistory?)null);
@@ -625,7 +632,7 @@ public sealed class PatientServiceTests
     [TestMethod]
     public async Task GetMedicalRecordsAsync_WhenRepositoryReturnsRecords_ReturnsRecords()
     {
-        List<MedicalRecord> records = [new() { Id = 1, HistoryId = 5 }];
+        List<MedicalRecord> records = new() { new() { Id = 1, HistoryId = 5 } };
         _recordRepository.Setup(x => x.GetByHistoryIdAsync(5)).ReturnsAsync(records);
 
         List<MedicalRecord> result = await _sut.GetMedicalRecordsAsync(5);
@@ -665,7 +672,7 @@ public sealed class PatientServiceTests
         _recordRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(new MedicalRecord { Id = 1, HistoryId = 9 });
         _historyRepository.Setup(x => x.GetByIdAsync(9)).ReturnsAsync(new MedicalHistory { Id = 9, PatientId = 1, Patient = MakePatient() });
         _prescriptionRepository.Setup(x => x.GetByRecordIdAsync(1)).ReturnsAsync(new Prescription { Id = 4, RecordId = 1 });
-        _prescriptionRepository.Setup(x => x.GetItemsAsync(4)).ReturnsAsync([new PrescriptionItem { MedName = "Ibuprofen" }]);
+        _prescriptionRepository.Setup(x => x.GetItemsAsync(4)).ReturnsAsync(new List<PrescriptionItem> { new PrescriptionItem { MedName = "Ibuprofen" } });
 
         RecordExportDataDto result = await _sut.GetRecordExportDataAsync(1);
 
@@ -701,7 +708,7 @@ public sealed class PatientServiceTests
     {
         Allergy allergy = new() { Id = 1, AllergyName = "Peanuts" };
         _historyRepository.Setup(x => x.GetByPatientIdAsync(1)).ReturnsAsync(new MedicalHistory { Id = 9, PatientId = 1 });
-        _historyRepository.Setup(x => x.GetAllergiesByHistoryIdAsync(9)).ReturnsAsync([(allergy, "Severe")]);
+        _historyRepository.Setup(x => x.GetAllergiesByHistoryIdAsync(9)).ReturnsAsync(new List<(Allergy Allergy, string SeverityLevel)> { (allergy, "Severe") });
 
         List<string> result = await _sut.GetPatientAllergiesAsync(1);
 

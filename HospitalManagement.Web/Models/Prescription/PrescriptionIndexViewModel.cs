@@ -10,5 +10,5 @@ public class PrescriptionIndexViewModel
     public int CurrentPage { get; set; } = 1;
     public bool HasNextPage { get; set; }
     public string? InfoMessage { get; set; }
-    public List<PrescriptionListItemViewModel> Prescriptions { get; set; } = [];
+    public List<PrescriptionListItemViewModel> Prescriptions { get; set; } = new ();
 }

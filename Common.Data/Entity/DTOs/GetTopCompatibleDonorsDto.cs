@@ -1,5 +1,4 @@
-﻿
-namespace Common.Data.Entity.DTOs
+﻿namespace Common.Data.Entity.DTOs
 {
     public class GetTopCompatibleDonorsDto
     {

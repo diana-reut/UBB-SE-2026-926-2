@@ -1,12 +1,12 @@
-﻿using Common.API.Auth;
+﻿using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Threading.Tasks;
+using Common.API.Auth;
 using Common.API.Services;
 using Common.Data.Entity;
 using Common.Data.Entity.DTOs;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Threading.Tasks;
 
 namespace Common.API.Controllers;
 
@@ -15,11 +15,11 @@ namespace Common.API.Controllers;
 [AuthorizeRole("Admin", "Medic")]
 public class AddictDetectionController : ControllerBase
 {
-    private readonly IAddictDetectionService _addictDetectionService;
+    private readonly IAddictDetectionService addictDetectionService;
 
     public AddictDetectionController(IAddictDetectionService addictDetectionService)
     {
-        _addictDetectionService = addictDetectionService;
+        this.addictDetectionService = addictDetectionService;
     }
 
     [HttpGet("candidates")]
@@ -27,7 +27,7 @@ public class AddictDetectionController : ControllerBase
     {
         try
         {
-            List<Patient> candidates = await _addictDetectionService.GetAddictCandidatesAsync();
+            List<Patient> candidates = await addictDetectionService.GetAddictCandidatesAsync();
             return Ok(candidates);
         }
         catch (Exception ex)
@@ -44,7 +44,7 @@ public class AddictDetectionController : ControllerBase
     {
         try
         {
-            string report = await _addictDetectionService.BuildPoliceReportAsync(dto.PatientId);
+            string report = await addictDetectionService.BuildPoliceReportAsync(dto.PatientId);
             return Ok(report);
         }
         catch (ArgumentException ex)
@@ -68,7 +68,7 @@ public class AddictDetectionController : ControllerBase
     {
         try
         {
-            await _addictDetectionService.MarkPoliceNotifiedAsync(patientId);
+            await addictDetectionService.MarkPoliceNotifiedAsync(patientId);
             return Ok();
         }
         catch (ArgumentException ex)
@@ -92,7 +92,7 @@ public class AddictDetectionController : ControllerBase
     {
         try
         {
-            string chronicConditions = await _addictDetectionService.GetChronicConditionsAsync(patientId);
+            string chronicConditions = await addictDetectionService.GetChronicConditionsAsync(patientId);
             return Ok(chronicConditions);
         }
         catch (ArgumentException ex)

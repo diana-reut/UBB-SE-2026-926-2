@@ -16,7 +16,7 @@ public class Transplant
 
     [Required]
     [MaxLength(100)]
-    public string OrganType { get; set; } = "";
+    public string OrganType { get; set; } = string.Empty;
 
     [Required]
     public DateTime RequestDate { get; set; }

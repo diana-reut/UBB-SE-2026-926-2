@@ -341,7 +341,6 @@ public sealed class BillingServiceTests
         decimal result = await service.ComputeBasePriceAsync(1, 1);
 
         Assert.AreEqual(200m, result);
-
     }
 
     [TestMethod]
@@ -360,8 +359,6 @@ public sealed class BillingServiceTests
         decimal result = await service.ComputeBasePriceAsync(1, 1);
 
         Assert.AreEqual(200m, result);
-
-     
     }
     [TestMethod]
     public async Task ComputeBasePriceAsync_WhenHistoryIsMissing_DoesNotFetchHistoryDetails()
@@ -383,11 +380,7 @@ public sealed class BillingServiceTests
         decimal result = await service.ComputeBasePriceAsync(1, 1);
 
         Assert.AreEqual(0m, result);
-
     }
-
-
-
 
     [TestMethod]
     public async Task ApplyDiscountAsync_WithZeroPercentDiscount_ReturnsOriginalPrice()
@@ -525,7 +518,6 @@ public sealed class BillingServiceTests
         decimal result = await service.ComputeBasePriceAsync(1, 99);
 
         Assert.AreEqual(500m, result);
-
     }
 
     [TestMethod]
@@ -756,14 +748,14 @@ public sealed class BillingServiceTests
     }
 
     [TestMethod]
-public async Task ApplyDiscountAsync_WithThirtyThreePercentDiscount_ReturnsExpectedDecimalPrice()
-{
-    BillingService service = CreateService();
+    public async Task ApplyDiscountAsync_WithThirtyThreePercentDiscount_ReturnsExpectedDecimalPrice()
+    {
+        BillingService service = CreateService();
 
-    decimal result = await service.ApplyDiscountAsync(100m, 33);
+        decimal result = await service.ApplyDiscountAsync(100m, 33);
 
-    Assert.AreEqual(67m, result);
-}
+        Assert.AreEqual(67m, result);
+    }
 
     [TestMethod]
     public async Task ComputeBasePriceAsync_WhenRecordIsMissing_DoesNotFetchHistoryDetails()
@@ -837,7 +829,6 @@ public async Task ApplyDiscountAsync_WithThirtyThreePercentDiscount_ReturnsExpec
         _historyRepo.Verify(x => x.GetAllergiesByHistoryIdAsync(It.IsAny<int>()), Times.Never);
     }
 
-    
     [TestMethod]
     public async Task ComputeBasePriceAsync_WhenPrescriptionIsMissing_DoesNotFetchItems()
     {
@@ -1000,6 +991,4 @@ public async Task ApplyDiscountAsync_WithThirtyThreePercentDiscount_ReturnsExpec
 
         _recordRepo.Verify(x => x.UpdateAsync(It.Is<MedicalRecord>(r => r.BasePrice == 200m && r.DiscountApplied == 10 && r.FinalPrice == 180m)), Times.Once);
     }
-
-
 }

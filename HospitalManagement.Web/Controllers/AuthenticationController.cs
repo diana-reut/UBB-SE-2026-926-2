@@ -63,8 +63,8 @@ public class AuthenticationController : Controller
 
             Claim[] claims =
             [
-                new(ClaimTypes.Name, response.Username),
-                new(ClaimTypes.Role, response.Role)
+                new (ClaimTypes.Name, response.Username),
+                new (ClaimTypes.Role, response.Role)
             ];
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);

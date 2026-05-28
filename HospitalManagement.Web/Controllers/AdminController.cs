@@ -521,7 +521,7 @@ public class AdminController : Controller
             BloodType = source?.BloodType ?? BloodType.A,
             Rh = source?.Rh ?? Rh.Positive,
             ChronicConditionsText = source?.ChronicConditionsText ?? string.Empty,
-            AllergyIds = source?.AllergyIds ?? [],
+            AllergyIds = source?.AllergyIds ?? new List<int>(),
             AvailableAllergies = allergies
         };
     }
@@ -536,7 +536,7 @@ public class AdminController : Controller
     {
         if (string.IsNullOrWhiteSpace(conditionsText))
         {
-            return [];
+            return new List<string>();
         }
 
         return conditionsText

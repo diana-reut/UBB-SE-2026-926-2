@@ -171,7 +171,8 @@ internal class StatisticsViewModel : INotifyPropertyChanged
             var series = new List<ISeries>();
             foreach (KeyValuePair<string, int> kvp in data)
             {
-                if (kvp.Value >= 0) // Ensure non-negative values
+                // Ensure non-negative values.
+                if (kvp.Value >= 0)
                 {
                     series.Add(new PieSeries<int>
                     {
@@ -222,7 +223,8 @@ internal class StatisticsViewModel : INotifyPropertyChanged
             var series = new List<ISeries>();
             foreach (KeyValuePair<string, int> kvp in data)
             {
-                if (kvp.Value >= 0) // Ensure non-negative values
+                // Ensure non-negative values.
+                if (kvp.Value >= 0)
                 {
                     series.Add(new PieSeries<int>
                     {

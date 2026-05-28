@@ -50,7 +50,11 @@ public partial class LoginViewModel : ObservableObject
         IsBusy = true;
         try
         {
-            AuthResponseDto response = await _authProxy.LoginAsync(new LoginDto(Username, Password));
+            AuthResponseDto response = await _authProxy.LoginAsync(new LoginDto
+            {
+                Username = Username,
+                Password = Password
+            });
             _session.SetSession(response.Token, response.Username, response.Role);
             LoginSucceeded?.Invoke(this, EventArgs.Empty);
         }

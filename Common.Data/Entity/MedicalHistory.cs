@@ -25,18 +25,19 @@ public class MedicalHistory
 
     public Rh? Rh { get; set; }
 
-    public List<string> ChronicConditions { get; set; } = [];
+    public List<string> ChronicConditions { get; set; } = new List<string>();
 
-    public List<MedicalRecord> MedicalRecords { get; set; } = [];
+    public List<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
 
-    public List<PatientAllergy> PatientAllergies { get; set; } = [];
+    public List<PatientAllergy> PatientAllergies { get; set; } = new List<PatientAllergy>();
 
     [NotMapped]
     public List<(Allergy Allergy, string SeverityLevel)> Allergies
     {
-        get => [.. (PatientAllergies ?? [])
+        get => (PatientAllergies ?? new List<PatientAllergy>())
             .Where(pa => pa?.Allergy is not null)
-            .Select(pa => (pa.Allergy, pa.SeverityLevel))];
+            .Select(pa => (pa.Allergy, pa.SeverityLevel))
+            .ToList();
         set
         {
             PatientAllergies = value?
@@ -48,7 +49,7 @@ public class MedicalHistory
                     SeverityLevel = item.SeverityLevel ?? string.Empty,
                     MedicalHistoryId = Id,
                 })
-                .ToList() ?? [];
+                .ToList() ?? new List<PatientAllergy>();
         }
     }
 }

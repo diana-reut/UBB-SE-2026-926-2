@@ -199,8 +199,6 @@ public sealed class MedicalRecordRepositoryTests
         Assert.AreEqual(0, context.MedicalRecords.Count());
     }
 
-   
-
     [TestMethod]
     public async Task GetAllAsync_WhenNoRecordsExist_ReturnsEmptyList()
     {
@@ -211,10 +209,6 @@ public sealed class MedicalRecordRepositoryTests
 
         Assert.AreEqual(0, result.Count);
     }
-
-  
-
-   
 
     [TestMethod]
     public async Task GetByHistoryIdAsync_WhenNoRecordsExist_ReturnsEmptyList()
@@ -227,8 +221,6 @@ public sealed class MedicalRecordRepositoryTests
         Assert.AreEqual(0, result.Count);
     }
 
-    
-
     [TestMethod]
     public async Task GetByIdAsync_WhenRecordDoesNotExist_ReturnsNull()
     {
@@ -240,7 +232,6 @@ public sealed class MedicalRecordRepositoryTests
         Assert.IsNull(result);
     }
 
-    
     [TestMethod]
     public void GetById_WhenRecordDoesNotExist_ReturnsNull()
     {

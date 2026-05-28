@@ -8,7 +8,7 @@ namespace HospitalManagement.Web.Services;
 public class AuthenticationApiClient : IAuthenticationApiClient
 {
     private readonly HttpClient httpClient;
-    private readonly JsonSerializerOptions jsonOptions = new()
+    private readonly JsonSerializerOptions jsonOptions = new ()
     {
         PropertyNameCaseInsensitive = true,
     };
@@ -23,7 +23,11 @@ public class AuthenticationApiClient : IAuthenticationApiClient
         string password,
         CancellationToken cancellationToken)
     {
-        var dto = new LoginDto(username, password);
+        var dto = new LoginDto
+        {
+            Username = username,
+            Password = password
+        };
 
         using HttpResponseMessage response = await httpClient.PostAsJsonAsync(
             "api/auth/login",

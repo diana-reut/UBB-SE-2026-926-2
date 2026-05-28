@@ -11,8 +11,8 @@ public class PatientProfileModel
     public string? BloodType { get; set; }
     public string? Rh { get; set; }
     public string ChronicConditionsFormatted { get; set; } = "None";
-    public List<string> Allergies { get; set; } = [];
-    public List<MedicalRecord> MedicalRecords { get; set; } = [];
+    public List<string> Allergies { get; set; } = new ();
+    public List<MedicalRecord> MedicalRecords { get; set; } = new ();
     public int? SelectedRecordId { get; set; }
     public decimal BasePrice { get; set; }
     public decimal FinalPrice { get; set; }

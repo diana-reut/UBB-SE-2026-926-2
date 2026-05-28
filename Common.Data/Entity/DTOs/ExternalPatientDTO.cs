@@ -5,11 +5,11 @@ namespace Common.Data.Entity.DTOs;
 
 public class ExternalPatientDTO
 {
-    public string CNP { get; set; } = "";
+    public string CNP { get; set; } = string.Empty;
 
-    public string FirstName { get; set; } = "";
+    public string FirstName { get; set; } = string.Empty;
 
-    public string LastName { get; set; } = "";
+    public string LastName { get; set; } = string.Empty;
 
     public Sex Sex { get; set; }
 

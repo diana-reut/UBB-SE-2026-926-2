@@ -198,7 +198,7 @@ public sealed class StatisticsServiceTests
                 new MedicalRecord { Diagnosis = " flu " },
                 new MedicalRecord { Diagnosis = "FLU" },
                 new MedicalRecord { Diagnosis = "Cold" },
-                new MedicalRecord { Diagnosis = "" },
+                new MedicalRecord { Diagnosis = string.Empty },
                 new MedicalRecord { Diagnosis = "   " },
                 new MedicalRecord { Diagnosis = null }
             });
@@ -227,8 +227,6 @@ public sealed class StatisticsServiceTests
         AssertDictionariesAreEqual(new Dictionary<string, int>(), result);
     }
 
-
-
     [TestMethod]
     public async Task GetMostPrescribedMedsAsync_IgnoresNullAndEmptyMedicationNamesAndGroupsCaseInsensitiveTrimmedValues()
     {
@@ -244,7 +242,7 @@ public sealed class StatisticsServiceTests
                         new PrescriptionItem { MedName = " aspirin " },
                         new PrescriptionItem { MedName = "ASPIRIN" },
                         new PrescriptionItem { MedName = "Ibuprofen" },
-                        new PrescriptionItem { MedName = "" },
+                        new PrescriptionItem { MedName = string.Empty },
                         new PrescriptionItem { MedName = "   " },
                         new PrescriptionItem { MedName = null }
                     }
@@ -352,16 +350,12 @@ public sealed class StatisticsServiceTests
         _patientRepo.Setup(x => x.GetAllAsync(true))
             .ReturnsAsync(new List<Patient>
             {
-          
             new Patient { Date_of_Birth = today.AddYears(-17) },
 
-        
             new Patient { Date_of_Birth = today.AddYears(-18) },
 
-          
-            new Patient { Date_of_Birth= today.AddYears(-64) },
+            new Patient { Date_of_Birth = today.AddYears(-64) },
 
-           
             new Patient { Date_of_Birth = today.AddYears(-65) }
             });
 
@@ -376,7 +370,4 @@ public sealed class StatisticsServiceTests
             },
             result);
     }
-
-
-
 }

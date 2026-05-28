@@ -4,7 +4,6 @@ using System.Text;
 
 namespace Common.Data.Integration;
 
-
 public class GetLatestPrescriptionsDTO
 {
     public int N { get; set; }

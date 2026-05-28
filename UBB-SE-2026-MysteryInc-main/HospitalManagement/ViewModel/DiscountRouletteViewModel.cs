@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace HospitalManagement.ViewModel;
+
 internal partial class DiscountRouletteViewModel : ObservableObject
 {
     [ObservableProperty]
@@ -32,7 +33,6 @@ internal partial class DiscountRouletteViewModel : ObservableObject
 
     public DiscountRouletteViewModel()
     {
-
     }
 
     public void Initialize(decimal price)
@@ -61,7 +61,5 @@ internal partial class DiscountRouletteViewModel : ObservableObject
         await Task.Delay(2200);
         SpinCompleted?.Invoke(DiscountPercentage, FinalPrice);
         IsSpinning = false;
-
     }
-
 }

@@ -33,7 +33,7 @@ public class PatientApiClient : HospitalApiClientBase, IPatientApiClient
         GetAsync<MedicalHistory>($"{BaseUri}/{id}/medical-history", cancellationToken);
 
     public async Task<List<MedicalRecord>> GetMedicalRecordsAsync(int historyId, CancellationToken cancellationToken = default) =>
-        await GetAsync<List<MedicalRecord>>($"{BaseUri}/{historyId}/medical-records", cancellationToken) ?? [];
+        await GetAsync<List<MedicalRecord>>($"{BaseUri}/{historyId}/medical-records", cancellationToken) ?? new List<MedicalRecord>();
 
     public async Task<int> CreateMedicalRecordAsync(
         int patientId,
@@ -48,7 +48,7 @@ public class PatientApiClient : HospitalApiClientBase, IPatientApiClient
         PostAsync($"{BaseUri}/records/{recordId}/prescription", dto, cancellationToken);
 
     public async Task<List<string>> GetPatientAllergiesAsync(int id, CancellationToken cancellationToken = default) =>
-        await GetAsync<List<string>>($"{BaseUri}/{id}/allergies", cancellationToken) ?? [];
+        await GetAsync<List<string>>($"{BaseUri}/{id}/allergies", cancellationToken) ?? new List<string>();
 
     public async Task<bool> IsHighRiskPatientAsync(int id, CancellationToken cancellationToken = default) =>
         await GetAsync<bool>($"{BaseUri}/{id}/high-risk", cancellationToken);
@@ -59,7 +59,7 @@ public class PatientApiClient : HospitalApiClientBase, IPatientApiClient
     public async Task<List<Patient>> SearchPatientsAsync(
         SearchPatientsDto dto,
         CancellationToken cancellationToken = default) =>
-        await PostAsync<SearchPatientsDto, List<Patient>>($"{BaseUri}/search", dto, cancellationToken) ?? [];
+        await PostAsync<SearchPatientsDto, List<Patient>>($"{BaseUri}/search", dto, cancellationToken) ?? new List<Patient>();
 
     public async Task<Patient> CreatePatientAsync(
         CreatePatientDto dto,

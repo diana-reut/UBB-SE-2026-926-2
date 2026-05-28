@@ -4,8 +4,8 @@ public class RoomAssignmentViewModel
 {
     public int? SelectedVisitId { get; set; }
     public int? SelectedRoomId { get; set; }
-    public List<RoomAssignmentVisitViewModel> WaitingVisits { get; set; } = [];
-    public List<RoomOptionViewModel> AvailableRooms { get; set; } = [];
+    public List<RoomAssignmentVisitViewModel> WaitingVisits { get; set; } = new ();
+    public List<RoomOptionViewModel> AvailableRooms { get; set; } = new ();
     public RoomAssignmentPatientViewModel? SelectedPatient { get; set; }
     public RoomAssignmentTriageViewModel? SelectedTriage { get; set; }
     public string? ErrorMessage { get; set; }

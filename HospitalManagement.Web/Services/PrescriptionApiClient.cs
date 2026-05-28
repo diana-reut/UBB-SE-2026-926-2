@@ -13,7 +13,7 @@ public class PrescriptionApiClient : IPrescriptionApiClient
     private static readonly TimeSpan StartupRetryDelay = TimeSpan.FromMilliseconds(800);
 
     private readonly HttpClient httpClient;
-    private readonly JsonSerializerOptions jsonOptions = new()
+    private readonly JsonSerializerOptions jsonOptions = new ()
     {
         PropertyNameCaseInsensitive = true,
     };
@@ -31,7 +31,7 @@ public class PrescriptionApiClient : IPrescriptionApiClient
                 ct => httpClient.GetAsync($"{BaseUri}/latest?n={n}&page={page}", ct),
                 cancellationToken);
 
-            return await ReadAsync<List<Prescription>>(response, cancellationToken) ?? [];
+            return await ReadAsync<List<Prescription>>(response, cancellationToken) ?? new List<Prescription>();
         }
         catch (HttpRequestException)
         {
@@ -51,7 +51,7 @@ public class PrescriptionApiClient : IPrescriptionApiClient
                 ct => httpClient.PostAsJsonAsync(BaseUri, filter, jsonOptions, ct),
                 cancellationToken);
 
-            return await ReadAsync<List<Prescription>>(response, cancellationToken) ?? [];
+            return await ReadAsync<List<Prescription>>(response, cancellationToken) ?? new List<Prescription>();
         }
         catch (HttpRequestException)
         {

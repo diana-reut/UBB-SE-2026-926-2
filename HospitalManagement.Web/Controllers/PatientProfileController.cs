@@ -1,5 +1,6 @@
 using Common.Data.Entity;
 using Common.Data.Entity.DTOs;
+using Common.Data.Models;
 using HospitalManagement.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,13 +16,19 @@ public class PatientProfileController : Controller
 {
     private readonly IPatientApiClient patientApiClient;
     private readonly IBillingApiClient billingApiClient;
+    private readonly IErWorkflowApiClient erWorkflowApiClient;
+    private readonly IAppointmentImportProvider appointmentImportProvider;
 
     public PatientProfileController(
         IPatientApiClient patientApiClient,
-        IBillingApiClient billingApiClient)
+        IBillingApiClient billingApiClient,
+        IErWorkflowApiClient erWorkflowApiClient,
+        IAppointmentImportProvider appointmentImportProvider)
     {
         this.patientApiClient = patientApiClient;
         this.billingApiClient = billingApiClient;
+        this.erWorkflowApiClient = erWorkflowApiClient;
+        this.appointmentImportProvider = appointmentImportProvider;
     }
 
     [HttpGet]
@@ -56,7 +63,7 @@ public class PatientProfileController : Controller
                         StaffId = r.StaffId,
                         Symptoms = r.Symptoms ?? "N/A",
                         Diagnosis = r.Diagnosis ?? "N/A",
-                    }).ToList() ?? [],
+                    }).ToList() ?? new List<PatientsMedicalRecordViewModel>(),
                 SelectedRecordId = selectedRecordId,
             };
 
@@ -74,6 +81,8 @@ public class PatientProfileController : Controller
                 }
             }
 
+            ViewData["SuccessMessage"] = TempData["SuccessMessage"];
+            ViewData["ErrorMessage"] = TempData["ErrorMessage"];
             return View("~/Views/Patients/PatientProfile.cshtml", model);
         }
         catch (Exception ex)
@@ -304,17 +313,93 @@ public class PatientProfileController : Controller
         return RedirectToAction(nameof(SelectRecord), new { patientId, recordId });
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ImportFromEr(int patientId)
+    {
+        try
+        {
+            Patient patient = await patientApiClient.GetPatientDetailsAsync(patientId, HttpContext.RequestAborted);
+            if (patient.MedicalHistory is null)
+            {
+                throw new InvalidOperationException("Patient medical history must be initialized before importing records.");
+            }
+
+            var existingErSourceIds = patient.MedicalHistory.MedicalRecords?
+                .Where(record => record.SourceType == Common.Data.Entity.Enums.SourceType.ER)
+                .Select(record => record.SourceId)
+                .ToHashSet() ?? new HashSet<int>();
+
+            Examination? candidateExam = (await erWorkflowApiClient.GetPatientExaminationHistoryAsync(
+                    patient.Cnp,
+                    HttpContext.RequestAborted))
+                .OrderByDescending(examination => examination.Exam_Time)
+                .FirstOrDefault(examination => !existingErSourceIds.Contains(examination.Visit_ID));
+
+            if (candidateExam is null)
+            {
+                throw new InvalidOperationException("No new ER examination is available to import for this patient.");
+            }
+
+            ERExaminationSummaryDto? summary = await erWorkflowApiClient.GetExaminationSummaryAsync(
+                candidateExam.Visit_ID,
+                HttpContext.RequestAborted);
+            if (summary is null)
+            {
+                throw new InvalidOperationException("Could not load the ER examination summary for import.");
+            }
+
+            var dto = new RecordDTO
+            {
+                ExternalRecordId = candidateExam.Visit_ID,
+                Symptoms = summary.ChiefComplaint,
+                TemporaryDiagnosis = string.IsNullOrWhiteSpace(summary.Notes) ? summary.Specialization : summary.Notes,
+                PrescribedMeds = string.Empty,
+                ConsultationDate = summary.ExamTime,
+                SourceType = Common.Data.Entity.Enums.SourceType.ER,
+            };
+
+            await ProcessImportAsync(dto, patient, HttpContext.RequestAborted);
+            TempData["SuccessMessage"] = "ER records imported correctly.";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { id = patientId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ImportFromStaff(int patientId)
+    {
+        try
+        {
+            Patient patient = await patientApiClient.GetPatientDetailsAsync(patientId, HttpContext.RequestAborted);
+            RecordDTO dto = appointmentImportProvider.FetchRecordByPatientId(patientId);
+            await ProcessImportAsync(dto, patient, HttpContext.RequestAborted);
+            TempData["SuccessMessage"] = "Staff records imported correctly.";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { id = patientId });
+    }
+
     private async Task<MigratedPatientProfileModel> BuildProfileModelAsync(
         int patientId,
         CancellationToken cancellationToken)
     {
         Patient patient = await patientApiClient.GetPatientDetailsAsync(patientId, cancellationToken);
         patient.MedicalHistory ??= new MedicalHistory();
-        patient.MedicalHistory.MedicalRecords ??= [];
+        patient.MedicalHistory.MedicalRecords ??= new List<MedicalRecord>();
 
         List<MedicalRecord> records = patient.MedicalHistory.Id > 0
             ? await patientApiClient.GetMedicalRecordsAsync(patient.MedicalHistory.Id, cancellationToken)
-            : [];
+            : new List<MedicalRecord>();
         List<string> allergies = await patientApiClient.GetPatientAllergiesAsync(patientId, cancellationToken);
         var history = patient.MedicalHistory;
 
@@ -332,6 +417,58 @@ public class PatientProfileController : Controller
             Allergies = allergies,
             MedicalRecords = records.OrderByDescending(r => r.ConsultationDate).ToList(),
             CachedAt = DateTime.UtcNow,
+        };
+    }
+
+    private async Task ProcessImportAsync(RecordDTO dto, Patient patient, CancellationToken cancellationToken)
+    {
+        if (patient.MedicalHistory is null)
+        {
+            throw new InvalidOperationException("Patient medical history must be initialized before importing records.");
+        }
+
+        int recordId = await patientApiClient.CreateMedicalRecordAsync(
+            patient.Id,
+            BuildRecordFromDto(dto),
+            cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(dto.PrescribedMeds))
+        {
+            await CreatePrescriptionAsync(dto.PrescribedMeds, recordId, cancellationToken);
+        }
+    }
+
+    private async Task CreatePrescriptionAsync(string medsString, int recordId, CancellationToken cancellationToken)
+    {
+        string[] meds = medsString.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        var prescription = new CreatePrescriptionDto
+        {
+            Date = DateTime.Now,
+            DoctorNotes = "Imported from external provider",
+            Items = meds.Select(medication => new CreatePrescriptionItemDto
+            {
+                MedName = medication,
+                Quantity = "1",
+            }).ToList(),
+        };
+
+        await patientApiClient.CreatePrescriptionForRecordAsync(recordId, prescription, cancellationToken);
+    }
+
+    private static CreateMedicalRecordDto BuildRecordFromDto(RecordDTO dto)
+    {
+        return new CreateMedicalRecordDto
+        {
+            SourceType = dto.SourceType,
+            SourceId = dto.ExternalRecordId,
+            StaffId = 1,
+            Symptoms = dto.Symptoms,
+            Diagnosis = dto.TemporaryDiagnosis,
+            ConsultationDate = dto.ConsultationDate,
+            BasePrice = 0,
+            FinalPrice = 0,
+            PoliceNotified = false,
         };
     }
 }

@@ -52,7 +52,7 @@ public class TransferLogService : ITransferLogService
             .OrderBy(visit => visit.Arrival_date_time)
             .ToList();
 
-        List<ERTransferEligibleVisitDto> result = new();
+        List<ERTransferEligibleVisitDto> result = new ();
         foreach (ER_Visit visit in visits)
         {
             Patient? patient = (await patientRepository.SearchAsync(new PatientFilter { CNP = visit.Patient_ID }))

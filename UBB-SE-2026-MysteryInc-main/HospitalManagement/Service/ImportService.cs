@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Common.Data.Entity;
@@ -6,7 +7,6 @@ using Common.Data.Entity.DTOs;
 using HospitalManagement.Integration.External;
 using HospitalManagement.Proxy.PatientProxy;
 using ERManagementSystem.Proxy.ExaminationProxy;
-
 
 namespace HospitalManagement.Service;
 
@@ -48,7 +48,7 @@ internal class ImportService : IImportService
         var existingErSourceIds = patient.MedicalHistory.MedicalRecords?
             .Where(record => record.SourceType == Common.Data.Entity.Enums.SourceType.ER)
             .Select(record => record.SourceId)
-            .ToHashSet() ?? [];
+            .ToHashSet() ?? new HashSet<int>();
 
         var candidateExam = (await _examinationProxy.GetPatientHistoryAsync(patient.Cnp))
             .OrderByDescending(examination => examination.Exam_Time)
@@ -92,7 +92,6 @@ internal class ImportService : IImportService
 
     private async Task ProcessImportAsync(RecordDTO dto, Patient patient)
     {
-
         if (patient.MedicalHistory is null)
         {
             throw new InvalidOperationException("Patient medical history must be initialized before importing records.");
@@ -115,11 +114,11 @@ internal class ImportService : IImportService
         {
             Date = DateTime.Now,
             DoctorNotes = "Imported from external provider",
-            Items = [.. meds.Select(m => new CreatePrescriptionItemDto
+            Items = meds.Select(m => new CreatePrescriptionItemDto
             {
                 MedName = m,
                 Quantity = "1",
-            })],
+            }).ToList(),
         };
 
         return _patientService.CreatePrescriptionForRecordAsync(recordId, prescription);

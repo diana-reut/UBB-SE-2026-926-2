@@ -1,7 +1,7 @@
-using Common.Data.Entity.Enums;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using Common.Data.Entity.Enums;
 
 namespace HospitalManagement.Web.Models.Patients;
 
@@ -40,22 +40,22 @@ public class CreatePatientViewModel : IValidatableObject
     {
         if (string.IsNullOrWhiteSpace(FirstName))
         {
-            yield return new ValidationResult("First Name is required", [nameof(FirstName)]);
+            yield return new ValidationResult("First Name is required", new[] { nameof(FirstName) });
         }
 
         if (string.IsNullOrWhiteSpace(LastName))
         {
-            yield return new ValidationResult("Last Name is required", [nameof(LastName)]);
+            yield return new ValidationResult("Last Name is required", new[] { nameof(LastName) });
         }
 
         if (!IsTenDigitPhone(PhoneNo))
         {
-            yield return new ValidationResult("Phone must be 10 digits", [nameof(PhoneNo)]);
+            yield return new ValidationResult("Phone must be 10 digits", new[] { nameof(PhoneNo) });
         }
 
         if (!IsTenDigitPhone(EmergencyContact))
         {
-            yield return new ValidationResult("Emergency contact must be 10 digits", [nameof(EmergencyContact)]);
+            yield return new ValidationResult("Emergency contact must be 10 digits", new[] { nameof(EmergencyContact) });
         }
     }
 

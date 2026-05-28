@@ -2,9 +2,9 @@ namespace HospitalManagement.Web.Models.RoomManagement;
 
 public class RoomManagementViewModel
 {
-    public List<RoomStatusItemViewModel> AvailableRooms { get; set; } = [];
-    public List<RoomStatusItemViewModel> OccupiedRooms { get; set; } = [];
-    public List<RoomStatusItemViewModel> CleaningRooms { get; set; } = [];
+    public List<RoomStatusItemViewModel> AvailableRooms { get; set; } = new ();
+    public List<RoomStatusItemViewModel> OccupiedRooms { get; set; } = new ();
+    public List<RoomStatusItemViewModel> CleaningRooms { get; set; } = new ();
     public int TotalRooms => AvailableRooms.Count + OccupiedRooms.Count + CleaningRooms.Count;
     public int? SelectedRoomId { get; set; }
     public RoomVisitDetailsViewModel? SelectedRoomVisit { get; set; }

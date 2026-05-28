@@ -1,12 +1,12 @@
-using Common.Data.Entity;
-using Common.Data.Entity.Enums;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using Common.Data.Entity;
+using Common.Data.Entity.Enums;
 using Common.Data.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Common.Data.Data;
 
@@ -269,13 +269,13 @@ public class EFHospitalDbContext : DbContext
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            return [];
+            return new List<string>();
         }
 
         string trimmed = value.Trim();
         if (trimmed.StartsWith('['))
         {
-            return JsonSerializer.Deserialize<List<string>>(trimmed, new JsonSerializerOptions()) ?? [];
+            return JsonSerializer.Deserialize<List<string>>(trimmed, new JsonSerializerOptions()) ?? new List<string>();
         }
 
         return trimmed

@@ -11,13 +11,13 @@ namespace Common.API.Controllers
     [AuthorizeRole("Admin", "Medic")]
     public class ERVisitsController : ControllerBase
     {
-        private readonly IERVisitService _erVisitService;
-        private readonly ILogger<ERVisitsController> _logger;
+        private readonly IERVisitService erVisitService;
+        private readonly ILogger<ERVisitsController> logger;
 
         public ERVisitsController(IERVisitService erVisitService, ILogger<ERVisitsController> logger)
         {
-            _erVisitService = erVisitService;
-            _logger = logger;
+            this.erVisitService = erVisitService;
+            this.logger = logger;
         }
 
         [HttpGet]
@@ -25,12 +25,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                var result = await _erVisitService.GetAllAsync();
+                var result = await erVisitService.GetAllAsync();
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch ER visits.");
+                logger.LogError(e, "Failed to fetch ER visits.");
 
                 return Problem(
                     detail: "Failed to fetch ER visits.",
@@ -44,10 +44,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                ER_Visit? result = await _erVisitService.GetByIdAsync(id);
+                ER_Visit? result = await erVisitService.GetByIdAsync(id);
                 if (result is null)
                 {
-                    _logger.LogWarning("ER visit {VisitId} was not found.", id);
+                    logger.LogWarning("ER visit {VisitId} was not found.", id);
                     return NotFound();
                 }
 
@@ -55,7 +55,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to fetch ER visit {VisitId}.", id);
+                logger.LogError(e, "Failed to fetch ER visit {VisitId}.", id);
 
                 return Problem(
                     detail: "Failed to fetch ER visit.",
@@ -69,12 +69,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                ER_Visit result = await _erVisitService.CreateAsync(visit);
+                ER_Visit result = await erVisitService.CreateAsync(visit);
                 return CreatedAtAction(nameof(GetById), new { id = result.Visit_ID }, result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to create ER visit.");
+                logger.LogError(e, "Failed to create ER visit.");
 
                 return Problem(
                     detail: "Failed to create ER visit.",
@@ -88,10 +88,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                bool updated = await _erVisitService.UpdateAsync(id, visit);
+                bool updated = await erVisitService.UpdateAsync(id, visit);
                 if (!updated)
                 {
-                    _logger.LogWarning("ER visit {VisitId} was not found for update.", id);
+                    logger.LogWarning("ER visit {VisitId} was not found for update.", id);
                     return NotFound();
                 }
 
@@ -99,7 +99,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to update ER visit {VisitId}.", id);
+                logger.LogError(e, "Failed to update ER visit {VisitId}.", id);
 
                 return Problem(
                     detail: "Failed to update ER visit.",
@@ -113,10 +113,10 @@ namespace Common.API.Controllers
         {
             try
             {
-                bool deleted = await _erVisitService.DeleteAsync(id);
+                bool deleted = await erVisitService.DeleteAsync(id);
                 if (!deleted)
                 {
-                    _logger.LogWarning("ER visit {VisitId} was not found for delete.", id);
+                    logger.LogWarning("ER visit {VisitId} was not found for delete.", id);
                     return NotFound();
                 }
 
@@ -124,7 +124,7 @@ namespace Common.API.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to delete ER visit {VisitId}.", id);
+                logger.LogError(e, "Failed to delete ER visit {VisitId}.", id);
 
                 return Problem(
                     detail: "Failed to delete ER visit.",
@@ -138,12 +138,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                bool assigned = await _erVisitService.AutoAssignHighestPriorityRoomAsync();
+                bool assigned = await erVisitService.AutoAssignHighestPriorityRoomAsync();
                 return Ok(assigned);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to auto-assign room.");
+                logger.LogError(e, "Failed to auto-assign room.");
                 return Problem(
                     detail: "Failed to auto-assign room.",
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -156,12 +156,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                await _erVisitService.AssignRoomAsync(visitId, roomId);
+                await erVisitService.AssignRoomAsync(visitId, roomId);
                 return NoContent();
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to assign room {RoomId} to visit {VisitId}.", roomId, visitId);
+                logger.LogError(e, "Failed to assign room {RoomId} to visit {VisitId}.", roomId, visitId);
                 return Problem(
                     detail: e.Message,
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -174,12 +174,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                await _erVisitService.TransferVisitAsync(visitId);
+                await erVisitService.TransferVisitAsync(visitId);
                 return NoContent();
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to transfer visit {VisitId}.", visitId);
+                logger.LogError(e, "Failed to transfer visit {VisitId}.", visitId);
                 return Problem(
                     detail: e.Message,
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -192,12 +192,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                await _erVisitService.RetryTransferAsync(visitId);
+                await erVisitService.RetryTransferAsync(visitId);
                 return NoContent();
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to retry transfer for visit {VisitId}.", visitId);
+                logger.LogError(e, "Failed to retry transfer for visit {VisitId}.", visitId);
                 return Problem(
                     detail: e.Message,
                     statusCode: (int)HttpStatusCode.InternalServerError,
@@ -210,12 +210,12 @@ namespace Common.API.Controllers
         {
             try
             {
-                await _erVisitService.CloseVisitAsync(visitId);
+                await erVisitService.CloseVisitAsync(visitId);
                 return NoContent();
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to close visit {VisitId}.", visitId);
+                logger.LogError(e, "Failed to close visit {VisitId}.", visitId);
                 return Problem(
                     detail: e.Message,
                     statusCode: (int)HttpStatusCode.InternalServerError,

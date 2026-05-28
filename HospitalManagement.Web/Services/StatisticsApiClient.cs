@@ -7,7 +7,7 @@ public class StatisticsApiClient : IStatisticsApiClient
 {
     private const string BaseUri = "api/statistics";
     private readonly HttpClient httpClient;
-    private readonly JsonSerializerOptions jsonOptions = new()
+    private readonly JsonSerializerOptions jsonOptions = new ()
     {
         PropertyNameCaseInsensitive = true,
     };
@@ -54,6 +54,6 @@ public class StatisticsApiClient : IStatisticsApiClient
         using HttpResponseMessage response = await httpClient.GetAsync($"{BaseUri}/{route}", cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<Dictionary<string, int>>(jsonOptions, cancellationToken) ?? [];
+        return await response.Content.ReadFromJsonAsync<Dictionary<string, int>>(jsonOptions, cancellationToken) ?? new Dictionary<string, int>();
     }
 }

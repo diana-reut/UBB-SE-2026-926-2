@@ -9,7 +9,7 @@ public class AddictDetectionApiClient : IAddictDetectionApiClient
 {
     private const string BaseUri = "api/addicts";
     private readonly HttpClient httpClient;
-    private readonly JsonSerializerOptions jsonOptions = new() { PropertyNameCaseInsensitive = true };
+    private readonly JsonSerializerOptions jsonOptions = new () { PropertyNameCaseInsensitive = true };
 
     public AddictDetectionApiClient(HttpClient httpClient)
     {
@@ -23,10 +23,10 @@ public class AddictDetectionApiClient : IAddictDetectionApiClient
             using HttpResponseMessage response = await httpClient.GetAsync($"{BaseUri}/candidates", cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
-                return [];
+                return new List<Patient>();
             }
 
-            return await response.Content.ReadFromJsonAsync<List<Patient>>(jsonOptions, cancellationToken) ?? [];
+            return await response.Content.ReadFromJsonAsync<List<Patient>>(jsonOptions, cancellationToken) ?? new List<Patient>();
         }
         catch (HttpRequestException)
         {

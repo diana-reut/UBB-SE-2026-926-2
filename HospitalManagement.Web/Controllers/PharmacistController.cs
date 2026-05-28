@@ -61,7 +61,7 @@ public class PharmacistController : Controller
             DoctorNotes = prescription.DoctorNotes ?? "No notes provided",
             ReturnPatientId = returnPatientId,
             ReturnRecordId = returnRecordId,
-            Medications = (prescription.MedicationList ?? [])
+            Medications = (prescription.MedicationList ?? new List<PrescriptionItem>())
                 .Select(m => new PrescriptionItemViewModel
                 {
                     MedName = m.MedName,
@@ -84,7 +84,7 @@ public class PharmacistController : Controller
         catch (InvalidOperationException ex)
         {
             TempData["ErrorMessage"] = ex.Message;
-            candidates = [];
+            candidates = new List<Patient>();
         }
 
         var model = new AddictListViewModel

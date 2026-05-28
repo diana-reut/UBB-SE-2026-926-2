@@ -14,6 +14,6 @@ public class PatientDetailsViewModel
     public string? BloodType { get; set; }
     public string? Rh { get; set; }
     public string ChronicConditions { get; set; } = "None";
-    public List<string> Allergies { get; set; } = [];
-    public List<PatientMedicalRecordViewModel> MedicalRecords { get; set; } = [];
+    public List<string> Allergies { get; set; } = new ();
+    public List<PatientMedicalRecordViewModel> MedicalRecords { get; set; } = new ();
 }

@@ -11,7 +11,7 @@ public class AdminPatientsIndexViewModel
     public Sex? Sex { get; set; }
     public bool ShowArchived { get; set; }
     public int? SelectedPatientId { get; set; }
-    public List<PatientListItemViewModel> Patients { get; set; } = [];
+    public List<PatientListItemViewModel> Patients { get; set; } = new ();
     public EditPatientViewModel? SelectedPatient { get; set; }
 
     public bool IsActiveMode => !ShowArchived;

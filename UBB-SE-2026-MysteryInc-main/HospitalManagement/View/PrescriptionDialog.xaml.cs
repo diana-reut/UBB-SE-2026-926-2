@@ -13,5 +13,4 @@ internal sealed partial class PrescriptionDialog : ContentDialog
         ViewModel = viewModel;
         DataContext = ViewModel;
     }
-
 }
